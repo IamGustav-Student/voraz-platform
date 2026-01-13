@@ -1,0 +1,25 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Estilos Base Voraz */
+body {
+  background-color: #121212; /* voraz-black */
+  color: #F5F5F5; /* voraz-white */
+  font-family: 'Inter', sans-serif;
+}
+
+/* Scrollbar personalizada (Toque Premium) */
+::-webkit-scrollbar {
+  width: 8px;
+}
+::-webkit-scrollbar-track {
+  background: #121212;
+}
+::-webkit-scrollbar-thumb {
+  background: #333;
+  border-radius: 4px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #D92525;
+}
