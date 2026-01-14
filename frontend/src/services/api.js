@@ -1,5 +1,5 @@
 // Si existe una variable de entorno, úsala. Si no, usa localhost.
-const API_URL = 'voraz-platform-production.up.railway.app/api';
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000/api';
 
 // --- PRODUCTOS ---
 export const getMenu = async () => {
