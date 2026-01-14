@@ -1,17 +1,16 @@
 import pg from 'pg';
 import dotenv from 'dotenv';
+import { DB_HOST, DB_NAME, DB_PASSWORD, DB_USER, DB_PORT } from './config.js'; // O como importes tus variables
 
 // Cargar variables de entorno
 dotenv.config();
 
 const { Pool } = pg;
 
-const pool = new Pool({
-  user: process.env.DB_USER,
-  password: process.env.DB_PASSWORD,
-  host: process.env.DB_HOST,
-  port: process.env.DB_PORT,
-  database: process.env.DB_NAME,
+export const pool = new pg.Pool({
+  connectionString: process.env.DATABASE_URL,
+  // Esta línea de abajo es OBLIGATORIA para Railway (SSL):
+  ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false
 });
 
 // Listener para errores inesperados en el pool
