@@ -1,6 +1,6 @@
 import pg from 'pg';
 import dotenv from 'dotenv';
-import { DB_HOST, DB_NAME, DB_PASSWORD, DB_USER, DB_PORT } from './config.js'; // O como importes tus variables
+
 
 // Cargar variables de entorno
 dotenv.config();
