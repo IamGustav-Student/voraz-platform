@@ -31,6 +31,6 @@ export const getMenu = async (req, res) => {
 
   } catch (error) {
     console.error('Error fetching menu:', error);
-    res.status(500).json({ status: 'error', message: 'Error interno del servidor' });
+    res.status(500).json({ status: 'error', message: error.message, detail: error.detail || null, code: error.code || null });
   }
 };
