@@ -6,7 +6,9 @@
   "type": "module",
   "scripts": {
     "dev": "nodemon src/index.js",
-    "start": "node src/index.js"
+    "start": "node src/index.js",
+    "seed": "node sembrar.js",
+    "seed:real": "node sembrar-real.js"
   },
   "keywords": [],
   "author": "Programador GS",

@@ -86,6 +86,17 @@ function App() {
       case 'NUEVO': return 'bg-green-500 text-white shadow-[0_0_10px_rgba(34,197,94,0.4)]';
       case 'PICANTE': return 'bg-red-600 text-white shadow-[0_0_10px_rgba(220,38,38,0.4)]';
       case 'BEST SELLER': return 'bg-voraz-yellow text-voraz-black shadow-[0_0_10px_rgba(242,201,76,0.4)]';
+      case 'ÍCONO': return 'bg-voraz-yellow text-voraz-black shadow-[0_0_10px_rgba(242,201,76,0.4)]';
+      case 'TOP': return 'bg-voraz-yellow text-voraz-black shadow-[0_0_10px_rgba(242,201,76,0.4)]';
+      case 'CLÁSICO': return 'bg-gray-600 text-white';
+      case 'COLLAB': return 'bg-purple-600 text-white shadow-[0_0_10px_rgba(147,51,234,0.4)]';
+      case 'COSCU': return 'bg-purple-600 text-white shadow-[0_0_10px_rgba(147,51,234,0.4)]';
+      case 'FYE': return 'bg-purple-600 text-white shadow-[0_0_10px_rgba(147,51,234,0.4)]';
+      case 'VEGGIE': return 'bg-green-600 text-white shadow-[0_0_10px_rgba(22,163,74,0.4)]';
+      case 'KIDS': return 'bg-blue-500 text-white';
+      case 'GOURMET': return 'bg-amber-600 text-white';
+      case 'DULCE': return 'bg-pink-500 text-white';
+      case '+18': return 'bg-gray-800 text-white border border-white/20';
       default: return 'bg-blue-600 text-white';
     }
   };
