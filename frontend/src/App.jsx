@@ -2,21 +2,32 @@ import { useEffect, useState } from 'react';
 import { getMenu, getInfluencers, getVideos, getStores, getNews } from './services/api';
 import { Helmet } from 'react-helmet-async';
 import { motion, AnimatePresence } from 'framer-motion';
+import { useCart } from './context/CartContext';
+import { useAuth } from './context/AuthContext';
+import CartDrawer from './components/CartDrawer';
+import OrderTracking from './components/OrderTracking';
+import AuthModal from './components/AuthModal';
+import VorazClub from './components/VorazClub';
 
 function App() {
-  // --- ESTADOS ---
+  const { itemCount, dispatch } = useCart();
+  const { user } = useAuth();
+
   const [products, setProducts] = useState([]);
   const [influencers, setInfluencers] = useState([]);
   const [videos, setVideos] = useState([]);
   const [stores, setStores] = useState([]);
   const [news, setNews] = useState([]);
-  
-  const [currentView, setCurrentView] = useState('menu'); 
+
+  const [currentView, setCurrentView] = useState('menu');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [activeCategory, setActiveCategory] = useState('Todas');
   const [selectedProduct, setSelectedProduct] = useState(null);
   const [isScrolled, setIsScrolled] = useState(false);
+  const [isCartOpen, setIsCartOpen] = useState(false);
+  const [activeOrderId, setActiveOrderId] = useState(null);
+  const [isAuthOpen, setIsAuthOpen] = useState(false);
 
   useEffect(() => {
     loadAllData();
@@ -25,28 +36,53 @@ function App() {
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
-  // Scroll suave al cambiar vista
   useEffect(() => {
-    window.scrollTo({ top: 0, behavior: 'smooth' });
+    if (currentView !== 'tracking') window.scrollTo({ top: 0, behavior: 'smooth' });
   }, [currentView]);
 
   const loadAllData = async () => {
     try {
-      // Simulamos un pequeño delay extra para apreciar el Skeleton (borrar en prod si se desea)
-      // await new Promise(resolve => setTimeout(resolve, 1500)); 
-      
       const [menuData, squadData, videoData, storesData, newsData] = await Promise.all([
         getMenu(), getInfluencers(), getVideos(), getStores(), getNews()
       ]);
       if (menuData) {
-        setProducts(menuData || []); setInfluencers(squadData || []); setVideos(videoData || []); setStores(storesData || []); setNews(newsData || []);
+        setProducts(menuData || []);
+        setInfluencers(squadData || []);
+        setVideos(videoData || []);
+        setStores(storesData || []);
+        setNews(newsData || []);
         setError(null);
-      } else { setError("Error de conexión con Voraz Server."); }
-    } catch (err) { setError("Error crítico."); } finally { setLoading(false); }
+      } else {
+        setError("Error de conexión con Voraz Server.");
+      }
+    } catch {
+      setError("Error crítico.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleAddToCart = (product) => {
+    dispatch({
+      type: 'ADD_ITEM',
+      payload: {
+        product_id: product.id,
+        product_name: product.name,
+        product_price: parseFloat(product.price),
+        image_url: product.image_url,
+      }
+    });
+    setSelectedProduct(null);
+    setIsCartOpen(true);
+  };
+
+  const handleOrderCreated = (orderId) => {
+    setActiveOrderId(orderId);
+    setCurrentView('tracking');
   };
 
   const getBadgeColor = (badge) => {
-    switch(badge?.toUpperCase()) {
+    switch (badge?.toUpperCase()) {
       case 'NUEVO': return 'bg-green-500 text-white shadow-[0_0_10px_rgba(34,197,94,0.4)]';
       case 'PICANTE': return 'bg-red-600 text-white shadow-[0_0_10px_rgba(220,38,38,0.4)]';
       case 'BEST SELLER': return 'bg-voraz-yellow text-voraz-black shadow-[0_0_10px_rgba(242,201,76,0.4)]';
@@ -54,26 +90,20 @@ function App() {
     }
   };
 
-  // --- VARIANTS (Animaciones) ---
   const pageVariants = {
     initial: { opacity: 0, y: 10 },
     in: { opacity: 1, y: 0 },
     out: { opacity: 0, y: -10 }
   };
 
-  const pageTransition = {
-    type: "tween",
-    ease: "anticipate",
-    duration: 0.4
-  };
+  const pageTransition = { type: "tween", ease: "anticipate", duration: 0.4 };
 
-  // --- VISTAS ---
+  const fmt = (n) => parseInt(n).toLocaleString('es-AR');
 
   const MenuView = () => {
     const categories = ['Todas', ...new Set(products.map(p => p.category))];
     const filteredProducts = activeCategory === 'Todas' ? products : products.filter(p => p.category === activeCategory);
     const featuredProducts = products.filter(p => p.badge).slice(0, 5);
-    
     const groupByCategory = (items) => items.reduce((acc, item) => { (acc[item.category] = acc[item.category] || []).push(item); return acc; }, {});
     const menuDisplay = groupByCategory(filteredProducts);
 
@@ -81,7 +111,6 @@ function App() {
       <motion.div initial="initial" animate="in" exit="out" variants={pageVariants} transition={pageTransition} className="pt-2 pb-28 md:pb-10">
         <Helmet><title>Menú | Voraz</title></Helmet>
 
-        {/* DESTACADOS MOBILE */}
         <div className="md:hidden mb-6 pl-4">
           <h3 className="text-xs font-bold text-gray-500 mb-3 uppercase tracking-wider">Destacados</h3>
           <div className="flex space-x-3 overflow-x-auto no-scrollbar pb-2 pr-4">
@@ -90,14 +119,13 @@ function App() {
                 <img src={product.image_url} className="w-full h-full object-cover brightness-75" />
                 <div className="absolute bottom-0 left-0 p-3 w-full bg-gradient-to-t from-black to-transparent">
                   <div className="text-white font-bold leading-none mb-1 text-sm">{product.name}</div>
-                  <div className="text-voraz-yellow text-xs font-bold">${parseInt(product.price).toLocaleString('es-AR')}</div>
+                  <div className="text-voraz-yellow text-xs font-bold">${fmt(product.price)}</div>
                 </div>
               </motion.div>
             ))}
           </div>
         </div>
 
-        {/* FILTROS STICKY */}
         <nav className="sticky top-14 md:top-24 z-30 py-3 mb-6 bg-[#121212] border-b border-white/10 shadow-2xl">
           <div className="container mx-auto px-4 overflow-x-auto no-scrollbar">
             <div className="flex space-x-2 md:justify-center">
@@ -112,7 +140,6 @@ function App() {
           </div>
         </nav>
 
-        {/* GRILLA PRODUCTOS */}
         <div className="container mx-auto px-4">
           {Object.keys(menuDisplay).length > 0 ? Object.keys(menuDisplay).map((category) => (
             <section key={category} className="mb-10">
@@ -122,11 +149,11 @@ function App() {
               </div>
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
                 {menuDisplay[category].map((product) => (
-                  <motion.article 
+                  <motion.article
                     layoutId={`product-${product.id}`}
                     whileHover={{ y: -5 }}
                     whileTap={{ scale: 0.98 }}
-                    key={product.id} 
+                    key={product.id}
                     onClick={() => setSelectedProduct(product)}
                     className="bg-voraz-gray rounded-xl overflow-hidden shadow-xl group cursor-pointer relative flex md:block h-28 md:h-auto border border-white/5"
                   >
@@ -140,7 +167,7 @@ function App() {
                         <p className="text-gray-400 text-[10px] md:text-xs line-clamp-2">{product.description}</p>
                       </div>
                       <div className="flex justify-between items-end mt-1 md:mt-4">
-                        <div className="text-voraz-yellow font-black text-sm md:text-base">${parseInt(product.price).toLocaleString('es-AR')}</div>
+                        <div className="text-voraz-yellow font-black text-sm md:text-base">${fmt(product.price)}</div>
                         <div className="md:hidden bg-voraz-red text-white p-1 rounded-full"><svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 4v16m8-8H4"></path></svg></div>
                         <button className="hidden md:block bg-white/10 hover:bg-voraz-red text-white py-1 px-3 rounded text-xs uppercase font-bold transition">Ver</button>
                       </div>
@@ -182,7 +209,7 @@ function App() {
         {videos.map((vid) => (
           <motion.div whileHover={{ scale: 1.02 }} key={vid.id} className="aspect-video bg-black rounded-xl overflow-hidden shadow-2xl relative group cursor-pointer border border-white/5">
             <img src={vid.thumbnail_url} className="w-full h-full object-cover opacity-80" />
-            <div className="absolute inset-0 flex items-center justify-center"><div className="w-14 h-14 bg-voraz-red/90 rounded-full flex items-center justify-center shadow-lg"><svg className="w-6 h-6 text-white ml-1" fill="currentColor" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg></div></div>
+            <div className="absolute inset-0 flex items-center justify-center"><div className="w-14 h-14 bg-voraz-red/90 rounded-full flex items-center justify-center shadow-lg"><svg className="w-6 h-6 text-white ml-1" fill="currentColor" viewBox="0 0 24 24"><path d="M8 5v14l11-7z" /></svg></div></div>
             <div className="absolute bottom-0 left-0 p-4 w-full bg-gradient-to-t from-black to-transparent"><h3 className="text-lg font-bold text-white">{vid.title}</h3></div>
           </motion.div>
         ))}
@@ -249,11 +276,10 @@ function App() {
     </motion.div>
   );
 
-  // --- RENDER ---
   return (
     <div className="min-h-screen bg-voraz-black text-voraz-white font-sans selection:bg-voraz-red selection:text-white">
-      
-      {/* 1. HEADER PC */}
+
+      {/* HEADER PC */}
       <header className={`hidden md:block sticky top-0 z-50 h-24 transition-all duration-300 ${isScrolled ? 'bg-[#121212] border-b border-white/10 shadow-xl' : 'bg-[#121212] py-4'}`}>
         <div className="container mx-auto px-4 h-full flex items-center justify-between">
           <div className="cursor-pointer hover:opacity-80 transition" onClick={() => setCurrentView('menu')}>
@@ -267,21 +293,77 @@ function App() {
             <NavButtonPC active={currentView === 'delivery'} onClick={() => setCurrentView('delivery')} image="/images/delivery.jpg" label="Delivery" />
             <NavButtonPC active={currentView === 'vorazburger'} onClick={() => setCurrentView('vorazburger')} image="/images/vorazburger.jpg" label="Voraz" />
           </nav>
+          {/* Auth button PC */}
+          <div className="flex items-center space-x-3">
+            <motion.button
+              whileTap={{ scale: 0.93 }}
+              onClick={() => user ? setCurrentView('club') : setIsAuthOpen(true)}
+              className="flex items-center space-x-2 bg-white/5 hover:bg-white/10 border border-white/10 text-white px-3 py-2 rounded-xl text-sm font-bold transition"
+            >
+              {user?.avatar_url
+                ? <img src={user.avatar_url} className="w-6 h-6 rounded-full object-cover" alt="" />
+                : <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" /></svg>
+              }
+              {user
+                ? <span className="flex items-center space-x-1"><span>{user.name.split(' ')[0]}</span><span className="text-voraz-yellow text-xs">⭐{user.points}</span></span>
+                : <span>Ingresar</span>
+              }
+            </motion.button>
+            {/* Botón carrito PC */}
+            <motion.button
+              whileTap={{ scale: 0.93 }}
+              onClick={() => setIsCartOpen(true)}
+              className="relative flex items-center space-x-2 bg-voraz-red hover:bg-red-700 text-white px-4 py-2 rounded-xl font-bold text-sm transition"
+            >
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z" /></svg>
+              <span>Pedido</span>
+              {itemCount > 0 && (
+                <span className="absolute -top-2 -right-2 bg-voraz-yellow text-black text-xs font-black w-5 h-5 rounded-full flex items-center justify-center shadow">
+                  {itemCount}
+                </span>
+              )}
+            </motion.button>
+          </div>
         </div>
       </header>
 
-      {/* 2. HEADER MÓVIL */}
-      <header className="md:hidden sticky top-0 z-40 bg-[#121212] border-b border-white/10 h-14 flex items-center justify-center shadow-xl">
+      {/* HEADER MÓVIL */}
+      <header className="md:hidden sticky top-0 z-40 bg-[#121212] border-b border-white/10 h-14 flex items-center justify-between px-4 shadow-xl">
         <img src="/images/logo_voraz.jpg" className="h-8 object-contain" alt="Voraz" />
+        <div className="flex items-center space-x-2">
+          {/* User button móvil */}
+          <motion.button whileTap={{ scale: 0.9 }}
+            onClick={() => user ? setCurrentView('club') : setIsAuthOpen(true)}
+            className="relative p-2 rounded-xl bg-white/5 border border-white/10 text-white"
+          >
+            {user?.avatar_url
+              ? <img src={user.avatar_url} className="w-5 h-5 rounded-full object-cover" alt="" />
+              : <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" /></svg>
+            }
+            {user && <span className="absolute -top-1 -right-1 w-2 h-2 bg-green-400 rounded-full"></span>}
+          </motion.button>
+          {/* Cart button móvil */}
+          <motion.button whileTap={{ scale: 0.9 }}
+            onClick={() => setIsCartOpen(true)}
+            className="relative p-2 rounded-xl bg-voraz-red text-white"
+          >
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z" /></svg>
+            {itemCount > 0 && (
+              <span className="absolute -top-1 -right-1 bg-voraz-yellow text-black text-[10px] font-black w-4 h-4 rounded-full flex items-center justify-center">
+                {itemCount}
+              </span>
+            )}
+          </motion.button>
+        </div>
       </header>
 
-      {/* 3. CONTENIDO PRINCIPAL CON SKELETON */}
+      {/* CONTENIDO PRINCIPAL */}
       <main className="min-h-screen">
         <AnimatePresence mode='wait'>
           {loading ? (
             <motion.div key="loader" exit={{ opacity: 0 }} className="container mx-auto px-4 pt-10">
               <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                {[1,2,3,4,5,6].map(i => <SkeletonCard key={i} />)}
+                {[1, 2, 3, 4, 5, 6].map(i => <SkeletonCard key={i} />)}
               </div>
             </motion.div>
           ) : !error ? (
@@ -290,55 +372,69 @@ function App() {
               {currentView === 'community' && <CommunityView key="community" />}
               {currentView === 'videos' && <VideosView key="videos" />}
               {currentView === 'locations' && <LocationsView key="locations" />}
-              {currentView === 'delivery' && <DeliveryView key="delivery" />} 
-              {currentView === 'vorazburger' && <VorazBurgerView key="vorazburger" />} 
+              {currentView === 'delivery' && <DeliveryView key="delivery" />}
+              {currentView === 'vorazburger' && <VorazBurgerView key="vorazburger" />}
+          {currentView === 'tracking' && activeOrderId && (
+                <OrderTracking
+                  key="tracking"
+                  orderId={activeOrderId}
+                  onBack={() => setCurrentView('menu')}
+                />
+              )}
+              {currentView === 'club' && (
+                <VorazClub
+                  key="club"
+                  onBack={() => setCurrentView('menu')}
+                  onOpenAuth={() => setIsAuthOpen(true)}
+                />
+              )}
             </>
           ) : (
             <div className="flex h-[50vh] items-center justify-center flex-col">
-               <div className="text-red-500 font-bold mb-4">{error}</div>
-               <button onClick={loadAllData} className="bg-voraz-red text-white px-6 py-2 rounded-lg font-bold">Reintentar</button>
+              <div className="text-red-500 font-bold mb-4">{error}</div>
+              <button onClick={loadAllData} className="bg-voraz-red text-white px-6 py-2 rounded-lg font-bold">Reintentar</button>
             </div>
           )}
         </AnimatePresence>
       </main>
 
-      {/* 4. BOTTOM NAV */}
+      {/* BOTTOM NAV */}
       <nav className="md:hidden fixed bottom-0 left-0 w-full bg-[#121212] border-t border-white/10 z-50 px-6 pb-4 pt-2 safe-area-pb">
         <div className="flex justify-between items-end">
           <BottomNavItem icon="home" label="Menú" active={currentView === 'menu'} onClick={() => setCurrentView('menu')} />
           <BottomNavItem icon="users" label="Squad" active={currentView === 'community'} onClick={() => setCurrentView('community')} />
           <div className="relative -top-6">
-             <motion.button 
-                whileTap={{ scale: 0.9 }}
-                onClick={() => setCurrentView('vorazburger')}
-                className={`w-14 h-14 rounded-full flex items-center justify-center shadow-lg border-4 border-voraz-black ${currentView === 'vorazburger' ? 'bg-voraz-yellow text-black' : 'bg-voraz-red text-white'}`}>
-                <span className="font-black text-xs">V</span>
-             </motion.button>
+            <motion.button
+              whileTap={{ scale: 0.9 }}
+              onClick={() => setCurrentView('vorazburger')}
+              className={`w-14 h-14 rounded-full flex items-center justify-center shadow-lg border-4 border-voraz-black ${currentView === 'vorazburger' ? 'bg-voraz-yellow text-black' : 'bg-voraz-red text-white'}`}>
+              <span className="font-black text-xs">V</span>
+            </motion.button>
           </div>
           <BottomNavItem icon="map" label="Spots" active={currentView === 'locations'} onClick={() => setCurrentView('locations')} />
           <BottomNavItem icon="bike" label="Dely" active={currentView === 'delivery'} onClick={() => setCurrentView('delivery')} />
         </div>
       </nav>
 
-      {/* 5. MODAL CON ANIMACIÓN */}
+      {/* MODAL DE PRODUCTO */}
       <AnimatePresence>
         {selectedProduct && (
-          <motion.div 
+          <motion.div
             initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-            className="fixed inset-0 z-[100] flex items-end md:items-center justify-center bg-black/90 backdrop-blur-sm" 
+            className="fixed inset-0 z-[100] flex items-end md:items-center justify-center bg-black/90 backdrop-blur-sm"
             onClick={() => setSelectedProduct(null)}
           >
-            <motion.div 
+            <motion.div
               initial={{ y: "100%" }} animate={{ y: 0 }} exit={{ y: "100%" }} transition={{ type: "spring", damping: 25, stiffness: 500 }}
-              className="bg-voraz-gray w-full md:max-w-4xl h-[85vh] md:h-auto rounded-t-[30px] md:rounded-2xl overflow-hidden shadow-2xl flex flex-col md:flex-row relative border-t md:border border-white/10" 
+              className="bg-voraz-gray w-full md:max-w-4xl h-[85vh] md:h-auto rounded-t-[30px] md:rounded-2xl overflow-hidden shadow-2xl flex flex-col md:flex-row relative border-t md:border border-white/10"
               onClick={e => e.stopPropagation()}
             >
               <button onClick={() => setSelectedProduct(null)} className="absolute top-4 right-4 z-20 bg-black/50 text-white p-2 rounded-full hover:bg-voraz-red transition backdrop-blur-md">
                 <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12"></path></svg>
               </button>
               <div className="h-[35vh] md:h-auto md:w-1/2 relative flex-shrink-0">
-                 <img src={selectedProduct.image_url} className="w-full h-full object-cover" />
-                 <div className="md:hidden absolute inset-0 bg-gradient-to-t from-voraz-gray to-transparent"></div>
+                <img src={selectedProduct.image_url} className="w-full h-full object-cover" />
+                <div className="md:hidden absolute inset-0 bg-gradient-to-t from-voraz-gray to-transparent"></div>
               </div>
               <div className="flex-grow p-6 md:p-10 flex flex-col justify-between overflow-y-auto">
                 <div>
@@ -346,19 +442,23 @@ function App() {
                   <h2 className="text-3xl md:text-4xl font-black text-white leading-none mb-4">{selectedProduct.name}</h2>
                   <p className="text-gray-300 text-sm md:text-lg font-light leading-relaxed mb-6">{selectedProduct.description}</p>
                   <div className="flex flex-wrap gap-2 mb-6">
-                     {['Carne Premium', 'Pan de Papa', 'Casero'].map(tag => (
-                       <span key={tag} className="px-3 py-1 rounded-full bg-white/5 border border-white/5 text-gray-400 text-xs font-bold">{tag}</span>
-                     ))}
+                    {['Carne Premium', 'Pan de Papa', 'Casero'].map(tag => (
+                      <span key={tag} className="px-3 py-1 rounded-full bg-white/5 border border-white/5 text-gray-400 text-xs font-bold">{tag}</span>
+                    ))}
                   </div>
                 </div>
                 <div className="mt-auto pt-4 border-t border-white/10">
                   <div className="flex items-center justify-between mb-4 md:hidden">
                     <span className="text-gray-400 text-sm">Total</span>
-                    <div className="text-2xl font-black text-white">${parseInt(selectedProduct.price).toLocaleString('es-AR')}</div>
+                    <div className="text-2xl font-black text-white">${fmt(selectedProduct.price)}</div>
                   </div>
-                  <motion.button whileTap={{ scale: 0.95 }} className="w-full bg-voraz-red text-white py-4 md:py-3 rounded-xl font-bold uppercase tracking-wide shadow-lg flex justify-between md:justify-center px-6">
-                    <span>Agregar</span>
-                    <span className="md:hidden">${parseInt(selectedProduct.price).toLocaleString('es-AR')}</span>
+                  <motion.button
+                    whileTap={{ scale: 0.95 }}
+                    onClick={() => handleAddToCart(selectedProduct)}
+                    className="w-full bg-voraz-red text-white py-4 md:py-3 rounded-xl font-bold uppercase tracking-wide shadow-lg flex justify-between md:justify-center px-6 hover:bg-red-700 transition"
+                  >
+                    <span>Agregar al pedido</span>
+                    <span className="md:hidden">${fmt(selectedProduct.price)}</span>
                   </motion.button>
                 </div>
               </div>
@@ -366,13 +466,22 @@ function App() {
           </motion.div>
         )}
       </AnimatePresence>
+
+      {/* CART DRAWER */}
+      <CartDrawer
+        isOpen={isCartOpen}
+        onClose={() => setIsCartOpen(false)}
+        stores={stores}
+        onOrderCreated={handleOrderCreated}
+        onOpenAuth={() => { setIsCartOpen(false); setIsAuthOpen(true); }}
+      />
+
+      {/* AUTH MODAL */}
+      <AuthModal isOpen={isAuthOpen} onClose={() => setIsAuthOpen(false)} />
     </div>
   );
 }
 
-// --- COMPONENTES AUXILIARES ---
-
-// SKELETON LOADER (Efecto de Carga Nivel Dios)
 const SkeletonCard = () => (
   <div className="bg-voraz-gray rounded-xl overflow-hidden border border-white/5 h-28 md:h-auto flex md:block animate-pulse">
     <div className="w-28 md:w-full h-full md:h-48 bg-white/5"></div>
@@ -406,7 +515,7 @@ const BottomNavItem = ({ icon, label, active, onClick }) => {
   };
   return (
     <button onClick={onClick} className="flex flex-col items-center justify-center w-12 group relative">
-      <motion.div 
+      <motion.div
         animate={active ? { y: -5, color: '#F2C94C' } : { y: 0, color: '#6B7280' }}
         className="transition-colors duration-300"
       >

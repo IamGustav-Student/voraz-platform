@@ -1,15 +1,15 @@
 import pg from 'pg';
 import dotenv from 'dotenv';
 
-
-// Cargar variables de entorno
 dotenv.config();
 
 const { Pool } = pg;
 
+const connectionString = process.env.DATABASE_URL ||
+  `postgresql://${process.env.DB_USER}:${process.env.DB_PASSWORD}@${process.env.DB_HOST}:${process.env.DB_PORT}/${process.env.DB_NAME}`;
+
 export const pool = new pg.Pool({
-  connectionString: process.env.DATABASE_URL,
-  // Esta línea de abajo es OBLIGATORIA para Railway (SSL):
+  connectionString,
   ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false
 });
 
