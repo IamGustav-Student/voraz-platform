@@ -23,18 +23,14 @@ const PORT = process.env.PORT || 3000;
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 app.use(morgan('dev'));
-
-const allowedOrigins = process.env.FRONTEND_URL
-  ? [process.env.FRONTEND_URL, 'http://localhost:5173']
-  : ['http://localhost:5173', 'https://voraz-platform.vercel.app'];
-
-app.use(cors({
-  origin: (origin, callback) => {
-    if (!origin || allowedOrigins.includes(origin)) return callback(null, true);
-    callback(new Error('Not allowed by CORS'));
-  },
-  credentials: true
-}));
+app.use((req, res, next) => {
+  res.header('Access-Control-Allow-Origin', '*');
+  res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, PATCH, DELETE, OPTIONS');
+  res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept, Authorization');
+  if (req.method === 'OPTIONS') return res.sendStatus(200);
+  next();
+});
+app.use(cors({ origin: '*', credentials: false }));
 app.use(express.json());
 app.use(passport.initialize());
 
