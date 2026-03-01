@@ -89,4 +89,5 @@ app.listen(PORT, async () => {
     console.log(`\n🚀 Servidor corriendo en http://localhost:${PORT}`);
     await runMigration('phase7_orders.sql');
     await runMigration('phase8_auth.sql');
+    await runMigration('phase9_whitelabel.sql');
 });

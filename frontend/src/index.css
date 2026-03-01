@@ -2,24 +2,24 @@
 @tailwind components;
 @tailwind utilities;
 
-/* Estilos Base Voraz */
+/* ── Variables de marca (se sobreescriben por tenant vía JS) ── */
+:root {
+  --brand-primary:     #D92525;
+  --brand-primary-hover: #b71c1c;
+  --brand-secondary:   #F2C94C;
+  --brand-bg:          #121212;
+  --brand-surface:     #1E1E1E;
+  --brand-text:        #F5F5F5;
+}
+
 body {
-  background-color: #121212; /* voraz-black */
-  color: #F5F5F5; /* voraz-white */
+  background-color: var(--brand-bg);
+  color: var(--brand-text);
   font-family: 'Inter', sans-serif;
 }
 
-/* Scrollbar personalizada (Toque Premium) */
-::-webkit-scrollbar {
-  width: 8px;
-}
-::-webkit-scrollbar-track {
-  background: #121212;
-}
-::-webkit-scrollbar-thumb {
-  background: #333;
-  border-radius: 4px;
-}
-::-webkit-scrollbar-thumb:hover {
-  background: #D92525;
-}
+/* Scrollbar personalizada */
+::-webkit-scrollbar { width: 8px; }
+::-webkit-scrollbar-track { background: var(--brand-bg); }
+::-webkit-scrollbar-thumb { background: #333; border-radius: 4px; }
+::-webkit-scrollbar-thumb:hover { background: var(--brand-primary); }

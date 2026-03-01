@@ -1,9 +1,15 @@
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000/api';
+const API_URL = (import.meta.env.VITE_API_URL || 'http://localhost:3000/api').trim();
+const TENANT_ID = (import.meta.env.VITE_TENANT_ID || 'voraz').trim();
 
-// --- PRODUCTOS ---
+// Headers base con tenant_id para todas las requests
+const baseHeaders = {
+  'Content-Type': 'application/json',
+  'x-tenant-id': TENANT_ID,
+};
+
 export const getMenu = async () => {
   try {
-    const response = await fetch(`${API_URL}/products`);
+    const response = await fetch(`${API_URL}/products`, { headers: baseHeaders });
     if (!response.ok) throw new Error('Error server');
     const data = await response.json();
     return data.data;
@@ -13,10 +19,9 @@ export const getMenu = async () => {
   }
 };
 
-// --- COMUNIDAD ---
 export const getInfluencers = async () => {
   try {
-    const response = await fetch(`${API_URL}/community/influencers`);
+    const response = await fetch(`${API_URL}/community/influencers`, { headers: baseHeaders });
     if (!response.ok) throw new Error('Error server');
     const data = await response.json();
     return data.data || [];
@@ -28,7 +33,7 @@ export const getInfluencers = async () => {
 
 export const getVideos = async () => {
   try {
-    const response = await fetch(`${API_URL}/community/videos`);
+    const response = await fetch(`${API_URL}/community/videos`, { headers: baseHeaders });
     if (!response.ok) throw new Error('Error server');
     const data = await response.json();
     return data.data || [];
@@ -38,10 +43,9 @@ export const getVideos = async () => {
   }
 };
 
-// --- LOCALES ---
 export const getStores = async () => {
   try {
-    const response = await fetch(`${API_URL}/stores`);
+    const response = await fetch(`${API_URL}/stores`, { headers: baseHeaders });
     if (!response.ok) throw new Error('Error server');
     const data = await response.json();
     return data.data || [];
@@ -51,10 +55,9 @@ export const getStores = async () => {
   }
 };
 
-// --- NOTICIAS ---
 export const getNews = async () => {
   try {
-    const response = await fetch(`${API_URL}/news`);
+    const response = await fetch(`${API_URL}/news`, { headers: baseHeaders });
     if (!response.ok) throw new Error('Error server');
     const data = await response.json();
     return data.data || [];
@@ -64,10 +67,9 @@ export const getNews = async () => {
   }
 };
 
-// --- PEDIDOS ---
 export const createOrder = async (payload, token) => {
   try {
-    const headers = { 'Content-Type': 'application/json' };
+    const headers = { ...baseHeaders };
     if (token) headers['Authorization'] = `Bearer ${token}`;
     const response = await fetch(`${API_URL}/orders`, { method: 'POST', headers, body: JSON.stringify(payload) });
     const data = await response.json();
@@ -81,7 +83,7 @@ export const createOrder = async (payload, token) => {
 
 export const getOrderById = async (id) => {
   try {
-    const response = await fetch(`${API_URL}/orders/${id}`);
+    const response = await fetch(`${API_URL}/orders/${id}`, { headers: baseHeaders });
     if (!response.ok) throw new Error('Error server');
     const data = await response.json();
     return data.data || null;
@@ -91,10 +93,9 @@ export const getOrderById = async (id) => {
   }
 };
 
-// --- PAGOS ---
 export const createPaymentPreference = async (payload, token) => {
   try {
-    const headers = { 'Content-Type': 'application/json' };
+    const headers = { ...baseHeaders };
     if (token) headers['Authorization'] = `Bearer ${token}`;
     const response = await fetch(`${API_URL}/payments/preference`, { method: 'POST', headers, body: JSON.stringify(payload) });
     const data = await response.json();
@@ -106,11 +107,10 @@ export const createPaymentPreference = async (payload, token) => {
   }
 };
 
-// --- AUTH ---
 export const registerUser = async (payload) => {
   const response = await fetch(`${API_URL}/auth/register`, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers: baseHeaders,
     body: JSON.stringify(payload),
   });
   const data = await response.json();
@@ -121,7 +121,7 @@ export const registerUser = async (payload) => {
 export const loginUser = async (payload) => {
   const response = await fetch(`${API_URL}/auth/login`, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers: baseHeaders,
     body: JSON.stringify(payload),
   });
   const data = await response.json();
@@ -131,7 +131,9 @@ export const loginUser = async (payload) => {
 
 export const getMe = async (token) => {
   try {
-    const response = await fetch(`${API_URL}/auth/me`, { headers: { Authorization: `Bearer ${token}` } });
+    const response = await fetch(`${API_URL}/auth/me`, {
+      headers: { ...baseHeaders, Authorization: `Bearer ${token}` }
+    });
     if (!response.ok) return null;
     const data = await response.json();
     return data.data || null;
@@ -140,10 +142,11 @@ export const getMe = async (token) => {
   }
 };
 
-// --- USUARIOS ---
 export const getPointsHistory = async (userId, token) => {
   try {
-    const response = await fetch(`${API_URL}/users/${userId}/points`, { headers: { Authorization: `Bearer ${token}` } });
+    const response = await fetch(`${API_URL}/users/${userId}/points`, {
+      headers: { ...baseHeaders, Authorization: `Bearer ${token}` }
+    });
     if (!response.ok) return null;
     const data = await response.json();
     return data.data || null;
@@ -154,7 +157,9 @@ export const getPointsHistory = async (userId, token) => {
 
 export const getUserOrders = async (userId, token) => {
   try {
-    const response = await fetch(`${API_URL}/users/${userId}/orders`, { headers: { Authorization: `Bearer ${token}` } });
+    const response = await fetch(`${API_URL}/users/${userId}/orders`, {
+      headers: { ...baseHeaders, Authorization: `Bearer ${token}` }
+    });
     if (!response.ok) return null;
     const data = await response.json();
     return data.data || [];
@@ -163,12 +168,11 @@ export const getUserOrders = async (userId, token) => {
   }
 };
 
-// --- CUPONES ---
 export const validateCoupon = async (payload) => {
   try {
     const response = await fetch(`${API_URL}/coupons/validate`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: baseHeaders,
       body: JSON.stringify(payload),
     });
     const data = await response.json();

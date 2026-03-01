@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { getMenu, getInfluencers, getVideos, getStores, getNews } from './services/api';
 import { Helmet } from 'react-helmet-async';
+import { TENANT, formatPrice } from './config/tenant.js';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useCart } from './context/CartContext';
 import { useAuth } from './context/AuthContext';
@@ -53,7 +54,7 @@ function App() {
         setNews(newsData || []);
         setError(null);
       } else {
-        setError("Error de conexión con Voraz Server.");
+        setError(`Error de conexión con ${TENANT.brandName} Server.`);
       }
     } catch {
       setError("Error crítico.");
@@ -109,7 +110,7 @@ function App() {
 
   const pageTransition = { type: "tween", ease: "anticipate", duration: 0.4 };
 
-  const fmt = (n) => parseInt(n).toLocaleString('es-AR');
+  const fmt = (n) => formatPrice(n);
 
   const MenuView = () => {
     const categories = ['Todas', ...new Set(products.map(p => p.category))];
@@ -120,7 +121,7 @@ function App() {
 
     return (
       <motion.div initial="initial" animate="in" exit="out" variants={pageVariants} transition={pageTransition} className="pt-2 pb-28 md:pb-10">
-        <Helmet><title>Menú | Voraz</title></Helmet>
+        <Helmet><title>Menú | {TENANT.brandName}</title></Helmet>
 
         <div className="md:hidden mb-6 pl-4">
           <h3 className="text-xs font-bold text-gray-500 mb-3 uppercase tracking-wider">Destacados</h3>
@@ -195,8 +196,8 @@ function App() {
 
   const CommunityView = () => (
     <motion.div initial="initial" animate="in" exit="out" variants={pageVariants} transition={pageTransition} className="container mx-auto px-4 py-8 pb-32">
-      <Helmet><title>Squad | Voraz</title></Helmet>
-      <div className="text-center mb-8"><h2 className="text-3xl md:text-5xl font-black uppercase italic mb-2">Voraz <span className="text-voraz-yellow">Squad</span></h2></div>
+      <Helmet><title>Squad | {TENANT.brandName}</title></Helmet>
+      <div className="text-center mb-8"><h2 className="text-3xl md:text-5xl font-black uppercase italic mb-2">{TENANT.brandName} <span className="text-brand-secondary">Squad</span></h2></div>
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         {influencers.map((inf) => (
           <motion.div whileHover={{ scale: 1.05 }} key={inf.id} className="relative rounded-2xl overflow-hidden aspect-square group shadow-lg">
@@ -214,8 +215,8 @@ function App() {
 
   const VideosView = () => (
     <motion.div initial="initial" animate="in" exit="out" variants={pageVariants} transition={pageTransition} className="container mx-auto px-4 py-8 pb-32">
-      <Helmet><title>Live | Voraz</title></Helmet>
-      <div className="text-center mb-8"><h2 className="text-3xl md:text-5xl font-black uppercase italic mb-2">Voraz <span className="text-voraz-red">Live</span></h2></div>
+      <Helmet><title>Live | {TENANT.brandName}</title></Helmet>
+      <div className="text-center mb-8"><h2 className="text-3xl md:text-5xl font-black uppercase italic mb-2">{TENANT.brandName} <span className="text-brand-primary">Live</span></h2></div>
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         {videos.map((vid) => (
           <motion.div whileHover={{ scale: 1.02 }} key={vid.id} className="aspect-video bg-black rounded-xl overflow-hidden shadow-2xl relative group cursor-pointer border border-white/5">
@@ -230,7 +231,7 @@ function App() {
 
   const LocationsView = () => (
     <motion.div initial="initial" animate="in" exit="out" variants={pageVariants} transition={pageTransition} className="container mx-auto px-4 py-8 pb-32">
-      <Helmet><title>Spots | Voraz</title></Helmet>
+      <Helmet><title>Spots | {TENANT.brandName}</title></Helmet>
       <div className="text-center mb-8"><h2 className="text-3xl md:text-5xl font-black uppercase italic mb-2">Nuestros <span className="text-white">Spots</span></h2></div>
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         {stores.map((store) => (
@@ -251,8 +252,8 @@ function App() {
 
   const DeliveryView = () => (
     <motion.div initial="initial" animate="in" exit="out" variants={pageVariants} transition={pageTransition} className="container mx-auto px-4 py-8 pb-32">
-      <Helmet><title>Delivery | Voraz</title></Helmet>
-      <div className="text-center mb-8"><h2 className="text-3xl md:text-5xl font-black uppercase italic mb-2">Delivery <span className="text-voraz-red">Express</span></h2></div>
+      <Helmet><title>Delivery | {TENANT.brandName}</title></Helmet>
+      <div className="text-center mb-8"><h2 className="text-3xl md:text-5xl font-black uppercase italic mb-2">Delivery <span className="text-brand-primary">Express</span></h2></div>
       <div className="max-w-4xl mx-auto grid grid-cols-1 md:grid-cols-2 gap-4">
         {stores.map((store) => (
           <motion.a whileTap={{ scale: 0.98 }} key={store.id} href={store.delivery_link} target="_blank" className="flex items-center p-4 bg-voraz-gray rounded-xl border border-white/5 hover:border-voraz-red transition group">
@@ -268,10 +269,10 @@ function App() {
     </motion.div>
   );
 
-  const VorazBurgerView = () => (
+  const BrandWorldView = () => (
     <motion.div initial="initial" animate="in" exit="out" variants={pageVariants} transition={pageTransition} className="container mx-auto px-4 py-8 pb-32">
-      <Helmet><title>Mundo | Voraz</title></Helmet>
-      <div className="text-center mb-8"><h2 className="text-3xl md:text-5xl font-black uppercase italic mb-2">Mundo <span className="text-voraz-yellow">Voraz</span></h2></div>
+      <Helmet><title>Mundo | {TENANT.brandName}</title></Helmet>
+      <div className="text-center mb-8"><h2 className="text-3xl md:text-5xl font-black uppercase italic mb-2">Mundo <span className="text-brand-secondary">{TENANT.brandName}</span></h2></div>
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         {news.map((item) => (
           <motion.article whileHover={{ y: -5 }} key={item.id} className="bg-voraz-gray rounded-xl overflow-hidden border border-white/5 shadow-xl">
@@ -288,13 +289,16 @@ function App() {
   );
 
   return (
-    <div className="min-h-screen bg-voraz-black text-voraz-white font-sans selection:bg-voraz-red selection:text-white">
+    <div className="min-h-screen bg-brand-bg text-brand-text font-sans selection:bg-brand-primary selection:text-white">
 
       {/* HEADER PC */}
       <header className={`hidden md:block sticky top-0 z-50 h-24 transition-all duration-300 ${isScrolled ? 'bg-[#121212] border-b border-white/10 shadow-xl' : 'bg-[#121212] py-4'}`}>
         <div className="container mx-auto px-4 h-full flex items-center justify-between">
           <div className="cursor-pointer hover:opacity-80 transition" onClick={() => setCurrentView('menu')}>
-            <img src="/images/logo_voraz.jpg" alt="VORAZ" className="h-16 object-contain" />
+            {TENANT.logo
+              ? <img src={TENANT.logo} alt={TENANT.brandName} className="h-16 object-contain" />
+              : <span className="text-2xl font-black uppercase italic text-brand-primary">{TENANT.brandName}</span>
+            }
           </div>
           <nav className="flex space-x-6">
             <NavButtonPC active={currentView === 'menu'} onClick={() => setCurrentView('menu')} image="/images/menu.jpg" label="Menú" />
@@ -302,9 +306,8 @@ function App() {
             <NavButtonPC active={currentView === 'videos'} onClick={() => setCurrentView('videos')} image="/images/eventos.jpg" label="Videos" />
             <NavButtonPC active={currentView === 'locations'} onClick={() => setCurrentView('locations')} image="/images/locales.jpg" label="Locales" />
             <NavButtonPC active={currentView === 'delivery'} onClick={() => setCurrentView('delivery')} image="/images/delivery.jpg" label="Delivery" />
-            <NavButtonPC active={currentView === 'vorazburger'} onClick={() => setCurrentView('vorazburger')} image="/images/vorazburger.jpg" label="Voraz" />
+            <NavButtonPC active={currentView === 'brandworld'} onClick={() => setCurrentView('brandworld')} image="/images/vorazburger.jpg" label={TENANT.brandName} />
           </nav>
-          {/* Auth button PC */}
           <div className="flex items-center space-x-3">
             <motion.button
               whileTap={{ scale: 0.93 }}
@@ -316,20 +319,19 @@ function App() {
                 : <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" /></svg>
               }
               {user
-                ? <span className="flex items-center space-x-1"><span>{user.name.split(' ')[0]}</span><span className="text-voraz-yellow text-xs">⭐{user.points}</span></span>
+                ? <span className="flex items-center space-x-1"><span>{user.name.split(' ')[0]}</span><span className="text-brand-secondary text-xs">⭐{user.points}</span></span>
                 : <span>Ingresar</span>
               }
             </motion.button>
-            {/* Botón carrito PC */}
             <motion.button
               whileTap={{ scale: 0.93 }}
               onClick={() => setIsCartOpen(true)}
-              className="relative flex items-center space-x-2 bg-voraz-red hover:bg-red-700 text-white px-4 py-2 rounded-xl font-bold text-sm transition"
+              className="relative flex items-center space-x-2 bg-brand-primary hover:bg-brand-primary-hover text-white px-4 py-2 rounded-xl font-bold text-sm transition"
             >
               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z" /></svg>
               <span>Pedido</span>
               {itemCount > 0 && (
-                <span className="absolute -top-2 -right-2 bg-voraz-yellow text-black text-xs font-black w-5 h-5 rounded-full flex items-center justify-center shadow">
+                <span className="absolute -top-2 -right-2 bg-brand-secondary text-black text-xs font-black w-5 h-5 rounded-full flex items-center justify-center shadow">
                   {itemCount}
                 </span>
               )}
@@ -340,9 +342,11 @@ function App() {
 
       {/* HEADER MÓVIL */}
       <header className="md:hidden sticky top-0 z-40 bg-[#121212] border-b border-white/10 h-14 flex items-center justify-between px-4 shadow-xl">
-        <img src="/images/logo_voraz.jpg" className="h-8 object-contain" alt="Voraz" />
+        {TENANT.logo
+          ? <img src={TENANT.logo} className="h-8 object-contain" alt={TENANT.brandName} />
+          : <span className="text-xl font-black uppercase italic text-brand-primary">{TENANT.brandName}</span>
+        }
         <div className="flex items-center space-x-2">
-          {/* User button móvil */}
           <motion.button whileTap={{ scale: 0.9 }}
             onClick={() => user ? setCurrentView('club') : setIsAuthOpen(true)}
             className="relative p-2 rounded-xl bg-white/5 border border-white/10 text-white"
@@ -353,14 +357,13 @@ function App() {
             }
             {user && <span className="absolute -top-1 -right-1 w-2 h-2 bg-green-400 rounded-full"></span>}
           </motion.button>
-          {/* Cart button móvil */}
           <motion.button whileTap={{ scale: 0.9 }}
             onClick={() => setIsCartOpen(true)}
-            className="relative p-2 rounded-xl bg-voraz-red text-white"
+            className="relative p-2 rounded-xl bg-brand-primary text-white"
           >
             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z" /></svg>
             {itemCount > 0 && (
-              <span className="absolute -top-1 -right-1 bg-voraz-yellow text-black text-[10px] font-black w-4 h-4 rounded-full flex items-center justify-center">
+              <span className="absolute -top-1 -right-1 bg-brand-secondary text-black text-[10px] font-black w-4 h-4 rounded-full flex items-center justify-center">
                 {itemCount}
               </span>
             )}
@@ -384,26 +387,19 @@ function App() {
               {currentView === 'videos' && <VideosView key="videos" />}
               {currentView === 'locations' && <LocationsView key="locations" />}
               {currentView === 'delivery' && <DeliveryView key="delivery" />}
-              {currentView === 'vorazburger' && <VorazBurgerView key="vorazburger" />}
-          {currentView === 'tracking' && activeOrderId && (
-                <OrderTracking
-                  key="tracking"
-                  orderId={activeOrderId}
-                  onBack={() => setCurrentView('menu')}
-                />
+              {currentView === 'brandworld' && <BrandWorldView key="brandworld" />}
+              {currentView === 'vorazburger' && <BrandWorldView key="vorazburger" />}
+              {currentView === 'tracking' && activeOrderId && (
+                <OrderTracking key="tracking" orderId={activeOrderId} onBack={() => setCurrentView('menu')} />
               )}
               {currentView === 'club' && (
-                <VorazClub
-                  key="club"
-                  onBack={() => setCurrentView('menu')}
-                  onOpenAuth={() => setIsAuthOpen(true)}
-                />
+                <VorazClub key="club" onBack={() => setCurrentView('menu')} onOpenAuth={() => setIsAuthOpen(true)} />
               )}
             </>
           ) : (
             <div className="flex h-[50vh] items-center justify-center flex-col">
               <div className="text-red-500 font-bold mb-4">{error}</div>
-              <button onClick={loadAllData} className="bg-voraz-red text-white px-6 py-2 rounded-lg font-bold">Reintentar</button>
+              <button onClick={loadAllData} className="bg-brand-primary text-white px-6 py-2 rounded-lg font-bold">Reintentar</button>
             </div>
           )}
         </AnimatePresence>

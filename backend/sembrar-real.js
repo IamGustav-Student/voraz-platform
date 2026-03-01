@@ -192,9 +192,11 @@ const crearTablas = async () => {
 // ─────────────────────────────────────────────────────────────────────────────
 // SEED PRINCIPAL
 // ─────────────────────────────────────────────────────────────────────────────
+const TENANT_ID = process.env.TENANT_ID || 'voraz';
+
 const sembrarDatos = async () => {
   try {
-    console.log('🌱 Iniciando siembra con datos REALES de Voraz...');
+    console.log(`🌱 Iniciando siembra para tenant: ${TENANT_ID}`);
 
     // Crear tablas primero
     await crearTablas();
@@ -203,21 +205,23 @@ const sembrarDatos = async () => {
     console.log('🧹 Limpiando datos anteriores...');
     await pool.query('TRUNCATE TABLE coupon_uses, points_history, order_items, orders, products, influencers, videos, stores, news, coupons, categories RESTART IDENTITY CASCADE');
 
+    await pool.query(`INSERT INTO tenants (id, name) VALUES ($1, $2) ON CONFLICT (id) DO NOTHING`, [TENANT_ID, TENANT_ID.charAt(0).toUpperCase() + TENANT_ID.slice(1)]);
+
     // ─────────────────────────────────────────────────────────────────────────
     // CATEGORÍAS REALES DE VORAZ
     // ─────────────────────────────────────────────────────────────────────────
     console.log('📂 Insertando categorías...');
     await pool.query(`
-      INSERT INTO categories (name, slug) VALUES 
-      ('Smash', 'smash'),
-      ('Clásicas', 'clasicas'),
-      ('Crispy', 'crispy'),
-      ('Veggie', 'veggie'),
-      ('Entradas', 'entradas'),
-      ('Bebidas', 'bebidas'),
-      ('Postres', 'postres')
+      INSERT INTO categories (name, slug, tenant_id) VALUES 
+      ('Smash', 'smash', $1),
+      ('Clásicas', 'clasicas', $1),
+      ('Crispy', 'crispy', $1),
+      ('Veggie', 'veggie', $1),
+      ('Entradas', 'entradas', $1),
+      ('Bebidas', 'bebidas', $1),
+      ('Postres', 'postres', $1)
       ON CONFLICT (slug) DO NOTHING;
-    `);
+    `, [TENANT_ID]);
 
     const getCatId = async (slug) => {
       const res = await pool.query('SELECT id FROM categories WHERE slug = $1', [slug]);
@@ -277,8 +281,8 @@ const sembrarDatos = async () => {
     for (const p of products) {
       if (!p.cat) { console.warn(`⚠️  Sin categoría: ${p.name}`); continue; }
       await pool.query(
-        'INSERT INTO products (name, description, price, category_id, image_url, badge) VALUES ($1, $2, $3, $4, $5, $6)',
-        [p.name, p.desc, p.price, p.cat, p.img, p.badge]
+        'INSERT INTO products (name, description, price, category_id, image_url, badge, tenant_id) VALUES ($1, $2, $3, $4, $5, $6, $7)',
+        [p.name, p.desc, p.price, p.cat, p.img, p.badge, TENANT_ID]
       );
     }
     console.log(`✅ ${products.length} productos insertados`);
@@ -297,8 +301,8 @@ const sembrarDatos = async () => {
 
     for (const s of stores) {
       await pool.query(
-        'INSERT INTO stores (name, address, phone, hours, image_url, lat, lng) VALUES ($1, $2, $3, $4, $5, $6, $7)',
-        [s.name, s.address, s.phone, s.hours, s.img, s.lat, s.lng]
+        'INSERT INTO stores (name, address, phone, hours, image_url, lat, lng, tenant_id) VALUES ($1, $2, $3, $4, $5, $6, $7, $8)',
+        [s.name, s.address, s.phone, s.hours, s.img, s.lat, s.lng, TENANT_ID]
       );
     }
     console.log(`✅ ${stores.length} sucursales insertadas`);
@@ -316,8 +320,8 @@ const sembrarDatos = async () => {
 
     for (const i of influencers) {
       await pool.query(
-        'INSERT INTO influencers (name, social_handle, testimonial, image_url) VALUES ($1, $2, $3, $4)',
-        [i.name, i.handle, i.text, i.img]
+        'INSERT INTO influencers (name, social_handle, testimonial, image_url, tenant_id) VALUES ($1, $2, $3, $4, $5)',
+        [i.name, i.handle, i.text, i.img, TENANT_ID]
       );
     }
     console.log(`✅ ${influencers.length} influencers insertados`);
@@ -333,8 +337,8 @@ const sembrarDatos = async () => {
     ];
     for (const v of videos) {
       await pool.query(
-        'INSERT INTO videos (title, youtube_id, thumbnail_url) VALUES ($1, $2, $3)',
-        [v.title, v.id, `https://img.youtube.com/vi/${v.id}/hqdefault.jpg`]
+        'INSERT INTO videos (title, youtube_id, thumbnail_url, tenant_id) VALUES ($1, $2, $3, $4)',
+        [v.title, v.id, `https://img.youtube.com/vi/${v.id}/hqdefault.jpg`, TENANT_ID]
       );
     }
     console.log(`✅ ${videos.length} videos insertados`);
@@ -351,8 +355,8 @@ const sembrarDatos = async () => {
     ];
     for (const n of noticias) {
       await pool.query(
-        'INSERT INTO news (title, content, image_url, date) VALUES ($1, $2, $3, $4)',
-        [n.title, n.content, n.img, n.date]
+        'INSERT INTO news (title, content, image_url, date, tenant_id) VALUES ($1, $2, $3, $4, $5)',
+        [n.title, n.content, n.img, n.date, TENANT_ID]
       );
     }
     console.log(`✅ ${noticias.length} noticias insertadas`);
@@ -362,14 +366,14 @@ const sembrarDatos = async () => {
     // ─────────────────────────────────────────────────────────────────────────
     console.log('🎟️  Insertando cupones...');
     await pool.query(`
-      INSERT INTO coupons (code, description, discount_type, discount_value, min_order)
+      INSERT INTO coupons (code, description, discount_type, discount_value, min_order, tenant_id)
       VALUES
-        ('VORAZ10',    '10% de descuento en tu pedido',              'percentage', 10,   0),
-        ('COSCU20',    '20% exclusivo del squad Coscu',              'percentage', 20,   20000),
-        ('BIENVENIDO', '$5000 de descuento en pedidos sobre $10000', 'fixed',      5000, 10000),
-        ('FYE2025',    '15% del squad Fino y Elegante',              'percentage', 15,   18000)
+        ('VORAZ10',    '10% de descuento en tu pedido',              'percentage', 10,   0,     $1),
+        ('COSCU20',    '20% exclusivo del squad Coscu',              'percentage', 20,   20000, $1),
+        ('BIENVENIDO', '$5000 de descuento en pedidos sobre $10000', 'fixed',      5000, 10000, $1),
+        ('FYE2025',    '15% del squad Fino y Elegante',              'percentage', 15,   18000, $1)
       ON CONFLICT (code) DO NOTHING;
-    `);
+    `, [TENANT_ID]);
     console.log('✅ 4 cupones insertados');
 
     console.log('');
