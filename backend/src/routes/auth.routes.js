@@ -1,11 +1,11 @@
-const express = require('express');
-const router = express.Router();
-const { register, login, getProfile } = require('../controllers/auth.controller');
-const { protect } = require('../middleware/auth.middleware');
+import { Router } from 'express';
+import { register, login, me } from '../controllers/auth.controller.js';
+import { authMiddleware } from '../middleware/auth.middleware.js';
 
-// Rutas de autenticación local
+const router = Router();
+
 router.post('/register', register);
 router.post('/login', login);
-router.get('/profile', protect, getProfile);
+router.get('/me', authMiddleware, me);
 
-module.exports = router;
+export default router;
