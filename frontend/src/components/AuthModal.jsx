@@ -3,7 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { useAuth } from '../context/AuthContext';
 import { registerUser, loginUser } from '../services/api';
 
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000/api';
+const API_URL = import.meta.env.VITE_API_URL + '/auth/google';
 const BACKEND_URL = API_URL.replace('/api', '');
 const GOOGLE_OAUTH_URL = `${BACKEND_URL}/api/auth/google`;
 
@@ -37,7 +37,7 @@ const AuthModal = ({ isOpen, onClose }) => {
         <input
             type={type} placeholder={placeholder} value={value} onChange={onChange}
             autoComplete={autoComplete}
-            className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white text-sm placeholder-gray-600 focus:outline-none focus:border-voraz-red transition"
+            className="w-full px-4 py-3 text-sm text-white placeholder-gray-600 transition border bg-white/5 border-white/10 rounded-xl focus:outline-none focus:border-voraz-red"
         />
     );
 
@@ -56,7 +56,7 @@ const AuthModal = ({ isOpen, onClose }) => {
                         onClick={e => e.stopPropagation()}
                     >
                         {/* Header */}
-                        <div className="px-6 pt-6 pb-4 border-b border-white/10 flex items-center justify-between">
+                        <div className="flex items-center justify-between px-6 pt-6 pb-4 border-b border-white/10">
                             <div>
                                 <h2 className="text-xl font-black text-white uppercase">
                                     {mode === 'login' ? 'Iniciar Sesión' : 'Crear Cuenta'}
@@ -65,7 +65,7 @@ const AuthModal = ({ isOpen, onClose }) => {
                                     {mode === 'login' ? '¡Bienvenido de vuelta!' : 'Sumáte al Voraz Club y ganá puntos'}
                                 </p>
                             </div>
-                            <button onClick={handleClose} className="text-gray-500 hover:text-white p-1 rounded-full hover:bg-white/10 transition">
+                            <button onClick={handleClose} className="p-1 text-gray-500 transition rounded-full hover:text-white hover:bg-white/10">
                                 <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" /></svg>
                             </button>
                         </div>
@@ -74,7 +74,7 @@ const AuthModal = ({ isOpen, onClose }) => {
                             {/* Google OAuth */}
                             <a
                                 href={GOOGLE_OAUTH_URL}
-                                className="w-full flex items-center justify-center space-x-3 bg-white text-gray-900 py-3 rounded-xl font-bold text-sm hover:bg-gray-100 transition shadow"
+                                className="flex items-center justify-center w-full py-3 space-x-3 text-sm font-bold text-gray-900 transition bg-white shadow rounded-xl hover:bg-gray-100"
                             >
                                 <svg className="w-5 h-5" viewBox="0 0 24 24">
                                     <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" />
@@ -87,7 +87,7 @@ const AuthModal = ({ isOpen, onClose }) => {
 
                             <div className="flex items-center space-x-3">
                                 <div className="flex-1 h-px bg-white/10"></div>
-                                <span className="text-gray-600 text-xs uppercase font-bold tracking-wider">o</span>
+                                <span className="text-xs font-bold tracking-wider text-gray-600 uppercase">o</span>
                                 <div className="flex-1 h-px bg-white/10"></div>
                             </div>
 
@@ -102,7 +102,7 @@ const AuthModal = ({ isOpen, onClose }) => {
                                 <InputField type="email" placeholder="Email" value={form.email} onChange={e => setForm(f => ({ ...f, email: e.target.value }))} autoComplete="email" />
                                 <InputField type="password" placeholder="Contraseña" value={form.password} onChange={e => setForm(f => ({ ...f, password: e.target.value }))} autoComplete={mode === 'login' ? 'current-password' : 'new-password'} />
 
-                                {error && <p className="text-red-400 text-sm bg-red-500/10 px-3 py-2 rounded-lg">{error}</p>}
+                                {error && <p className="px-3 py-2 text-sm text-red-400 rounded-lg bg-red-500/10">{error}</p>}
 
                                 <motion.button
                                     whileTap={{ scale: 0.97 }}
@@ -115,20 +115,20 @@ const AuthModal = ({ isOpen, onClose }) => {
                             </form>
 
                             {/* Toggle */}
-                            <p className="text-center text-gray-500 text-sm">
+                            <p className="text-sm text-center text-gray-500">
                                 {mode === 'login' ? '¿No tenés cuenta?' : '¿Ya tenés cuenta?'}{' '}
                                 <button
                                     onClick={() => { setMode(mode === 'login' ? 'register' : 'login'); setError(''); }}
-                                    className="text-voraz-yellow font-bold hover:underline"
+                                    className="font-bold text-voraz-yellow hover:underline"
                                 >
                                     {mode === 'login' ? 'Registrarse' : 'Iniciar sesión'}
                                 </button>
                             </p>
 
                             {mode === 'register' && (
-                                <div className="bg-voraz-yellow/10 border border-voraz-yellow/20 rounded-xl p-3 flex items-start space-x-2">
+                                <div className="flex items-start p-3 space-x-2 border bg-voraz-yellow/10 border-voraz-yellow/20 rounded-xl">
                                     <span className="text-lg">⭐</span>
-                                    <p className="text-voraz-yellow text-xs font-bold">¡Bienvenido bonus! Registrarte te da <span className="text-white">50 puntos</span> en el Voraz Club.</p>
+                                    <p className="text-xs font-bold text-voraz-yellow">¡Bienvenido bonus! Registrarte te da <span className="text-white">50 puntos</span> en el Voraz Club.</p>
                                 </div>
                             )}
                         </div>
