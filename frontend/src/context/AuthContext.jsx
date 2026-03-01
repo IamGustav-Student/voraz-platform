@@ -1,62 +1,46 @@
-import { createContext, useContext, useState, useEffect } from 'react';
-import { getMe } from '../services/api';
+import React, { createContext, useState, useContext, useEffect } from 'react';
+import { authAPI } from '../services/api';
 
-const AuthContext = createContext(null);
+const AuthContext = createContext();
 
 export const AuthProvider = ({ children }) => {
-    const [user, setUser] = useState(null);
-    const [loadingAuth, setLoadingAuth] = useState(true);
+  const [user, setUser] = useState(null);
+  const [loading, setLoading] = useState(true);
 
-    useEffect(() => {
-        const params = new URLSearchParams(window.location.search);
-        const token = params.get('token');
-        const authError = params.get('auth_error');
+  useEffect(() => {
+    const token = localStorage.getItem('token');
+    if (token) {
+      // Validar token con el perfil local
+      authAPI.getProfile()
+        .then(res => setUser(res.data))
+        .catch(() => localStorage.removeItem('token'))
+        .finally(() => setLoading(false));
+    } else {
+      setLoading(false);
+    }
+  }, []);
 
-        if (token) {
-            localStorage.setItem('voraz_token', token);
-            window.history.replaceState({}, '', '/');
-        }
-        if (authError) {
-            window.history.replaceState({}, '', '/');
-        }
+  const loginUser = async (email, password) => {
+    try {
+      const res = await authAPI.login({ email, password });
+      localStorage.setItem('token', res.data.token);
+      setUser(res.data.user);
+      return true;
+    } catch (err) {
+      throw err.response?.data?.message || 'Error al iniciar sesión';
+    }
+  };
 
-        const storedToken = localStorage.getItem('voraz_token');
-        if (storedToken) {
-            getMe(storedToken)
-                .then(userData => {
-                    if (userData) setUser(userData);
-                    else localStorage.removeItem('voraz_token');
-                })
-                .finally(() => setLoadingAuth(false));
-        } else {
-            setLoadingAuth(false);
-        }
-    }, []);
+  const logout = () => {
+    localStorage.removeItem('token');
+    setUser(null);
+  };
 
-    const login = (userData, token) => {
-        localStorage.setItem('voraz_token', token);
-        setUser(userData);
-    };
-
-    const logout = () => {
-        localStorage.removeItem('voraz_token');
-        setUser(null);
-    };
-
-    const refreshUser = async () => {
-        const token = localStorage.getItem('voraz_token');
-        if (!token) return;
-        const userData = await getMe(token);
-        if (userData) setUser(userData);
-    };
-
-    const getToken = () => localStorage.getItem('voraz_token');
-
-    return (
-        <AuthContext.Provider value={{ user, loadingAuth, login, logout, refreshUser, getToken }}>
-            {children}
-        </AuthContext.Provider>
-    );
+  return (
+    <AuthContext.Provider value={{ user, loginUser, logout, loading }}>
+      {children}
+    </AuthContext.Provider>
+  );
 };
 
 export const useAuth = () => useContext(AuthContext);
