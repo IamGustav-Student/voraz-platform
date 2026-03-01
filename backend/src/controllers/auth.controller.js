@@ -102,9 +102,10 @@ export const googleCallback = async (req, res) => {
         }
         const token = generateToken(user);
         const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:5173';
-        res.redirect(`${frontendUrl}?token=${token}`);
-    } catch {
+        return res.redirect(`${frontendUrl}?token=${token}`);
+    } catch (err) {
+        console.error('Error en Google callback:', err);
         const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:5173';
-        res.redirect(`${frontendUrl}?auth_error=true`);
+        return res.redirect(`${frontendUrl}?auth_error=true`);
     }
 };
