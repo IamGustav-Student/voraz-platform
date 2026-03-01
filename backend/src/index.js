@@ -4,8 +4,6 @@ import cors from 'cors';
 import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
-import passport from 'passport';
-import { Strategy as GoogleStrategy } from 'passport-google-oauth20';
 import { query } from './config/db.js';
 
 import productsRoutes from './routes/products.routes.js';
@@ -24,36 +22,17 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 app.use(morgan('dev'));
 app.use((req, res, next) => {
-  res.header('Access-Control-Allow-Origin', '*');
-  res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, PATCH, DELETE, OPTIONS');
-  res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept, Authorization');
-  if (req.method === 'OPTIONS') return res.sendStatus(200);
-  next();
+    res.header('Access-Control-Allow-Origin', '*');
+    res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, PATCH, DELETE, OPTIONS');
+    res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept, Authorization, x-tenant-id');
+    if (req.method === 'OPTIONS') return res.sendStatus(200);
+    next();
 });
 app.use(cors({ origin: '*', credentials: false }));
 app.use(express.json());
-app.use(passport.initialize());
-
-if (process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET) {
-    const callbackURL = process.env.NODE_ENV === 'production'
-        ? 'https://voraz-platform-production.up.railway.app/api/auth/google/callback'
-        : 'http://localhost:3000/api/auth/google/callback';
-
-    passport.use(new GoogleStrategy(
-        {
-            clientID: process.env.GOOGLE_CLIENT_ID,
-            clientSecret: process.env.GOOGLE_CLIENT_SECRET,
-            callbackURL,
-        },
-        (accessToken, refreshToken, profile, done) => done(null, profile)
-    ));
-    console.log('✅ Google OAuth configurado. Callback:', callbackURL);
-} else {
-    console.log('ℹ️  Google OAuth no configurado (faltan GOOGLE_CLIENT_ID / GOOGLE_CLIENT_SECRET)');
-}
 
 app.get('/', (req, res) => {
-    res.json({ message: '🍔 API de Voraz funcionando correctamente' });
+    res.json({ message: '🍔 Voraz API funcionando' });
 });
 
 app.get('/api/test-db', async (req, res) => {
