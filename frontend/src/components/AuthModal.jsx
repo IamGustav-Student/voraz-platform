@@ -3,9 +3,8 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { useAuth } from '../context/AuthContext';
 import { registerUser, loginUser } from '../services/api';
 
-const API_URL = import.meta.env.VITE_API_URL + '/auth/google';
-const BACKEND_URL = API_URL.replace('/api', '');
-const GOOGLE_OAUTH_URL = `${BACKEND_URL}/api/auth/google`;
+const GOOGLE_OAUTH_URL = import.meta.env.VITE_GOOGLE_AUTH_URL ||
+  'https://voraz-platform-production.up.railway.app/api/auth/google';
 
 const AuthModal = ({ isOpen, onClose }) => {
     const { login } = useAuth();
