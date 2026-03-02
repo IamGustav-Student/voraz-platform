@@ -1,8 +1,9 @@
 import { Router } from 'express';
-import { createPreference, webhook } from '../controllers/payments.controller.js';
+import { createPreference, webhook, getPublicKey } from '../controllers/payments.controller.js';
 
 const router = Router();
 
+router.get('/public-key', getPublicKey);
 router.post('/preference', createPreference);
 router.post('/webhook', webhook);
 

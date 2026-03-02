@@ -145,7 +145,7 @@ export default function AdminPanel({ onClose }) {
               {section === 'Videos' && <VideosSection token={token} />}
               {section === 'Noticias' && <NewsSection token={token} />}
               {section === 'Pedidos' && <OrdersSection items={data.Pedidos || []} token={token} reload={() => load('Pedidos')} />}
-              {section === 'MercadoPago' && <MercadoPagoSection data={data.MercadoPago} />}
+              {section === 'MercadoPago' && <MercadoPagoSection data={data.MercadoPago} token={token} reload={() => load('MercadoPago')} />}
             </>
           )}
         </main>
@@ -623,48 +623,178 @@ function OrdersSection({ items, token, reload }) {
 }
 
 // ── MercadoPago ───────────────────────────────────────────────────────────────
-function MercadoPagoSection({ data }) {
+function MercadoPagoSection({ data, token, reload }) {
+  const [form, setForm] = useState({
+    mp_access_token: '',
+    mp_public_key: data?.mp_public_key || '',
+    mp_sandbox: data?.mp_sandbox ?? false,
+    store_name: data?.store_name || '',
+    store_email: data?.store_email || '',
+    store_phone: data?.store_phone || '',
+    store_address: data?.store_address || '',
+  });
+  const [saving, setSaving] = useState(false);
+  const [msg, setMsg] = useState('');
+  const [showToken, setShowToken] = useState(false);
+
+  useEffect(() => {
+    if (data) {
+      setForm(prev => ({
+        ...prev,
+        mp_public_key: data.mp_public_key || '',
+        mp_sandbox: data.mp_sandbox ?? false,
+        store_name: data.store_name || '',
+        store_email: data.store_email || '',
+        store_phone: data.store_phone || '',
+        store_address: data.store_address || '',
+      }));
+    }
+  }, [data]);
+
+  const save = async (e) => {
+    e.preventDefault(); setSaving(true); setMsg('');
+    try {
+      const result = await adminFetch('/mercadopago', token, {
+        method: 'POST',
+        body: JSON.stringify(form),
+      });
+      setMsg(result.message || 'Guardado correctamente');
+      setForm(prev => ({ ...prev, mp_access_token: '' }));
+      reload();
+    } catch (e) { setMsg('Error: ' + e.message); }
+    setSaving(false);
+  };
+
+  const isConfigured = data?.access_token_set;
+
   return (
     <div>
-      <h2 className="text-2xl font-bold mb-6">Configuración MercadoPago</h2>
+      <h2 className="text-2xl font-bold mb-2">MercadoPago</h2>
+      <p className="text-gray-500 text-sm mb-6">Configurá las credenciales para recibir pagos online directamente en tu cuenta de MercadoPago.</p>
 
-      <div className="bg-white/5 rounded-xl p-6 border border-white/10 mb-6">
-        <h3 className="font-semibold text-gray-300 mb-4">Estado actual</h3>
-        <div className="space-y-3">
-          <div className="flex items-center gap-3">
-            <span className={`w-3 h-3 rounded-full ${data?.access_token_set ? 'bg-green-400' : 'bg-red-500'}`} />
-            <span className="text-sm">Access Token: {data?.access_token_set ? 'Configurado' : 'No configurado'}</span>
-          </div>
-          <div className="flex items-center gap-3">
-            <span className={`w-3 h-3 rounded-full ${data?.public_key ? 'bg-green-400' : 'bg-red-500'}`} />
-            <span className="text-sm">Public Key: {data?.public_key || 'No configurada'}</span>
-          </div>
-          {data?.webhook_url && (
-            <div className="mt-3">
-              <p className="text-xs text-gray-500 mb-1">URL del Webhook:</p>
-              <code className="text-xs bg-black/40 px-3 py-1.5 rounded text-green-400 block break-all">{data.webhook_url}</code>
-            </div>
-          )}
+      {/* Estado actual */}
+      <div className={`rounded-xl p-4 border mb-6 flex items-center gap-4 ${isConfigured ? 'bg-green-900/20 border-green-500/30' : 'bg-yellow-900/20 border-yellow-500/30'}`}>
+        <div className={`w-4 h-4 rounded-full flex-shrink-0 ${isConfigured ? 'bg-green-400' : 'bg-yellow-400 animate-pulse'}`} />
+        <div>
+          <p className={`font-semibold text-sm ${isConfigured ? 'text-green-300' : 'text-yellow-300'}`}>
+            {isConfigured ? 'MercadoPago configurado y activo' : 'MercadoPago no configurado — modo demo activo'}
+          </p>
+          <p className="text-xs text-gray-500 mt-0.5">
+            {isConfigured
+              ? `Modo: ${data.mp_sandbox ? 'Prueba (Sandbox)' : 'Producción (real)'}`
+              : 'Los pedidos se confirman automáticamente sin cobro online.'}
+          </p>
         </div>
       </div>
 
-      <div className="bg-blue-950/40 border border-blue-500/30 rounded-xl p-6">
-        <h3 className="font-semibold text-blue-300 mb-3">Cómo configurar MercadoPago</h3>
-        <ol className="text-sm text-gray-400 space-y-3 list-decimal list-inside">
-          <li>Ingresá a <a href="https://www.mercadopago.com.ar/developers/panel/app" target="_blank" rel="noreferrer" className="text-blue-400 underline">MercadoPago Developers</a></li>
-          <li>Creá o seleccioná tu aplicación</li>
-          <li>Copiá el <strong className="text-white">Access Token</strong> de producción</li>
-          <li>Copiá la <strong className="text-white">Public Key</strong> de producción</li>
-          <li>En Railway → tu servicio backend → <strong className="text-white">Variables</strong>, agregá:
-            <div className="mt-2 space-y-1">
-              <code className="block bg-black/40 px-3 py-1.5 rounded text-yellow-300 text-xs">MP_ACCESS_TOKEN=APP_USR-xxxx</code>
-              <code className="block bg-black/40 px-3 py-1.5 rounded text-yellow-300 text-xs">MP_PUBLIC_KEY=APP_USR-xxxx</code>
+      <form onSubmit={save} className="space-y-6">
+        {/* Credenciales MP */}
+        <div className="bg-white/5 rounded-xl p-5 border border-white/10">
+          <h3 className="font-semibold text-gray-200 mb-1">Credenciales de MercadoPago</h3>
+          <p className="text-xs text-gray-500 mb-4">
+            Obtenelas en <a href="https://www.mercadopago.com.ar/developers/panel/app" target="_blank" rel="noreferrer" className="text-blue-400 underline">mercadopago.com.ar/developers</a> → Tu aplicación → Credenciales.
+          </p>
+
+          <div className="space-y-3">
+            <div>
+              <label className="text-xs text-gray-400 block mb-1">Access Token {isConfigured && <span className="text-green-500 ml-1">✓ ya guardado</span>}</label>
+              <div className="relative">
+                <input
+                  type={showToken ? 'text' : 'password'}
+                  placeholder={isConfigured ? 'Dejar vacío para mantener el actual...' : 'APP_USR-xxxx-xxxx'}
+                  value={form.mp_access_token}
+                  onChange={e => setForm(p => ({ ...p, mp_access_token: e.target.value }))}
+                  className="w-full bg-black/30 border border-white/10 rounded-lg px-3 py-2.5 text-white text-sm pr-16"
+                />
+                <button type="button" onClick={() => setShowToken(p => !p)}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-gray-500 hover:text-gray-300">
+                  {showToken ? 'Ocultar' : 'Ver'}
+                </button>
+              </div>
+              <p className="text-xs text-gray-600 mt-1">Empieza con <code>APP_USR-</code> (producción) o <code>TEST-</code> (prueba)</p>
             </div>
-          </li>
-          <li>Configurá el webhook en MercadoPago apuntando a:
-            <code className="block mt-1 bg-black/40 px-3 py-1.5 rounded text-green-300 text-xs break-all">{data?.webhook_url || 'https://TU_BACKEND.up.railway.app/api/payments/webhook'}</code>
-          </li>
-          <li>Hacé un Redeploy en Railway para aplicar los cambios</li>
+
+            <div>
+              <label className="text-xs text-gray-400 block mb-1">Public Key {data?.mp_public_key && <span className="text-green-500 ml-1">✓ ya guardada</span>}</label>
+              <input
+                type="text"
+                placeholder="APP_USR-xxxx-xxxx"
+                value={form.mp_public_key}
+                onChange={e => setForm(p => ({ ...p, mp_public_key: e.target.value }))}
+                className="w-full bg-black/30 border border-white/10 rounded-lg px-3 py-2.5 text-white text-sm"
+              />
+            </div>
+
+            <div className="flex items-center gap-3 py-2">
+              <button type="button" onClick={() => setForm(p => ({ ...p, mp_sandbox: !p.mp_sandbox }))}
+                className={`relative w-11 h-6 rounded-full transition-colors ${form.mp_sandbox ? 'bg-yellow-500' : 'bg-gray-700'}`}>
+                <span className={`absolute top-1 w-4 h-4 bg-white rounded-full transition-transform ${form.mp_sandbox ? 'translate-x-6' : 'translate-x-1'}`} />
+              </button>
+              <div>
+                <p className="text-sm text-white">{form.mp_sandbox ? 'Modo Sandbox (prueba)' : 'Modo Producción'}</p>
+                <p className="text-xs text-gray-500">{form.mp_sandbox ? 'Los pagos no son reales — ideal para testear' : 'Los pagos son reales — para tu negocio'}</p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Webhook URL */}
+        {data?.webhook_url && (
+          <div className="bg-black/30 rounded-xl p-4 border border-white/5">
+            <p className="text-xs text-gray-500 mb-2">URL del Webhook (configurala en MercadoPago Developers → Notificaciones IPN):</p>
+            <div className="flex items-center gap-2">
+              <code className="text-xs text-green-400 flex-1 break-all">{data.webhook_url}</code>
+              <button type="button" onClick={() => navigator.clipboard.writeText(data.webhook_url)}
+                className="text-xs text-gray-500 hover:text-white px-2 py-1 rounded bg-white/10 flex-shrink-0">
+                Copiar
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* Datos del local */}
+        <div className="bg-white/5 rounded-xl p-5 border border-white/10">
+          <h3 className="font-semibold text-gray-200 mb-1">Datos del local</h3>
+          <p className="text-xs text-gray-500 mb-4">Estos datos aparecen en el resumen de pago de MercadoPago.</p>
+          <div className="grid grid-cols-2 gap-3">
+            <input placeholder="Nombre del local (ej: Voraz Burger)" value={form.store_name}
+              onChange={e => setForm(p => ({ ...p, store_name: e.target.value }))}
+              className="col-span-2 bg-black/30 border border-white/10 rounded-lg px-3 py-2.5 text-white text-sm" />
+            <input placeholder="Email de contacto" value={form.store_email} type="email"
+              onChange={e => setForm(p => ({ ...p, store_email: e.target.value }))}
+              className="bg-black/30 border border-white/10 rounded-lg px-3 py-2.5 text-white text-sm" />
+            <input placeholder="Teléfono / WhatsApp" value={form.store_phone}
+              onChange={e => setForm(p => ({ ...p, store_phone: e.target.value }))}
+              className="bg-black/30 border border-white/10 rounded-lg px-3 py-2.5 text-white text-sm" />
+            <input placeholder="Dirección del local" value={form.store_address}
+              onChange={e => setForm(p => ({ ...p, store_address: e.target.value }))}
+              className="col-span-2 bg-black/30 border border-white/10 rounded-lg px-3 py-2.5 text-white text-sm" />
+          </div>
+        </div>
+
+        <button type="submit" disabled={saving}
+          className="w-full bg-blue-600 hover:bg-blue-700 py-3 rounded-xl font-bold text-white disabled:opacity-50 transition">
+          {saving ? 'Guardando...' : 'Guardar configuración'}
+        </button>
+
+        {msg && (
+          <div className={`px-4 py-3 rounded-lg text-sm ${msg.startsWith('Error') ? 'bg-red-900/50 text-red-300' : 'bg-green-900/50 text-green-300'}`}>
+            {msg}
+          </div>
+        )}
+      </form>
+
+      {/* Instrucciones paso a paso */}
+      <div className="mt-8 bg-blue-950/30 border border-blue-500/20 rounded-xl p-5">
+        <h3 className="font-semibold text-blue-300 mb-3 text-sm">Guía paso a paso para activar cobros online</h3>
+        <ol className="text-xs text-gray-400 space-y-2 list-decimal list-inside">
+          <li>Ingresá a <a href="https://www.mercadopago.com.ar/developers/panel/app" target="_blank" rel="noreferrer" className="text-blue-400 underline">mercadopago.com.ar/developers</a></li>
+          <li>Creá una nueva aplicación o seleccioná la existente</li>
+          <li>En <strong className="text-white">Credenciales de producción</strong>, copiá el <strong className="text-white">Access Token</strong> y la <strong className="text-white">Public Key</strong></li>
+          <li>Pegá ambas en el formulario de arriba y guardá</li>
+          <li>En la misma app de developers, andá a <strong className="text-white">Notificaciones IPN</strong> y pegá la URL del webhook</li>
+          <li>Activá los eventos: <code className="bg-black/30 px-1 rounded">payment</code></li>
+          <li>¡Listo! Los clientes ya pueden pagar con cualquier método de MercadoPago</li>
         </ol>
       </div>
     </div>

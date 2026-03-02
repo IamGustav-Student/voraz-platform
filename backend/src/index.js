@@ -72,4 +72,5 @@ app.listen(PORT, async () => {
     await runMigration('phase8_auth.sql');
     await runMigration('phase9_whitelabel.sql');
     await runMigration('phase10_admin.sql');
+    await runMigration('phase11_tenant_settings.sql');
 });

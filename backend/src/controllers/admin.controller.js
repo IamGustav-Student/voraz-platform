@@ -282,19 +282,51 @@ export const updateOrderStatus = async (req, res) => {
 
 // ── CONFIGURACIÓN MERCADOPAGO ──────────────────────────────────────────────
 export const getMercadopagoConfig = async (req, res) => {
-  res.json({
-    status: 'success',
-    data: {
-      public_key: process.env.MP_PUBLIC_KEY ? '***configurado***' : null,
-      access_token_set: !!process.env.MP_ACCESS_TOKEN,
-      webhook_url: `${process.env.BACKEND_URL || ''}/api/payments/webhook`,
-    }
-  });
+  try {
+    const tenantId = getTenantId(req);
+    const result = await query(
+      'SELECT mp_public_key, mp_sandbox, mp_access_token, store_name, store_email, store_phone, store_address FROM tenant_settings WHERE tenant_id = $1',
+      [tenantId]
+    );
+    const settings = result.rows[0] || {};
+    const backendUrl = process.env.BACKEND_URL || `https://voraz-platform-production.up.railway.app`;
+    res.json({
+      status: 'success',
+      data: {
+        mp_public_key: settings.mp_public_key || null,
+        access_token_set: !!(settings.mp_access_token),
+        mp_sandbox: settings.mp_sandbox ?? false,
+        webhook_url: `${backendUrl}/api/payments/webhook`,
+        store_name: settings.store_name || null,
+        store_email: settings.store_email || null,
+        store_phone: settings.store_phone || null,
+        store_address: settings.store_address || null,
+      }
+    });
+  } catch (e) { res.status(500).json({ status: 'error', message: e.message }); }
 };
 
 export const saveMercadopagoConfig = async (req, res) => {
-  res.json({
-    status: 'info',
-    message: 'Para actualizar las credenciales de MercadoPago, editá las variables de entorno MP_PUBLIC_KEY y MP_ACCESS_TOKEN en Railway → Variables. Los cambios se aplican en el próximo redeploy.'
-  });
+  try {
+    const tenantId = getTenantId(req);
+    const { mp_access_token, mp_public_key, mp_sandbox, store_name, store_email, store_phone, store_address } = req.body;
+
+    // Upsert en tenant_settings
+    await query(
+      `INSERT INTO tenant_settings (tenant_id, mp_access_token, mp_public_key, mp_sandbox, store_name, store_email, store_phone, store_address, updated_at)
+       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,NOW())
+       ON CONFLICT (tenant_id) DO UPDATE SET
+         mp_access_token = COALESCE(NULLIF($2,''), tenant_settings.mp_access_token),
+         mp_public_key   = COALESCE(NULLIF($3,''), tenant_settings.mp_public_key),
+         mp_sandbox      = $4,
+         store_name      = COALESCE(NULLIF($5,''), tenant_settings.store_name),
+         store_email     = COALESCE(NULLIF($6,''), tenant_settings.store_email),
+         store_phone     = COALESCE(NULLIF($7,''), tenant_settings.store_phone),
+         store_address   = COALESCE(NULLIF($8,''), tenant_settings.store_address),
+         updated_at      = NOW()`,
+      [tenantId, mp_access_token || '', mp_public_key || '', mp_sandbox ?? false, store_name || '', store_email || '', store_phone || '', store_address || '']
+    );
+
+    res.json({ status: 'success', message: 'Configuración guardada correctamente. MercadoPago ya está activo.' });
+  } catch (e) { res.status(500).json({ status: 'error', message: e.message }); }
 };
