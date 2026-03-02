@@ -104,6 +104,21 @@ export default function AdminPanel({ onClose }) {
 
   useEffect(() => { load(section); }, [section, load]);
 
+  const [menuOpen, setMenuOpen] = useState(false);
+
+  const changeSection = (s) => { setSection(s); setMenuOpen(false); };
+
+  const SECTION_ICONS = {
+    Dashboard:   'M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6',
+    'Categorías':'M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A2 2 0 013 12V7a4 4 0 014-4z',
+    Productos:   'M4 6h16M4 10h16M4 14h16M4 18h16',
+    Cupones:     'M7 7h.01M17 17h.01M3 7a4 4 0 014-4h10a4 4 0 014 4v10a4 4 0 01-4 4H7a4 4 0 01-4-4V7z',
+    Videos:      'M15 10l4.553-2.277A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M3 8a2 2 0 012-2h8a2 2 0 012 2v8a2 2 0 01-2 2H5a2 2 0 01-2-2V8z',
+    Noticias:    'M19 20H5a2 2 0 01-2-2V6a2 2 0 012-2h10a2 2 0 012 2v1m2 13a2 2 0 01-2-2V7m2 13a2 2 0 002-2V9a2 2 0 00-2-2h-2m-4-3H9M7 16h6M7 8h6v4H7V8z',
+    Pedidos:     'M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2',
+    MercadoPago: 'M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z',
+  };
+
   if (!user || (user.role !== 'admin' && user.role !== 'manager')) {
     return (
       <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50">
@@ -116,21 +131,71 @@ export default function AdminPanel({ onClose }) {
   }
 
   return (
-    <div className="fixed inset-0 bg-black/90 z-50 flex flex-col">
-      <div className="flex items-center justify-between px-6 py-4 bg-[#111] border-b border-white/10">
-        <h1 className="text-white font-bold text-xl">Panel de Administración</h1>
-        <button onClick={onClose} className="text-gray-400 hover:text-white text-2xl leading-none">&times;</button>
+    <div className="fixed inset-0 bg-[#0a0a0a] z-50 flex flex-col">
+
+      {/* ── HEADER ── */}
+      <div className="flex items-center justify-between px-4 py-3 bg-[#111] border-b border-white/10 flex-shrink-0">
+        {/* Hamburguesa (solo mobile) */}
+        <button
+          onClick={() => setMenuOpen(p => !p)}
+          className="md:hidden p-2 rounded-lg bg-white/5 border border-white/10 text-white"
+          aria-label="Menú"
+        >
+          {menuOpen
+            ? <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" /></svg>
+            : <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 6h16M4 12h16M4 18h16" /></svg>
+          }
+        </button>
+        <h1 className="text-white font-bold text-base md:text-xl flex-1 text-center md:text-left md:ml-0 ml-0">
+          <span className="md:hidden">{section}</span>
+          <span className="hidden md:inline">Panel de Administración</span>
+        </h1>
+        <button onClick={onClose} className="text-gray-400 hover:text-white text-2xl leading-none w-9 h-9 flex items-center justify-center rounded-lg hover:bg-white/10">
+          &times;
+        </button>
       </div>
-      <div className="flex flex-1 overflow-hidden">
-        <aside className="w-48 bg-[#0d0d0d] border-r border-white/10 flex flex-col gap-1 p-4 overflow-y-auto">
+
+      <div className="flex flex-1 overflow-hidden relative">
+
+        {/* ── SIDEBAR DESKTOP (siempre visible en md+) ── */}
+        <aside className="hidden md:flex w-48 bg-[#0d0d0d] border-r border-white/10 flex-col gap-1 p-4 overflow-y-auto flex-shrink-0">
           {SECTIONS.map(s => (
-            <button key={s} onClick={() => setSection(s)}
-              className={`text-left px-4 py-2 rounded-lg text-sm transition-colors ${
+            <button key={s} onClick={() => changeSection(s)}
+              className={`flex items-center gap-2 text-left px-3 py-2 rounded-lg text-sm transition-colors ${
                 section === s ? 'bg-red-600 text-white' : 'text-gray-400 hover:bg-white/10 hover:text-white'
-              }`}>{s}</button>
+              }`}>
+              <svg className="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d={SECTION_ICONS[s]} />
+              </svg>
+              {s}
+            </button>
           ))}
         </aside>
-        <main className="flex-1 overflow-y-auto p-6 text-white">
+
+        {/* ── MENÚ HAMBURGUESA MOBILE (overlay) ── */}
+        {menuOpen && (
+          <div className="md:hidden absolute inset-0 z-20 flex">
+            <div className="w-72 max-w-full bg-[#0d0d0d] border-r border-white/10 flex flex-col p-4 overflow-y-auto">
+              <p className="text-xs text-gray-600 uppercase tracking-widest mb-3 px-2">Secciones</p>
+              {SECTIONS.map(s => (
+                <button key={s} onClick={() => changeSection(s)}
+                  className={`flex items-center gap-3 text-left px-4 py-3 rounded-xl text-sm font-medium transition-colors mb-1 ${
+                    section === s ? 'bg-red-600 text-white' : 'text-gray-400 active:bg-white/10'
+                  }`}>
+                  <svg className="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d={SECTION_ICONS[s]} />
+                  </svg>
+                  {s}
+                </button>
+              ))}
+            </div>
+            {/* Tap fuera para cerrar */}
+            <div className="flex-1 bg-black/60 backdrop-blur-sm" onClick={() => setMenuOpen(false)} />
+          </div>
+        )}
+
+        {/* ── CONTENIDO PRINCIPAL ── */}
+        <main className="flex-1 overflow-y-auto p-4 md:p-6 text-white min-w-0">
           {error && <div className="bg-red-900/50 text-red-300 px-4 py-3 rounded-lg mb-4 text-sm">{error}</div>}
           {loading ? (
             <div className="flex items-center justify-center h-40">
@@ -138,13 +203,13 @@ export default function AdminPanel({ onClose }) {
             </div>
           ) : (
             <>
-              {section === 'Dashboard' && <DashboardSection data={data.Dashboard} />}
-              {section === 'Categorías' && <CategoriesSection items={data['Categorías'] || []} token={token} reload={() => load('Categorías')} />}
-              {section === 'Productos' && <ProductsSection items={data.Productos || []} categories={data._categories || []} token={token} reload={() => load('Productos')} />}
-              {section === 'Cupones' && <CouponsSection items={data.Cupones || []} token={token} reload={() => load('Cupones')} />}
-              {section === 'Videos' && <VideosSection token={token} />}
-              {section === 'Noticias' && <NewsSection token={token} />}
-              {section === 'Pedidos' && <OrdersSection items={data.Pedidos || []} token={token} reload={() => load('Pedidos')} />}
+              {section === 'Dashboard'   && <DashboardSection data={data.Dashboard} />}
+              {section === 'Categorías'  && <CategoriesSection items={data['Categorías'] || []} token={token} reload={() => load('Categorías')} />}
+              {section === 'Productos'   && <ProductsSection items={data.Productos || []} categories={data._categories || []} token={token} reload={() => load('Productos')} />}
+              {section === 'Cupones'     && <CouponsSection items={data.Cupones || []} token={token} reload={() => load('Cupones')} />}
+              {section === 'Videos'      && <VideosSection token={token} />}
+              {section === 'Noticias'    && <NewsSection token={token} />}
+              {section === 'Pedidos'     && <OrdersSection items={data.Pedidos || []} token={token} reload={() => load('Pedidos')} />}
               {section === 'MercadoPago' && <MercadoPagoSection data={data.MercadoPago} token={token} reload={() => load('MercadoPago')} />}
             </>
           )}
