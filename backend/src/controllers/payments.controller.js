@@ -4,7 +4,7 @@ import { query } from '../config/db.js';
 const getMPCredentials = async (tenantId = 'voraz') => {
     try {
         const result = await query(
-            'SELECT mp_access_token, mp_public_key, mp_sandbox FROM tenant_settings WHERE tenant_id = $1',
+            'SELECT mp_access_token, mp_public_key, mp_sandbox, store_name FROM tenant_settings WHERE tenant_id = $1',
             [tenantId]
         );
         if (result.rows.length && result.rows[0].mp_access_token) {
@@ -12,6 +12,7 @@ const getMPCredentials = async (tenantId = 'voraz') => {
                 accessToken: result.rows[0].mp_access_token,
                 publicKey: result.rows[0].mp_public_key,
                 sandbox: result.rows[0].mp_sandbox,
+                storeName: result.rows[0].store_name || 'Voraz Burger',
             };
         }
     } catch {}
@@ -21,9 +22,22 @@ const getMPCredentials = async (tenantId = 'voraz') => {
             accessToken: process.env.MP_ACCESS_TOKEN,
             publicKey: process.env.MP_PUBLIC_KEY || '',
             sandbox: false,
+            storeName: 'Voraz Burger',
         };
     }
     return null;
+};
+
+// Devuelve URLs válidas para back_urls de MercadoPago.
+// MercadoPago exige HTTPS y no acepta localhost — si la URL no es https, las omite.
+const buildBackUrls = (frontendUrl, orderId) => {
+    const isValid = frontendUrl && frontendUrl.startsWith('https://');
+    if (!isValid) return null;
+    return {
+        success: `${frontendUrl}?order_id=${orderId}&payment_status=success`,
+        failure: `${frontendUrl}?order_id=${orderId}&payment_status=failure`,
+        pending: `${frontendUrl}?order_id=${orderId}&payment_status=pending`,
+    };
 };
 
 export const createPreference = async (req, res) => {
@@ -50,30 +64,37 @@ export const createPreference = async (req, res) => {
         const client = new MercadoPagoConfig({ accessToken: credentials.accessToken });
         const preference = new Preference(client);
 
-        const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:5173';
-        const backendUrl = process.env.BACKEND_URL || 'http://localhost:3000';
+        const frontendUrl = process.env.FRONTEND_URL || 'https://voraz-platform.vercel.app';
+        const backendUrl  = process.env.BACKEND_URL  || 'https://voraz-platform-production.up.railway.app';
 
-        const result = await preference.create({
-            body: {
-                items: items.map(item => ({
-                    id: String(item.product_id),
-                    title: item.product_name,
-                    quantity: Number(item.quantity),
-                    unit_price: parseFloat(item.product_price),
-                    currency_id: 'ARS',
-                })),
-                payer: { email: customer_email || 'cliente@voraz.com' },
-                back_urls: {
-                    success: `${frontendUrl}?order_id=${order_id}&payment_status=success`,
-                    failure: `${frontendUrl}?order_id=${order_id}&payment_status=failure`,
-                    pending: `${frontendUrl}?order_id=${order_id}&payment_status=pending`,
-                },
-                auto_return: 'approved',
-                external_reference: String(order_id),
-                notification_url: `${backendUrl}/api/payments/webhook`,
-                statement_descriptor: 'VORAZ BURGER',
-            }
-        });
+        const backUrls = buildBackUrls(frontendUrl, order_id);
+        const notificationUrl = backendUrl.startsWith('https://') ? `${backendUrl}/api/payments/webhook` : undefined;
+
+        const preferenceBody = {
+            items: items.map(item => ({
+                id: String(item.product_id),
+                title: item.product_name,
+                quantity: Number(item.quantity),
+                unit_price: parseFloat(item.product_price),
+                currency_id: 'ARS',
+            })),
+            payer: { email: customer_email || 'cliente@voraz.com' },
+            external_reference: String(order_id),
+            statement_descriptor: (credentials.storeName || 'VORAZ BURGER').substring(0, 22).toUpperCase(),
+        };
+
+        // Solo agregar back_urls si son HTTPS válidas (MercadoPago lo requiere)
+        if (backUrls) {
+            preferenceBody.back_urls = backUrls;
+            preferenceBody.auto_return = 'approved';
+        }
+
+        // Solo agregar notification_url si es HTTPS válida
+        if (notificationUrl) {
+            preferenceBody.notification_url = notificationUrl;
+        }
+
+        const result = await preference.create({ body: preferenceBody });
 
         // Guardar preference_id en la orden
         await query(
