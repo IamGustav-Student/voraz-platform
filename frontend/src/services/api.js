@@ -168,6 +168,19 @@ export const getUserOrders = async (userId, token) => {
   }
 };
 
+// ── ADMIN API ──────────────────────────────────────────────────────────────
+const adminHeaders = (token) => ({ ...baseHeaders, Authorization: `Bearer ${token}` });
+
+export const adminFetch = async (path, token, options = {}) => {
+  const res = await fetch(`${API_URL}/admin${path}`, {
+    ...options,
+    headers: { ...adminHeaders(token), ...(options.headers || {}) },
+  });
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.message || 'Error en petición admin');
+  return data.data ?? data;
+};
+
 export const validateCoupon = async (payload) => {
   try {
     const response = await fetch(`${API_URL}/coupons/validate`, {

@@ -6,7 +6,7 @@ const JWT_SECRET = process.env.JWT_SECRET || 'voraz_secret_key';
 const TOKEN_EXPIRY = '30d';
 
 const generateToken = (user) =>
-    jwt.sign({ id: user.id, email: user.email, name: user.name }, JWT_SECRET, { expiresIn: TOKEN_EXPIRY });
+    jwt.sign({ id: user.id, email: user.email, name: user.name, role: user.role || 'user' }, JWT_SECRET, { expiresIn: TOKEN_EXPIRY });
 
 export const register = async (req, res) => {
     const { email, password, name, phone } = req.body;
@@ -61,7 +61,7 @@ export const login = async (req, res) => {
 export const me = async (req, res) => {
     try {
         const result = await query(
-            'SELECT id, email, name, phone, avatar_url, points, created_at FROM users WHERE id = $1',
+            'SELECT id, email, name, phone, avatar_url, points, role, created_at FROM users WHERE id = $1',
             [req.user.id]
         );
         if (!result.rows.length) return res.status(404).json({ status: 'error', message: 'Usuario no encontrado.' });

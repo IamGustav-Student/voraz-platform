@@ -15,6 +15,7 @@ import paymentsRoutes from './routes/payments.routes.js';
 import authRoutes from './routes/auth.routes.js';
 import usersRoutes from './routes/users.routes.js';
 import couponsRoutes from './routes/coupons.routes.js';
+import adminRoutes from './routes/admin.routes.js';
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -53,6 +54,7 @@ app.use('/api/payments', paymentsRoutes);
 app.use('/api/auth', authRoutes);
 app.use('/api/users', usersRoutes);
 app.use('/api/coupons', couponsRoutes);
+app.use('/api/admin', adminRoutes);
 
 const runMigration = async (sqlFile) => {
     try {
@@ -69,4 +71,5 @@ app.listen(PORT, async () => {
     await runMigration('phase7_orders.sql');
     await runMigration('phase8_auth.sql');
     await runMigration('phase9_whitelabel.sql');
+    await runMigration('phase10_admin.sql');
 });
