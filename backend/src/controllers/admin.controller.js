@@ -64,6 +64,45 @@ export const getCategories = async (req, res) => {
   } catch (e) { res.status(500).json({ status: 'error', message: e.message }); }
 };
 
+export const createCategory = async (req, res) => {
+  try {
+    const tenantId = getTenantId(req);
+    const { name, description, image_url } = req.body;
+    const result = await query(
+      'INSERT INTO categories (name, description, image_url, tenant_id) VALUES ($1,$2,$3,$4) RETURNING *',
+      [name, description || null, image_url || null, tenantId]
+    );
+    res.status(201).json({ status: 'success', data: result.rows[0] });
+  } catch (e) { res.status(500).json({ status: 'error', message: e.message }); }
+};
+
+export const updateCategory = async (req, res) => {
+  try {
+    const tenantId = getTenantId(req);
+    const { id } = req.params;
+    const { name, description, image_url } = req.body;
+    const result = await query(
+      'UPDATE categories SET name=$1, description=$2, image_url=$3 WHERE id=$4 AND tenant_id=$5 RETURNING *',
+      [name, description || null, image_url || null, id, tenantId]
+    );
+    if (!result.rows.length) return res.status(404).json({ status: 'error', message: 'Categoría no encontrada' });
+    res.json({ status: 'success', data: result.rows[0] });
+  } catch (e) { res.status(500).json({ status: 'error', message: e.message }); }
+};
+
+export const deleteCategory = async (req, res) => {
+  try {
+    const tenantId = getTenantId(req);
+    const { id } = req.params;
+    const used = await query('SELECT COUNT(*) FROM products WHERE category_id=$1 AND is_active=true', [id]);
+    if (parseInt(used.rows[0].count) > 0) {
+      return res.status(409).json({ status: 'error', message: 'No se puede eliminar: hay productos activos en esta categoría' });
+    }
+    await query('DELETE FROM categories WHERE id=$1 AND tenant_id=$2', [id, tenantId]);
+    res.json({ status: 'success', message: 'Categoría eliminada' });
+  } catch (e) { res.status(500).json({ status: 'error', message: e.message }); }
+};
+
 // ── CUPONES ────────────────────────────────────────────────────────────────
 export const getAdminCoupons = async (req, res) => {
   try {
@@ -222,4 +261,40 @@ export const getAdminOrders = async (req, res) => {
     );
     res.json({ status: 'success', data: result.rows });
   } catch (e) { res.status(500).json({ status: 'error', message: e.message }); }
+};
+
+export const updateOrderStatus = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { status } = req.body;
+    const allowed = ['pending', 'confirmed', 'preparing', 'ready', 'delivered', 'cancelled'];
+    if (!allowed.includes(status)) {
+      return res.status(400).json({ status: 'error', message: 'Estado inválido' });
+    }
+    const result = await query(
+      'UPDATE orders SET status=$1 WHERE id=$2 RETURNING *',
+      [status, id]
+    );
+    if (!result.rows.length) return res.status(404).json({ status: 'error', message: 'Pedido no encontrado' });
+    res.json({ status: 'success', data: result.rows[0] });
+  } catch (e) { res.status(500).json({ status: 'error', message: e.message }); }
+};
+
+// ── CONFIGURACIÓN MERCADOPAGO ──────────────────────────────────────────────
+export const getMercadopagoConfig = async (req, res) => {
+  res.json({
+    status: 'success',
+    data: {
+      public_key: process.env.MP_PUBLIC_KEY ? '***configurado***' : null,
+      access_token_set: !!process.env.MP_ACCESS_TOKEN,
+      webhook_url: `${process.env.BACKEND_URL || ''}/api/payments/webhook`,
+    }
+  });
+};
+
+export const saveMercadopagoConfig = async (req, res) => {
+  res.json({
+    status: 'info',
+    message: 'Para actualizar las credenciales de MercadoPago, editá las variables de entorno MP_PUBLIC_KEY y MP_ACCESS_TOKEN en Railway → Variables. Los cambios se aplican en el próximo redeploy.'
+  });
 };
