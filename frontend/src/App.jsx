@@ -504,6 +504,29 @@ function App() {
     </div>
   );
 }
+function usePWAInstall() {
+  const [installPrompt, setInstallPrompt] = useState(null);
+
+  useEffect(() => {
+    window.addEventListener('beforeinstallprompt', (e) => {
+      e.preventDefault();
+      setInstallPrompt(e);
+    });
+  }, []);
+
+  const handleInstallClick = () => {
+    if (!installPrompt) return;
+    installPrompt.prompt();
+    installPrompt.userChoice.then((choice) => {
+      if (choice.outcome === 'accepted') {
+        console.log('Usuario instaló Voraz');
+      }
+      setInstallPrompt(null);
+    });
+  };
+
+  return { isInstallable: !!installPrompt, handleInstallClick };
+}
 
 const SkeletonCard = () => (
   <div className="bg-voraz-gray rounded-xl overflow-hidden border border-white/5 h-28 md:h-auto flex md:block animate-pulse">
