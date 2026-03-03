@@ -4,6 +4,7 @@ import {
   getDashboardStats,
   getAdminProducts, createProduct, updateProduct, deleteProduct,
   getCategories, createCategory, updateCategory, deleteCategory,
+  getAdminStores, createStore, updateStore, deleteStore,
   getAdminCoupons, createCoupon, updateCoupon, deleteCoupon,
   createVideo, deleteVideo,
   createNews, updateNews, deleteNews,
@@ -13,7 +14,6 @@ import {
 } from '../controllers/admin.controller.js';
 
 const router = Router();
-
 router.use(adminMiddleware);
 
 router.get('/stats', getDashboardStats);
@@ -27,6 +27,11 @@ router.get('/categories', getCategories);
 router.post('/categories', createCategory);
 router.put('/categories/:id', updateCategory);
 router.delete('/categories/:id', deleteCategory);
+
+router.get('/stores', getAdminStores);
+router.post('/stores', createStore);
+router.put('/stores/:id', updateStore);
+router.delete('/stores/:id', deleteStore);
 
 router.get('/coupons', getAdminCoupons);
 router.post('/coupons', createCoupon);

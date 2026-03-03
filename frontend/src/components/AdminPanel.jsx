@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback, useRef } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { adminFetch } from '../services/api';
 
-const SECTIONS = ['Dashboard', 'Categorías', 'Productos', 'Cupones', 'Videos', 'Noticias', 'Pedidos', 'MercadoPago'];
+const SECTIONS = ['Dashboard', 'Categorías', 'Productos', 'Locales', 'Cupones', 'Videos', 'Noticias', 'Pedidos', 'MercadoPago'];
 
 // ── Componente reutilizable: input de imagen (URL o archivo local) ──────────
 function ImageInput({ value, onChange, label = 'Imagen', token, folder = 'general' }) {
@@ -86,6 +86,7 @@ export default function AdminPanel({ onClose }) {
         Dashboard: '/stats',
         Categorías: '/categories',
         Productos: ['/products', '/categories'],
+        Locales: '/stores',
         Cupones: '/coupons',
         Pedidos: '/orders',
         MercadoPago: '/mercadopago',
@@ -115,6 +116,7 @@ export default function AdminPanel({ onClose }) {
     Cupones:     'M7 7h.01M17 17h.01M3 7a4 4 0 014-4h10a4 4 0 014 4v10a4 4 0 01-4 4H7a4 4 0 01-4-4V7z',
     Videos:      'M15 10l4.553-2.277A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M3 8a2 2 0 012-2h8a2 2 0 012 2v8a2 2 0 01-2 2H5a2 2 0 01-2-2V8z',
     Noticias:    'M19 20H5a2 2 0 01-2-2V6a2 2 0 012-2h10a2 2 0 012 2v1m2 13a2 2 0 01-2-2V7m2 13a2 2 0 002-2V9a2 2 0 00-2-2h-2m-4-3H9M7 16h6M7 8h6v4H7V8z',
+    Locales:     'M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-2 10v-5a1 1 0 00-1-1h-2a1 1 0 00-1 1v5m4 0H9',
     Pedidos:     'M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2',
     MercadoPago: 'M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z',
   };
@@ -206,6 +208,7 @@ export default function AdminPanel({ onClose }) {
               {section === 'Dashboard'   && <DashboardSection data={data.Dashboard} />}
               {section === 'Categorías'  && <CategoriesSection items={data['Categorías'] || []} token={token} reload={() => load('Categorías')} />}
               {section === 'Productos'   && <ProductsSection items={data.Productos || []} categories={data._categories || []} token={token} reload={() => load('Productos')} />}
+              {section === 'Locales'     && <StoresSection items={data.Locales || []} token={token} reload={() => load('Locales')} />}
               {section === 'Cupones'     && <CouponsSection items={data.Cupones || []} token={token} reload={() => load('Cupones')} />}
               {section === 'Videos'      && <VideosSection token={token} />}
               {section === 'Noticias'    && <NewsSection token={token} />}
@@ -436,6 +439,141 @@ function ProductsSection({ items, categories, token, reload }) {
             </button>
           </div>
         ))}
+      </div>
+    </div>
+  );
+}
+
+// ── Locales ───────────────────────────────────────────────────────────────────
+const DELIVERY_APPS = [
+  { value: '', label: 'Sin delivery online' },
+  { value: 'pedidosya', label: 'PedidosYa' },
+  { value: 'rappi', label: 'Rappi' },
+  { value: 'mercado', label: 'MercadoDelivery' },
+  { value: 'propio', label: 'Delivery propio (web/WhatsApp)' },
+];
+
+function StoresSection({ items, token, reload }) {
+  const emptyForm = { name: '', address: '', image_url: '', google_maps_url: '', delivery_app: '', delivery_link: '', phone: '' };
+  const [form, setForm] = useState(emptyForm);
+  const [editing, setEditing] = useState(null);
+  const [submitting, setSubmitting] = useState(false);
+  const [msg, setMsg] = useState('');
+
+  const startEdit = (s) => {
+    setEditing(s.id);
+    setForm({ name: s.name, address: s.address || '', image_url: s.image_url || '', google_maps_url: s.waze_link || '', delivery_app: '', delivery_link: s.delivery_link || '', phone: s.phone || '' });
+    setMsg('');
+  };
+  const cancelEdit = () => { setEditing(null); setForm(emptyForm); setMsg(''); };
+
+  const submit = async (e) => {
+    e.preventDefault(); setSubmitting(true); setMsg('');
+    try {
+      const payload = { ...form };
+      if (editing) {
+        await adminFetch(`/stores/${editing}`, token, { method: 'PUT', body: JSON.stringify(payload) });
+        setMsg('Local actualizado');
+      } else {
+        await adminFetch('/stores', token, { method: 'POST', body: JSON.stringify(payload) });
+        setMsg('Local creado');
+      }
+      cancelEdit(); reload();
+    } catch (e) { setMsg('Error: ' + e.message); }
+    setSubmitting(false);
+  };
+
+  const del = async (id) => {
+    if (!confirm('¿Eliminar este local?')) return;
+    try { await adminFetch(`/stores/${id}`, token, { method: 'DELETE' }); reload(); }
+    catch (e) { setMsg('Error: ' + e.message); }
+  };
+
+  return (
+    <div>
+      <h2 className="text-2xl font-bold mb-2">Locales</h2>
+      <p className="text-gray-500 text-sm mb-6">Administrá las sucursales. El botón "Cómo llegar" usa la URL de Maps o la construye desde la dirección automáticamente.</p>
+
+      <form onSubmit={submit} className="bg-white/5 rounded-xl p-5 border border-white/10 mb-8 grid grid-cols-2 gap-3">
+        <h3 className="col-span-2 font-semibold text-gray-300">{editing ? 'Editar local' : 'Nuevo local'}</h3>
+
+        <input placeholder="Nombre del local *" value={form.name} onChange={e => setForm(p => ({ ...p, name: e.target.value }))}
+          className="col-span-2 bg-black/30 border border-white/10 rounded-lg px-3 py-2 text-white text-sm" required />
+
+        <input placeholder="Dirección completa * (ej: Av. Corrientes 1234, CABA)" value={form.address}
+          onChange={e => setForm(p => ({ ...p, address: e.target.value }))}
+          className="col-span-2 bg-black/30 border border-white/10 rounded-lg px-3 py-2 text-white text-sm" required />
+
+        <input placeholder="Teléfono / WhatsApp" value={form.phone} onChange={e => setForm(p => ({ ...p, phone: e.target.value }))}
+          className="bg-black/30 border border-white/10 rounded-lg px-3 py-2 text-white text-sm" />
+
+        <input
+          placeholder="URL Google Maps (opcional — si no, se usa la dirección)"
+          value={form.google_maps_url} onChange={e => setForm(p => ({ ...p, google_maps_url: e.target.value }))}
+          className="bg-black/30 border border-white/10 rounded-lg px-3 py-2 text-white text-sm"
+        />
+        <p className="col-span-2 text-xs text-gray-600 -mt-1">
+          Si dejás vacío "URL Google Maps", el botón "Cómo llegar" usará la dirección que escribiste arriba.
+        </p>
+
+        <div className="col-span-2">
+          <label className="text-xs text-gray-400 block mb-1">App de Delivery</label>
+          <select value={form.delivery_app} onChange={e => setForm(p => ({ ...p, delivery_app: e.target.value }))}
+            className="w-full bg-black/30 border border-white/10 rounded-lg px-3 py-2 text-white text-sm">
+            {DELIVERY_APPS.map(a => <option key={a.value} value={a.value}>{a.label}</option>)}
+          </select>
+        </div>
+
+        <input
+          placeholder="URL del local en la app de delivery (o link de WhatsApp)"
+          value={form.delivery_link} onChange={e => setForm(p => ({ ...p, delivery_link: e.target.value }))}
+          className="col-span-2 bg-black/30 border border-white/10 rounded-lg px-3 py-2 text-white text-sm"
+        />
+        <p className="col-span-2 text-xs text-gray-600 -mt-1">
+          Ejemplo PedidosYa: <code>https://www.pedidosya.com.ar/restaurantes/...</code><br/>
+          Ejemplo WhatsApp: <code>https://wa.me/5491112345678?text=Quiero%20hacer%20un%20pedido</code>
+        </p>
+
+        <ImageInput value={form.image_url} onChange={v => setForm(p => ({ ...p, image_url: v }))} label="Foto del local" token={token} folder="stores" />
+
+        <div className="col-span-2 flex gap-2 mt-1">
+          <button type="submit" disabled={submitting}
+            className="flex-1 bg-red-600 hover:bg-red-700 py-2 rounded-lg font-semibold disabled:opacity-50">
+            {submitting ? 'Guardando...' : editing ? 'Guardar cambios' : 'Agregar local'}
+          </button>
+          {editing && (
+            <button type="button" onClick={cancelEdit} className="px-4 py-2 rounded-lg bg-white/10 hover:bg-white/20 text-sm">
+              Cancelar
+            </button>
+          )}
+        </div>
+        {msg && <p className={`col-span-2 text-sm ${msg.startsWith('Error') ? 'text-red-400' : 'text-green-400'}`}>{msg}</p>}
+      </form>
+
+      <div className="space-y-3">
+        {items.map(s => (
+          <div key={s.id} className="flex items-center gap-3 bg-white/5 rounded-xl px-4 py-3 border border-white/5">
+            {s.image_url && <img src={s.image_url} alt="" className="w-14 h-14 object-cover rounded-lg flex-shrink-0" />}
+            <div className="flex-1 min-w-0">
+              <p className="font-semibold">{s.name}</p>
+              <p className="text-xs text-gray-400 truncate">{s.address}</p>
+              {s.phone && <p className="text-xs text-gray-500">{s.phone}</p>}
+              <div className="flex gap-2 mt-1">
+                {s.waze_link
+                  ? <span className="text-xs text-green-500">Maps ✓</span>
+                  : <span className="text-xs text-yellow-600">Maps (desde dirección)</span>
+                }
+                {s.delivery_link
+                  ? <span className="text-xs text-blue-400">Delivery ✓</span>
+                  : <span className="text-xs text-gray-600">Sin delivery</span>
+                }
+              </div>
+            </div>
+            <button onClick={() => startEdit(s)} className="text-xs text-blue-400 hover:text-blue-300 flex-shrink-0">Editar</button>
+            <button onClick={() => del(s.id)} className="text-xs text-red-500 hover:text-red-300 flex-shrink-0">Eliminar</button>
+          </div>
+        ))}
+        {!items.length && <p className="text-gray-500 text-sm">No hay locales. Agregá el primero.</p>}
       </div>
     </div>
   );

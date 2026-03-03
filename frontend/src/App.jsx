@@ -215,19 +215,63 @@ function App() {
     </motion.div>
   );
 
+  const [selectedVideo, setSelectedVideo] = useState(null);
+
   const VideosView = () => (
     <motion.div initial="initial" animate="in" exit="out" variants={pageVariants} transition={pageTransition} className="container mx-auto px-4 py-8 pb-32">
       <Helmet><title>Live | {TENANT.brandName}</title></Helmet>
       <div className="text-center mb-8"><h2 className="text-3xl md:text-5xl font-black uppercase italic mb-2">{TENANT.brandName} <span className="text-brand-primary">Live</span></h2></div>
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         {videos.map((vid) => (
-          <motion.div whileHover={{ scale: 1.02 }} key={vid.id} className="aspect-video bg-black rounded-xl overflow-hidden shadow-2xl relative group cursor-pointer border border-white/5">
-            <img src={vid.thumbnail_url} className="w-full h-full object-cover opacity-80" />
-            <div className="absolute inset-0 flex items-center justify-center"><div className="w-14 h-14 bg-voraz-red/90 rounded-full flex items-center justify-center shadow-lg"><svg className="w-6 h-6 text-white ml-1" fill="currentColor" viewBox="0 0 24 24"><path d="M8 5v14l11-7z" /></svg></div></div>
-            <div className="absolute bottom-0 left-0 p-4 w-full bg-gradient-to-t from-black to-transparent"><h3 className="text-lg font-bold text-white">{vid.title}</h3></div>
+          <motion.div
+            whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}
+            key={vid.id}
+            onClick={() => setSelectedVideo(vid)}
+            className="aspect-video bg-black rounded-xl overflow-hidden shadow-2xl relative group cursor-pointer border border-white/5"
+          >
+            <img src={vid.thumbnail_url} className="w-full h-full object-cover opacity-80 group-hover:opacity-100 transition-opacity" />
+            <div className="absolute inset-0 flex items-center justify-center">
+              <div className="w-16 h-16 bg-red-600/90 group-hover:bg-red-500 rounded-full flex items-center justify-center shadow-lg transition-colors">
+                <svg className="w-7 h-7 text-white ml-1" fill="currentColor" viewBox="0 0 24 24"><path d="M8 5v14l11-7z" /></svg>
+              </div>
+            </div>
+            <div className="absolute bottom-0 left-0 p-4 w-full bg-gradient-to-t from-black to-transparent">
+              <h3 className="text-lg font-bold text-white">{vid.title}</h3>
+            </div>
           </motion.div>
         ))}
       </div>
+
+      {/* Modal reproductor YouTube */}
+      <AnimatePresence>
+        {selectedVideo && (
+          <motion.div
+            initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+            className="fixed inset-0 z-50 flex items-center justify-center bg-black/90 px-4"
+            onClick={() => setSelectedVideo(null)}
+          >
+            <motion.div
+              initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.9, opacity: 0 }}
+              onClick={e => e.stopPropagation()}
+              className="w-full max-w-3xl"
+            >
+              <div className="flex items-center justify-between mb-3">
+                <h3 className="text-white font-bold text-lg truncate pr-4">{selectedVideo.title}</h3>
+                <button onClick={() => setSelectedVideo(null)} className="text-gray-400 hover:text-white text-3xl leading-none flex-shrink-0">&times;</button>
+              </div>
+              <div className="aspect-video w-full rounded-xl overflow-hidden shadow-2xl bg-black">
+                <iframe
+                  src={`https://www.youtube.com/embed/${selectedVideo.youtube_id}?autoplay=1&rel=0`}
+                  title={selectedVideo.title}
+                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                  allowFullScreen
+                  className="w-full h-full"
+                />
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </motion.div>
   );
 
@@ -236,18 +280,59 @@ function App() {
       <Helmet><title>Spots | {TENANT.brandName}</title></Helmet>
       <div className="text-center mb-8"><h2 className="text-3xl md:text-5xl font-black uppercase italic mb-2">Nuestros <span className="text-white">Spots</span></h2></div>
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        {stores.map((store) => (
-          <motion.div whileHover={{ y: -5 }} key={store.id} className="bg-voraz-gray rounded-2xl overflow-hidden shadow-xl border border-white/5">
-            <div className="h-40 relative"><img src={store.image_url} className="w-full h-full object-cover" /><div className="absolute bottom-0 left-0 w-full p-4 bg-gradient-to-t from-black to-transparent"><h3 className="text-xl font-bold text-white">{store.name}</h3></div></div>
-            <div className="p-5">
-              <p className="text-gray-300 text-sm mb-4 flex items-center"><svg className="w-4 h-4 mr-2 text-voraz-red" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"></path><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>{store.address}</p>
-              <div className="grid grid-cols-2 gap-3">
-                <a href={store.waze_link} target="_blank" className="flex justify-center bg-white/5 text-white py-2 rounded-lg text-xs font-bold border border-white/10 active:bg-white/10">Cómo llegar</a>
-                <a href={store.delivery_link} target="_blank" className="flex justify-center bg-voraz-red text-white py-2 rounded-lg text-xs font-bold active:bg-red-700">Delivery</a>
-              </div>
-            </div>
-          </motion.div>
-        ))}
+        {stores.map((store) => {
+            const mapsUrl = store.waze_link ||
+              `https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(store.address)}`;
+            const deliveryUrl = store.delivery_link;
+            return (
+              <motion.div whileHover={{ y: -5 }} key={store.id} className="bg-voraz-gray rounded-2xl overflow-hidden shadow-xl border border-white/5">
+                <div className="h-40 relative">
+                  <img src={store.image_url} className="w-full h-full object-cover" />
+                  <div className="absolute bottom-0 left-0 w-full p-4 bg-gradient-to-t from-black to-transparent">
+                    <h3 className="text-xl font-bold text-white">{store.name}</h3>
+                  </div>
+                </div>
+                <div className="p-5">
+                  <p className="text-gray-300 text-sm mb-4 flex items-start gap-2">
+                    <svg className="w-4 h-4 mt-0.5 text-brand-primary flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+                    {store.address}
+                  </p>
+                  {store.phone && (
+                    <p className="text-gray-400 text-xs mb-4 flex items-center gap-2">
+                      <svg className="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"/></svg>
+                      {store.phone}
+                    </p>
+                  )}
+                  <div className="grid grid-cols-2 gap-3">
+                    <a
+                      href={mapsUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="flex items-center justify-center gap-1.5 bg-white/5 text-white py-2.5 rounded-lg text-xs font-bold border border-white/10 active:bg-white/10 hover:bg-white/10 transition-colors"
+                    >
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7"/></svg>
+                      Cómo llegar
+                    </a>
+                    {deliveryUrl ? (
+                      <a
+                        href={deliveryUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="flex items-center justify-center gap-1.5 bg-brand-primary text-white py-2.5 rounded-lg text-xs font-bold hover:opacity-90 active:opacity-80 transition-opacity"
+                      >
+                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
+                        Delivery
+                      </a>
+                    ) : (
+                      <button disabled className="flex items-center justify-center gap-1.5 bg-white/5 text-gray-500 py-2.5 rounded-lg text-xs font-bold border border-white/5 cursor-not-allowed">
+                        Sin delivery
+                      </button>
+                    )}
+                  </div>
+                </div>
+              </motion.div>
+            );
+          })}
       </div>
     </motion.div>
   );
@@ -437,7 +522,7 @@ function App() {
               whileTap={{ scale: 0.9 }}
               onClick={() => setCurrentView('vorazburger')}
               className={`w-14 h-14 rounded-full flex items-center justify-center shadow-lg border-4 border-voraz-black ${currentView === 'vorazburger' ? 'bg-voraz-yellow text-black' : 'bg-voraz-red text-white'}`}>
-              <span className="font-black text-xs">V</span>
+              <span className="font-black text-xs">{TENANT.brandName[0]}</span>
             </motion.button>
           </div>
           <BottomNavItem icon="map" label="Spots" active={currentView === 'locations'} onClick={() => setCurrentView('locations')} />
@@ -528,7 +613,7 @@ function usePWAInstall() {
     installPrompt.prompt();
     installPrompt.userChoice.then((choice) => {
       if (choice.outcome === 'accepted') {
-        console.log('Usuario instaló Voraz');
+        console.log(`Usuario instaló ${TENANT.brandName}`);
       }
       setInstallPrompt(null);
     });
