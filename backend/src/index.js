@@ -30,7 +30,8 @@ app.use((req, res, next) => {
     next();
 });
 app.use(cors({ origin: '*', credentials: false }));
-app.use(express.json());
+app.use(express.json({ limit: '15mb' }));
+app.use(express.urlencoded({ extended: true, limit: '15mb' }));
 
 app.get('/', (req, res) => {
     res.json({ message: '🍔 Voraz API funcionando' });
