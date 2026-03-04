@@ -8,7 +8,7 @@ export const createOrder = async (req, res) => {
     const {
         customer_name, customer_phone, order_type,
         delivery_address, store_id, items, notes, total,
-        user_id, coupon_id, discount, points_redeemed
+        user_id, coupon_id, discount, points_redeemed, payment_method
     } = req.body;
 
     if (!customer_name || !customer_phone || !order_type || !items?.length || total == null) {
@@ -21,6 +21,7 @@ export const createOrder = async (req, res) => {
         return res.status(400).json({ status: 'error', message: 'Sucursal requerida para retiro.' });
     }
 
+    const resolvedPaymentMethod = payment_method === 'cash' ? 'cash' : 'mercadopago';
     const finalTotal = Math.max(0, parseFloat(total) - (parseFloat(discount) || 0) - ((points_redeemed || 0) * 5));
     const pointsEarned = calcPoints(finalTotal);
 
@@ -28,13 +29,13 @@ export const createOrder = async (req, res) => {
         const orderResult = await query(
             `INSERT INTO orders
              (customer_name, customer_phone, order_type, delivery_address, store_id, total, notes,
-              user_id, coupon_id, discount, points_earned, points_redeemed)
-             VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12) RETURNING *`,
+              user_id, coupon_id, discount, points_earned, points_redeemed, payment_method)
+             VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13) RETURNING *`,
             [
                 customer_name, customer_phone, order_type,
                 delivery_address || null, store_id || null, finalTotal, notes || null,
                 user_id || null, coupon_id || null,
-                discount || 0, pointsEarned, points_redeemed || 0
+                discount || 0, pointsEarned, points_redeemed || 0, resolvedPaymentMethod
             ]
         );
         const order = orderResult.rows[0];

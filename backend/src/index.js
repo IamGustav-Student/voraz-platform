@@ -46,6 +46,20 @@ app.get('/api/test-db', async (req, res) => {
     }
 });
 
+app.get('/api/settings', async (req, res) => {
+    const tenantId = (req.headers['x-tenant-id'] || req.query.tenant || process.env.TENANT_ID || 'voraz').trim();
+    try {
+        const result = await query(
+            'SELECT cash_on_delivery, store_name FROM tenant_settings WHERE tenant_id = $1',
+            [tenantId]
+        );
+        const cfg = result.rows[0] || {};
+        res.json({ status: 'success', data: { cash_on_delivery: cfg.cash_on_delivery !== false, store_name: cfg.store_name || null } });
+    } catch {
+        res.json({ status: 'success', data: { cash_on_delivery: true } });
+    }
+});
+
 app.use('/api/products', productsRoutes);
 app.use('/api/community', communityRoutes);
 app.use('/api/stores', storesRoutes);
@@ -74,4 +88,5 @@ app.listen(PORT, async () => {
     await runMigration('phase9_whitelabel.sql');
     await runMigration('phase10_admin.sql');
     await runMigration('phase11_tenant_settings.sql');
+    await runMigration('phase12_cash_payment.sql');
 });

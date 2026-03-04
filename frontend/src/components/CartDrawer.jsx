@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useCart } from '../context/CartContext';
 import { useAuth } from '../context/AuthContext';
-import { createOrder, createPaymentPreference, validateCoupon } from '../services/api';
+import { createOrder, createPaymentPreference, validateCoupon, getTenantSettings } from '../services/api';
 
 const STEPS = { CART: 'cart', CHECKOUT: 'checkout', PROCESSING: 'processing' };
 const POINTS_TO_REDEEM = 100;
@@ -14,6 +14,8 @@ const CartDrawer = ({ isOpen, onClose, stores, onOrderCreated, onOpenAuth }) => 
 
     const [step, setStep] = useState(STEPS.CART);
     const [orderType, setOrderType] = useState('delivery');
+    const [paymentMethod, setPaymentMethod] = useState('mercadopago');
+    const [cashOnDeliveryEnabled, setCashOnDeliveryEnabled] = useState(true);
     const [form, setForm] = useState({ name: '', phone: '', address: '', store_id: '', notes: '' });
     const [couponCode, setCouponCode] = useState('');
     const [coupon, setCoupon] = useState(null);
@@ -27,6 +29,10 @@ const CartDrawer = ({ isOpen, onClose, stores, onOrderCreated, onOpenAuth }) => 
             setForm(f => ({ ...f, name: f.name || user.name, phone: f.phone || (user.phone || '') }));
         }
     }, [user, isOpen]);
+
+    useEffect(() => {
+        getTenantSettings().then(s => setCashOnDeliveryEnabled(s.cash_on_delivery !== false));
+    }, []);
 
     const maxRedeemable = user ? Math.floor(user.points / POINTS_TO_REDEEM) * POINTS_TO_REDEEM : 0;
     const pointsDiscount = pointsToRedeem * POINTS_VALUE;
@@ -84,6 +90,7 @@ const CartDrawer = ({ isOpen, onClose, stores, onOrderCreated, onOpenAuth }) => 
                 coupon_id: coupon?.coupon_id || null,
                 discount: totalDiscount,
                 points_redeemed: pointsToRedeem,
+                payment_method: paymentMethod,
                 items: items.map(i => ({
                     product_id: i.product_id,
                     product_name: i.product_name,
@@ -96,12 +103,6 @@ const CartDrawer = ({ isOpen, onClose, stores, onOrderCreated, onOpenAuth }) => 
             const orderRes = await createOrder(orderPayload, token);
             if (!orderRes?.order_id) throw new Error('No se pudo crear el pedido.');
 
-            const payRes = await createPaymentPreference({
-                order_id: orderRes.order_id,
-                items: orderPayload.items,
-                customer_email: user?.email || '',
-            }, token);
-
             if (user) await refreshUser();
 
             dispatch({ type: 'CLEAR' });
@@ -110,18 +111,30 @@ const CartDrawer = ({ isOpen, onClose, stores, onOrderCreated, onOpenAuth }) => 
             setPointsToRedeem(0);
             handleClose();
 
-            if (payRes?.demo) {
+            if (paymentMethod === 'cash') {
                 onOrderCreated(orderRes.order_id);
-            } else if (payRes?.init_point) {
-                window.location.href = payRes.init_point;
             } else {
-                onOrderCreated(orderRes.order_id);
+                const payRes = await createPaymentPreference({
+                    order_id: orderRes.order_id,
+                    items: orderPayload.items,
+                    customer_email: user?.email || '',
+                }, token);
+
+                if (payRes?.demo) {
+                    onOrderCreated(orderRes.order_id);
+                } else if (payRes?.init_point) {
+                    window.location.href = payRes.init_point;
+                } else {
+                    onOrderCreated(orderRes.order_id);
+                }
             }
         } catch (err) {
             setError(err.message || 'Error procesando el pedido. Intentá de nuevo.');
             setStep(STEPS.CHECKOUT);
         }
     };
+
+    const isCash = paymentMethod === 'cash';
 
     return (
         <AnimatePresence>
@@ -292,6 +305,7 @@ const CartDrawer = ({ isOpen, onClose, stores, onOrderCreated, onOpenAuth }) => 
                             {/* CHECKOUT */}
                             {step === STEPS.CHECKOUT && (
                                 <div className="p-6 space-y-5">
+                                    {/* Tipo de pedido */}
                                     <div>
                                         <label className="text-xs font-bold text-gray-400 uppercase tracking-wider block mb-2">Tipo de pedido</label>
                                         <div className="grid grid-cols-2 gap-3">
@@ -303,6 +317,40 @@ const CartDrawer = ({ isOpen, onClose, stores, onOrderCreated, onOpenAuth }) => 
                                             ))}
                                         </div>
                                     </div>
+
+                                    {/* Método de pago */}
+                                    <div>
+                                        <label className="text-xs font-bold text-gray-400 uppercase tracking-wider block mb-2">¿Cómo querés pagar?</label>
+                                        <div className={`grid gap-3 ${cashOnDeliveryEnabled ? 'grid-cols-2' : 'grid-cols-1'}`}>
+                                            <button
+                                                onClick={() => setPaymentMethod('mercadopago')}
+                                                className={`py-3 px-4 rounded-xl font-bold text-sm border transition flex flex-col items-center gap-1 ${paymentMethod === 'mercadopago' ? 'bg-blue-600 border-blue-500 text-white' : 'bg-white/5 border-white/10 text-gray-400 hover:text-white'}`}
+                                            >
+                                                <span className="text-lg">💳</span>
+                                                <span>MercadoPago</span>
+                                            </button>
+                                            {cashOnDeliveryEnabled && (
+                                                <button
+                                                    onClick={() => setPaymentMethod('cash')}
+                                                    className={`py-3 px-4 rounded-xl font-bold text-sm border transition flex flex-col items-center gap-1 ${paymentMethod === 'cash' ? 'bg-green-600 border-green-500 text-white' : 'bg-white/5 border-white/10 text-gray-400 hover:text-white'}`}
+                                                >
+                                                    <span className="text-lg">💵</span>
+                                                    <span>Efectivo</span>
+                                                </button>
+                                            )}
+                                        </div>
+                                        {isCash && (
+                                            <div className="mt-2 flex items-start gap-2 bg-green-900/20 border border-green-500/30 rounded-xl px-4 py-3">
+                                                <span className="text-green-400 text-lg flex-shrink-0">💵</span>
+                                                <p className="text-green-300 text-xs font-bold">
+                                                    Tenés que tener el efectivo preparado cuando llegue el repartidor.<br />
+                                                    <span className="text-green-400 font-black">Total a pagar: ${fmt(finalTotal)}</span>
+                                                </p>
+                                            </div>
+                                        )}
+                                    </div>
+
+                                    {/* Datos personales */}
                                     <div className="space-y-3">
                                         <label className="text-xs font-bold text-gray-400 uppercase tracking-wider block">Tus datos</label>
                                         <input type="text" placeholder="Tu nombre" value={form.name} onChange={e => setForm(f => ({ ...f, name: e.target.value }))}
@@ -310,6 +358,7 @@ const CartDrawer = ({ isOpen, onClose, stores, onOrderCreated, onOpenAuth }) => 
                                         <input type="tel" placeholder="Teléfono / WhatsApp" value={form.phone} onChange={e => setForm(f => ({ ...f, phone: e.target.value }))}
                                             className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white text-sm placeholder-gray-600 focus:outline-none focus:border-voraz-red" />
                                     </div>
+
                                     {orderType === 'delivery' && (
                                         <div>
                                             <label className="text-xs font-bold text-gray-400 uppercase tracking-wider block mb-2">Dirección de entrega</label>
@@ -327,12 +376,16 @@ const CartDrawer = ({ isOpen, onClose, stores, onOrderCreated, onOpenAuth }) => 
                                             </select>
                                         </div>
                                     )}
+
                                     <div>
                                         <label className="text-xs font-bold text-gray-400 uppercase tracking-wider block mb-2">Notas (opcional)</label>
                                         <textarea placeholder="Sin cebolla, extra cheddar..." value={form.notes} onChange={e => setForm(f => ({ ...f, notes: e.target.value }))} rows={2}
                                             className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white text-sm placeholder-gray-600 focus:outline-none focus:border-voraz-red resize-none" />
                                     </div>
+
                                     {error && <p className="text-red-400 text-sm font-bold bg-red-500/10 px-4 py-2 rounded-lg">{error}</p>}
+
+                                    {/* Resumen */}
                                     <div className="bg-white/5 rounded-xl p-4 space-y-1 border border-white/5">
                                         {items.map(i => (
                                             <div key={i.product_id} className="flex justify-between text-sm">
@@ -357,7 +410,9 @@ const CartDrawer = ({ isOpen, onClose, stores, onOrderCreated, onOpenAuth }) => 
                             {step === STEPS.PROCESSING && (
                                 <div className="flex flex-col items-center justify-center py-20 px-6">
                                     <div className="w-14 h-14 border-4 border-voraz-red border-t-transparent rounded-full animate-spin mb-5"></div>
-                                    <p className="text-white font-bold text-lg">Procesando tu pedido...</p>
+                                    <p className="text-white font-bold text-lg">
+                                        {isCash ? 'Confirmando tu pedido...' : 'Procesando tu pago...'}
+                                    </p>
                                     <p className="text-gray-500 text-sm mt-1">Un segundo</p>
                                 </div>
                             )}
@@ -378,9 +433,9 @@ const CartDrawer = ({ isOpen, onClose, stores, onOrderCreated, onOpenAuth }) => 
                                 ) : (
                                     <motion.button whileTap={{ scale: 0.97 }}
                                         onClick={handleCheckout}
-                                        className="w-full py-4 rounded-xl font-black uppercase tracking-wide text-sm bg-voraz-red text-white shadow-lg hover:bg-red-700 flex items-center justify-between px-6 transition"
+                                        className={`w-full py-4 rounded-xl font-black uppercase tracking-wide text-sm flex items-center justify-between px-6 transition shadow-lg ${isCash ? 'bg-green-600 hover:bg-green-700 text-white' : 'bg-voraz-red hover:bg-red-700 text-white'}`}
                                     >
-                                        <span>Confirmar y Pagar</span>
+                                        <span>{isCash ? '✅ Confirmar Pedido' : '💳 Confirmar y Pagar'}</span>
                                         <span>${fmt(finalTotal)}</span>
                                     </motion.button>
                                 )}

@@ -831,6 +831,7 @@ function MercadoPagoSection({ data, token, reload }) {
     mp_access_token: '',
     mp_public_key: data?.mp_public_key || '',
     mp_sandbox: data?.mp_sandbox ?? false,
+    cash_on_delivery: data?.cash_on_delivery !== false,
     store_name: data?.store_name || '',
     store_email: data?.store_email || '',
     store_phone: data?.store_phone || '',
@@ -846,6 +847,7 @@ function MercadoPagoSection({ data, token, reload }) {
         ...prev,
         mp_public_key: data.mp_public_key || '',
         mp_sandbox: data.mp_sandbox ?? false,
+        cash_on_delivery: data.cash_on_delivery !== false,
         store_name: data.store_name || '',
         store_email: data.store_email || '',
         store_phone: data.store_phone || '',
@@ -936,6 +938,17 @@ function MercadoPagoSection({ data, token, reload }) {
               <div>
                 <p className="text-sm text-white">{form.mp_sandbox ? 'Modo Sandbox (prueba)' : 'Modo Producción'}</p>
                 <p className="text-xs text-gray-500">{form.mp_sandbox ? 'Los pagos no son reales — ideal para testear' : 'Los pagos son reales — para tu negocio'}</p>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-3 py-2 border-t border-white/5 mt-1 pt-3">
+              <button type="button" onClick={() => setForm(p => ({ ...p, cash_on_delivery: !p.cash_on_delivery }))}
+                className={`relative w-11 h-6 rounded-full transition-colors ${form.cash_on_delivery ? 'bg-green-600' : 'bg-gray-700'}`}>
+                <span className={`absolute top-1 w-4 h-4 bg-white rounded-full transition-transform ${form.cash_on_delivery ? 'translate-x-6' : 'translate-x-1'}`} />
+              </button>
+              <div>
+                <p className="text-sm text-white">💵 Pago en Efectivo (contra entrega)</p>
+                <p className="text-xs text-gray-500">{form.cash_on_delivery ? 'Activado — los clientes pueden elegir pagar en efectivo' : 'Desactivado — solo se acepta MercadoPago'}</p>
               </div>
             </div>
           </div>

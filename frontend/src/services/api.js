@@ -181,6 +181,17 @@ export const adminFetch = async (path, token, options = {}) => {
   return data.data ?? data;
 };
 
+export const getTenantSettings = async () => {
+  try {
+    const response = await fetch(`${API_URL}/settings`, { headers: baseHeaders });
+    if (!response.ok) return { cash_on_delivery: true };
+    const data = await response.json();
+    return data.data || { cash_on_delivery: true };
+  } catch {
+    return { cash_on_delivery: true };
+  }
+};
+
 export const validateCoupon = async (payload) => {
   try {
     const response = await fetch(`${API_URL}/coupons/validate`, {

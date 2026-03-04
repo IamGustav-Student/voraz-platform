@@ -100,6 +100,15 @@ const OrderTracking = ({ orderId, onBack }) => {
                     {order.order_type === 'delivery' && order.status === 'delivering' && (
                         <p className="text-gray-400 text-sm">Tu pedido está en camino. ¡Preparate!</p>
                     )}
+                    {order.order_type === 'delivery' && order.status === 'delivering' && order.payment_method === 'cash' && (
+                        <div className="mt-3 flex items-center gap-2 bg-green-900/30 border border-green-500/40 rounded-xl px-4 py-3">
+                            <span className="text-2xl">💵</span>
+                            <p className="text-green-300 font-bold text-sm text-left">
+                                Ten preparado el efectivo para cuando llegue el repartidor.<br />
+                                <span className="text-green-400 font-black">Total: ${fmt(order.total)}</span>
+                            </p>
+                        </div>
+                    )}
                     {order.status === 'delivered' && (
                         <p className="text-voraz-yellow font-bold">¡Gracias por elegir Voraz!</p>
                     )}
@@ -156,6 +165,12 @@ const OrderTracking = ({ orderId, onBack }) => {
                 <div className="flex justify-between text-sm">
                     <span className="text-gray-400">Tipo</span>
                     <span className="text-white font-bold capitalize">{order.order_type === 'delivery' ? '🛵 Delivery' : '🏪 Retiro en local'}</span>
+                </div>
+                <div className="flex justify-between text-sm">
+                    <span className="text-gray-400">Pago</span>
+                    <span className={`font-bold ${order.payment_method === 'cash' ? 'text-green-400' : 'text-blue-400'}`}>
+                        {order.payment_method === 'cash' ? '💵 Efectivo' : '💳 MercadoPago'}
+                    </span>
                 </div>
                 <div className="flex justify-between text-sm">
                     <span className="text-gray-400">Cliente</span>
