@@ -1,18 +1,18 @@
 import { query } from '../config/db.js';
 
-// Obtiene las credenciales MP del tenant desde la BD, con fallback a env vars
-const getMPCredentials = async (tenantId = 'voraz') => {
+// Obtiene las credenciales MP del tenant desde la BD por store_id, con fallback a env vars
+const getMPCredentials = async (storeId = 1) => {
     try {
         const result = await query(
-            'SELECT mp_access_token, mp_public_key, mp_sandbox, store_name FROM tenant_settings WHERE tenant_id = $1',
-            [tenantId]
+            'SELECT mp_access_token, mp_public_key, mp_sandbox, store_name FROM tenant_settings WHERE store_id = $1 OR tenant_id = $1::text LIMIT 1',
+            [storeId]
         );
         if (result.rows.length && result.rows[0].mp_access_token) {
             return {
                 accessToken: result.rows[0].mp_access_token,
                 publicKey: result.rows[0].mp_public_key,
                 sandbox: result.rows[0].mp_sandbox,
-                storeName: result.rows[0].store_name || 'Voraz Burger',
+                storeName: result.rows[0].store_name || 'GastroRed',
             };
         }
     } catch {}
@@ -22,7 +22,7 @@ const getMPCredentials = async (tenantId = 'voraz') => {
             accessToken: process.env.MP_ACCESS_TOKEN,
             publicKey: process.env.MP_PUBLIC_KEY || '',
             sandbox: false,
-            storeName: 'Voraz Burger',
+            storeName: 'GastroRed',
         };
     }
     return null;
@@ -42,13 +42,13 @@ const buildBackUrls = (frontendUrl, orderId) => {
 
 export const createPreference = async (req, res) => {
     const { order_id, items, customer_email } = req.body;
-    const tenantId = req.headers['x-tenant-id'] || process.env.TENANT_ID || 'voraz';
+    const storeId = req.store?.id || 1;
 
     if (!order_id || !items?.length) {
         return res.status(400).json({ status: 'error', message: 'Datos de pago incompletos.' });
     }
 
-    const credentials = await getMPCredentials(tenantId);
+    const credentials = await getMPCredentials(storeId);
 
     // Sin credenciales MP: modo demo (aprobación automática)
     if (!credentials) {
@@ -129,8 +129,8 @@ export const webhook = async (req, res) => {
     try {
         // Buscar el tenant por el external_reference (order_id)
         // Primero obtenemos el pago desde MP para saber el external_reference
-        const tenantId = process.env.TENANT_ID || 'voraz';
-        const credentials = await getMPCredentials(tenantId);
+        const storeId = req.store?.id || 1;
+        const credentials = await getMPCredentials(storeId);
 
         if (!credentials) return res.sendStatus(200);
 
@@ -206,8 +206,8 @@ export const webhook = async (req, res) => {
 
 // Endpoint para obtener la public_key del tenant (usada por el frontend)
 export const getPublicKey = async (req, res) => {
-    const tenantId = req.headers['x-tenant-id'] || process.env.TENANT_ID || 'voraz';
-    const credentials = await getMPCredentials(tenantId);
+    const storeId = req.store?.id || 1;
+    const credentials = await getMPCredentials(storeId);
     if (!credentials?.publicKey) {
         return res.json({ status: 'success', data: { public_key: null, demo_mode: true } });
     }

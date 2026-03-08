@@ -327,10 +327,10 @@ export const updateOrderStatus = async (req, res) => {
 // ── CONFIGURACIÓN MERCADOPAGO ──────────────────────────────────────────────
 export const getMercadopagoConfig = async (req, res) => {
   try {
-    const tenantId = getStoreId(req);
+    const storeId = getStoreId(req);
     const result = await query(
-      'SELECT mp_public_key, mp_sandbox, mp_access_token, store_name, store_email, store_phone, store_address, cash_on_delivery FROM tenant_settings WHERE tenant_id = $1',
-      [tenantId]
+      'SELECT mp_public_key, mp_sandbox, mp_access_token, store_name, store_email, store_phone, store_address, cash_on_delivery FROM tenant_settings WHERE store_id = $1 OR tenant_id = $1::text LIMIT 1',
+      [storeId]
     );
     const settings = result.rows[0] || {};
     const backendUrl = process.env.BACKEND_URL || `https://voraz-platform-production.up.railway.app`;
@@ -353,13 +353,13 @@ export const getMercadopagoConfig = async (req, res) => {
 
 export const saveMercadopagoConfig = async (req, res) => {
   try {
-    const tenantId = getStoreId(req);
+    const storeId = getStoreId(req);
     const { mp_access_token, mp_public_key, mp_sandbox, cash_on_delivery, store_name, store_email, store_phone, store_address } = req.body;
 
     await query(
-      `INSERT INTO tenant_settings (tenant_id, mp_access_token, mp_public_key, mp_sandbox, cash_on_delivery, store_name, store_email, store_phone, store_address, updated_at)
-       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,NOW())
-       ON CONFLICT (tenant_id) DO UPDATE SET
+      `INSERT INTO tenant_settings (store_id, tenant_id, mp_access_token, mp_public_key, mp_sandbox, cash_on_delivery, store_name, store_email, store_phone, store_address, updated_at)
+       VALUES ($1,$1::text,$2,$3,$4,$5,$6,$7,$8,$9,NOW())
+       ON CONFLICT (store_id) DO UPDATE SET
          mp_access_token  = COALESCE(NULLIF($2,''), tenant_settings.mp_access_token),
          mp_public_key    = COALESCE(NULLIF($3,''), tenant_settings.mp_public_key),
          mp_sandbox       = $4,
@@ -369,7 +369,7 @@ export const saveMercadopagoConfig = async (req, res) => {
          store_phone      = COALESCE(NULLIF($8,''), tenant_settings.store_phone),
          store_address    = COALESCE(NULLIF($9,''), tenant_settings.store_address),
          updated_at       = NOW()`,
-      [tenantId, mp_access_token || '', mp_public_key || '', mp_sandbox ?? false, cash_on_delivery !== false, store_name || '', store_email || '', store_phone || '', store_address || '']
+      [storeId, mp_access_token || '', mp_public_key || '', mp_sandbox ?? false, cash_on_delivery !== false, store_name || '', store_email || '', store_phone || '', store_address || '']
     );
 
     res.json({ status: 'success', message: 'Configuración guardada correctamente.' });

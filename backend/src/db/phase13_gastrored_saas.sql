@@ -83,3 +83,8 @@ CREATE TABLE IF NOT EXISTS subscription_payments (
   status         VARCHAR(30) DEFAULT 'pending',
   created_at     TIMESTAMP DEFAULT NOW()
 );
+
+-- 8. Vincular tenant_settings con store_id (para queries por store_id numérico)
+ALTER TABLE tenant_settings ADD COLUMN IF NOT EXISTS store_id INT REFERENCES stores(id);
+UPDATE tenant_settings SET store_id = 1 WHERE store_id IS NULL;
+CREATE UNIQUE INDEX IF NOT EXISTS idx_tenant_settings_store_id ON tenant_settings(store_id);
