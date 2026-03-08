@@ -9,6 +9,29 @@ const PLAN_PRICES = {
   'Expert':       { monthly: 100000, annual: 1000000 },
 };
 
+export const superadminSetup = async (req, res) => {
+  try {
+    const existing = await query('SELECT COUNT(*) FROM superadmins');
+    if (parseInt(existing.rows[0].count) > 0) {
+      return res.status(403).json({ status: 'error', message: 'Setup ya completado. El superadmin ya existe.' });
+    }
+    const { email, password, name, setup_key } = req.body;
+    const expectedKey = process.env.GASTRORED_SUPERADMIN_SECRET || 'gastrored_dev_secret_CAMBIAR';
+    if (setup_key !== expectedKey) {
+      return res.status(401).json({ status: 'error', message: 'setup_key inválida.' });
+    }
+    if (!email || !password || password.length < 8) {
+      return res.status(400).json({ status: 'error', message: 'Email y password (mín. 8 caracteres) requeridos.' });
+    }
+    const hash = await bcrypt.hash(password, 10);
+    const result = await query(
+      'INSERT INTO superadmins (email, password_hash, name) VALUES ($1, $2, $3) RETURNING id, email, name',
+      [email, hash, name || 'GastroRed Admin']
+    );
+    res.json({ status: 'success', message: 'Superadmin creado. Ya podés hacer login.', data: result.rows[0] });
+  } catch (e) { res.status(500).json({ status: 'error', message: e.message }); }
+};
+
 export const superadminLogin = async (req, res) => {
   const { email, password } = req.body;
   try {

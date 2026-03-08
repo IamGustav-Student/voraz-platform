@@ -2,6 +2,7 @@ import { Router } from 'express';
 import { superadminMiddleware } from '../middleware/auth.middleware.js';
 import {
   superadminLogin,
+  superadminSetup,
   getGlobalStats,
   listAllStores,
   createTenant,
@@ -13,6 +14,7 @@ import {
 const router = Router();
 
 router.post('/login', superadminLogin);
+router.post('/setup', superadminSetup);
 
 router.use(superadminMiddleware);
 
