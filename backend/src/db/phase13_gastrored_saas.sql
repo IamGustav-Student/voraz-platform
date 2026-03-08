@@ -8,7 +8,7 @@ ALTER TABLE stores ADD COLUMN IF NOT EXISTS subdomain        VARCHAR(100) UNIQUE
 ALTER TABLE stores ADD COLUMN IF NOT EXISTS plan_type        VARCHAR(50)  DEFAULT 'Full Digital';
 ALTER TABLE stores ADD COLUMN IF NOT EXISTS subscription_period VARCHAR(20) DEFAULT 'monthly';
 ALTER TABLE stores ADD COLUMN IF NOT EXISTS subscription_expires_at TIMESTAMP;
-ALTER TABLE stores ADD COLUMN IF NOT EXISTS status           VARCHAR(20)  DEFAULT 'active' CHECK (status IN ('active','suspended','trial'));
+ALTER TABLE stores ADD COLUMN IF NOT EXISTS status           VARCHAR(20)  DEFAULT 'active';
 ALTER TABLE stores ADD COLUMN IF NOT EXISTS brand_name       VARCHAR(100);
 ALTER TABLE stores ADD COLUMN IF NOT EXISTS brand_color_primary   VARCHAR(10) DEFAULT '#E30613';
 ALTER TABLE stores ADD COLUMN IF NOT EXISTS brand_color_secondary VARCHAR(10) DEFAULT '#1A1A1A';
