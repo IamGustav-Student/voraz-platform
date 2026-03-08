@@ -88,3 +88,11 @@ CREATE TABLE IF NOT EXISTS subscription_payments (
 ALTER TABLE tenant_settings ADD COLUMN IF NOT EXISTS store_id INT REFERENCES stores(id);
 UPDATE tenant_settings SET store_id = 1 WHERE store_id IS NULL;
 CREATE UNIQUE INDEX IF NOT EXISTS idx_tenant_settings_store_id ON tenant_settings(store_id);
+
+-- 9. Superadmin inicial de GastroRed (se inserta solo si no existe ninguno)
+INSERT INTO superadmins (email, password_hash, name)
+SELECT
+  'iamgustav.olivera@gmail.com',
+  '$2b$10$qlvIkKH8xsp1lzFjpXfJ4.ds1E/01LTA8vBWVSNQkRd/sZKsJ3tm6',
+  'GastroRed Admin'
+WHERE NOT EXISTS (SELECT 1 FROM superadmins LIMIT 1);
