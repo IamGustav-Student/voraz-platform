@@ -4,7 +4,7 @@ import cors from 'cors';
 import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
-import { query } from './config/db.js';
+import { query, testConnection } from './config/db.js';
 
 import productsRoutes     from './routes/products.routes.js';
 import communityRoutes    from './routes/community.routes.js';
@@ -136,12 +136,17 @@ const runMigration = async (sqlFile) => {
         await query(sql);
         console.log(`✅ Migración ejecutada: ${sqlFile}`);
     } catch (error) {
-        console.error(`⚠️  Error en migración ${sqlFile}:`, error.message);
+        console.error(`⚠️  Error en migración ${sqlFile}:`, error?.message || String(error));
     }
 };
 
 app.listen(PORT, async () => {
     console.log(`\n🚀 GastroRed API corriendo en http://localhost:${PORT}`);
+    const dbOk = await testConnection();
+    if (!dbOk) {
+        console.error('🔴 Sin conexión a BD. Las migraciones se saltean. Verificá DATABASE_URL en Railway → Variables.');
+        return;
+    }
     await runMigration('phase7_orders.sql');
     await runMigration('phase8_auth.sql');
     await runMigration('phase9_whitelabel.sql');

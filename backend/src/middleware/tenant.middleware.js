@@ -39,7 +39,7 @@ export const tenantMiddleware = async (req, res, next) => {
     req.store = store;
     next();
   } catch (err) {
-    console.error('tenantMiddleware error:', err.message);
+    console.error('tenantMiddleware error:', err?.message || String(err));
     req.store = FALLBACK_STORE;
     next();
   }
