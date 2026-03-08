@@ -1,14 +1,11 @@
 import { query } from '../config/db.js';
 
-const getTenantId = (req) =>
-  req.headers['x-tenant-id'] || req.query.tenant || process.env.TENANT_ID || 'voraz';
-
 export const getNews = async (req, res) => {
   try {
-    const tenantId = getTenantId(req);
+    const storeId = req.store?.id || 1;
     const result = await query(
-      'SELECT * FROM news WHERE tenant_id = $1 ORDER BY date DESC',
-      [tenantId]
+      'SELECT * FROM news WHERE store_id = $1 ORDER BY date DESC',
+      [storeId]
     );
     res.json({ status: 'success', data: result.rows });
   } catch (error) {

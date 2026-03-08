@@ -1,14 +1,15 @@
 import { query } from '../config/db.js';
 
-const getTenantId = (req) =>
-  req.headers['x-tenant-id'] || req.query.tenant || process.env.TENANT_ID || 'voraz';
-
 export const getStores = async (req, res) => {
   try {
-    const tenantId = getTenantId(req);
+    const storeId = req.store?.id || 1;
     const result = await query(
-      'SELECT * FROM stores WHERE tenant_id = $1 ORDER BY id ASC',
-      [tenantId]
+      `SELECT id, name, address, phone, image_url, waze_link, delivery_link
+       FROM stores
+       WHERE id = $1
+          OR (store_id = $1 AND id != $1)
+       ORDER BY id ASC`,
+      [storeId]
     );
     res.json({ status: 'success', data: result.rows });
   } catch (error) {

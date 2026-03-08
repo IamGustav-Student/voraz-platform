@@ -1,10 +1,14 @@
 const API_URL = (import.meta.env.VITE_API_URL || 'http://localhost:3000/api').trim();
-const TENANT_ID = (import.meta.env.VITE_TENANT_ID || 'voraz').trim();
 
-// Headers base con tenant_id para todas las requests
+const getStoreDomain = () => {
+  if (typeof window !== 'undefined') return window.location.hostname;
+  return import.meta.env.VITE_STORE_DOMAIN || 'localhost';
+};
+
+// Headers base con store-domain para todas las requests (multi-tenant)
 const baseHeaders = {
   'Content-Type': 'application/json',
-  'x-tenant-id': TENANT_ID,
+  'x-store-domain': getStoreDomain(),
 };
 
 export const getMenu = async () => {
