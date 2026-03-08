@@ -1,13 +1,12 @@
 import { query } from '../config/db.js';
 import { v2 as cloudinary } from 'cloudinary';
 
-const getTenantId = (req) =>
-  req.headers['x-tenant-id'] || req.query.tenant || process.env.TENANT_ID || 'voraz';
+const getStoreId = (req) => req.store?.id || 1;
 
 // ── PRODUCTOS ──────────────────────────────────────────────────────────────
 export const getAdminProducts = async (req, res) => {
   try {
-    const tenantId = getTenantId(req);
+    const tenantId = getStoreId(req);
     const result = await query(
       `SELECT p.*, c.name as category_name FROM products p
        LEFT JOIN categories c ON p.category_id = c.id
@@ -20,7 +19,7 @@ export const getAdminProducts = async (req, res) => {
 
 export const createProduct = async (req, res) => {
   try {
-    const tenantId = getTenantId(req);
+    const tenantId = getStoreId(req);
     const { name, description, price, category_id, image_url, badge } = req.body;
     const result = await query(
       `INSERT INTO products (name, description, price, category_id, image_url, badge, tenant_id)
@@ -33,7 +32,7 @@ export const createProduct = async (req, res) => {
 
 export const updateProduct = async (req, res) => {
   try {
-    const tenantId = getTenantId(req);
+    const tenantId = getStoreId(req);
     const { id } = req.params;
     const { name, description, price, category_id, image_url, badge, is_active } = req.body;
     const result = await query(
@@ -49,7 +48,7 @@ export const updateProduct = async (req, res) => {
 
 export const deleteProduct = async (req, res) => {
   try {
-    const tenantId = getTenantId(req);
+    const tenantId = getStoreId(req);
     const { id } = req.params;
     await query('UPDATE products SET is_active=false WHERE id=$1 AND tenant_id=$2', [id, tenantId]);
     res.json({ status: 'success', message: 'Producto desactivado' });
@@ -58,7 +57,7 @@ export const deleteProduct = async (req, res) => {
 
 export const getCategories = async (req, res) => {
   try {
-    const tenantId = getTenantId(req);
+    const tenantId = getStoreId(req);
     const result = await query('SELECT * FROM categories WHERE tenant_id=$1 ORDER BY id', [tenantId]);
     res.json({ status: 'success', data: result.rows });
   } catch (e) { res.status(500).json({ status: 'error', message: e.message }); }
@@ -66,7 +65,7 @@ export const getCategories = async (req, res) => {
 
 export const createCategory = async (req, res) => {
   try {
-    const tenantId = getTenantId(req);
+    const tenantId = getStoreId(req);
     const { name, description, image_url } = req.body;
     const result = await query(
       'INSERT INTO categories (name, description, image_url, tenant_id) VALUES ($1,$2,$3,$4) RETURNING *',
@@ -78,7 +77,7 @@ export const createCategory = async (req, res) => {
 
 export const updateCategory = async (req, res) => {
   try {
-    const tenantId = getTenantId(req);
+    const tenantId = getStoreId(req);
     const { id } = req.params;
     const { name, description, image_url } = req.body;
     const result = await query(
@@ -92,7 +91,7 @@ export const updateCategory = async (req, res) => {
 
 export const deleteCategory = async (req, res) => {
   try {
-    const tenantId = getTenantId(req);
+    const tenantId = getStoreId(req);
     const { id } = req.params;
     const used = await query('SELECT COUNT(*) FROM products WHERE category_id=$1 AND is_active=true', [id]);
     if (parseInt(used.rows[0].count) > 0) {
@@ -106,7 +105,7 @@ export const deleteCategory = async (req, res) => {
 // ── CUPONES ────────────────────────────────────────────────────────────────
 export const getAdminCoupons = async (req, res) => {
   try {
-    const tenantId = getTenantId(req);
+    const tenantId = getStoreId(req);
     const result = await query('SELECT * FROM coupons WHERE tenant_id=$1 ORDER BY id DESC', [tenantId]);
     res.json({ status: 'success', data: result.rows });
   } catch (e) { res.status(500).json({ status: 'error', message: e.message }); }
@@ -114,7 +113,7 @@ export const getAdminCoupons = async (req, res) => {
 
 export const createCoupon = async (req, res) => {
   try {
-    const tenantId = getTenantId(req);
+    const tenantId = getStoreId(req);
     const { code, description, discount_type, discount_value, min_order, max_uses, expires_at } = req.body;
     const result = await query(
       `INSERT INTO coupons (code, description, discount_type, discount_value, min_order, max_uses, expires_at, tenant_id)
@@ -127,7 +126,7 @@ export const createCoupon = async (req, res) => {
 
 export const updateCoupon = async (req, res) => {
   try {
-    const tenantId = getTenantId(req);
+    const tenantId = getStoreId(req);
     const { id } = req.params;
     const { active } = req.body;
     const result = await query(
@@ -140,7 +139,7 @@ export const updateCoupon = async (req, res) => {
 
 export const deleteCoupon = async (req, res) => {
   try {
-    const tenantId = getTenantId(req);
+    const tenantId = getStoreId(req);
     await query('DELETE FROM coupons WHERE id=$1 AND tenant_id=$2', [req.params.id, tenantId]);
     res.json({ status: 'success', message: 'Cupón eliminado' });
   } catch (e) { res.status(500).json({ status: 'error', message: e.message }); }
@@ -149,7 +148,7 @@ export const deleteCoupon = async (req, res) => {
 // ── VIDEOS ─────────────────────────────────────────────────────────────────
 export const createVideo = async (req, res) => {
   try {
-    const tenantId = getTenantId(req);
+    const tenantId = getStoreId(req);
     let { title, youtube_url } = req.body;
     // Extraer ID del link de YouTube
     const match = youtube_url.match(/(?:v=|youtu\.be\/|embed\/)([a-zA-Z0-9_-]{11})/);
@@ -166,7 +165,7 @@ export const createVideo = async (req, res) => {
 
 export const deleteVideo = async (req, res) => {
   try {
-    const tenantId = getTenantId(req);
+    const tenantId = getStoreId(req);
     await query('DELETE FROM videos WHERE id=$1 AND tenant_id=$2', [req.params.id, tenantId]);
     res.json({ status: 'success', message: 'Video eliminado' });
   } catch (e) { res.status(500).json({ status: 'error', message: e.message }); }
@@ -175,7 +174,7 @@ export const deleteVideo = async (req, res) => {
 // ── NOTICIAS ───────────────────────────────────────────────────────────────
 export const createNews = async (req, res) => {
   try {
-    const tenantId = getTenantId(req);
+    const tenantId = getStoreId(req);
     const { title, content, image_url, date } = req.body;
     const result = await query(
       'INSERT INTO news (title, content, image_url, date, tenant_id) VALUES ($1,$2,$3,$4,$5) RETURNING *',
@@ -187,7 +186,7 @@ export const createNews = async (req, res) => {
 
 export const updateNews = async (req, res) => {
   try {
-    const tenantId = getTenantId(req);
+    const tenantId = getStoreId(req);
     const { id } = req.params;
     const { title, content, image_url } = req.body;
     const result = await query(
@@ -200,7 +199,7 @@ export const updateNews = async (req, res) => {
 
 export const deleteNews = async (req, res) => {
   try {
-    const tenantId = getTenantId(req);
+    const tenantId = getStoreId(req);
     await query('DELETE FROM news WHERE id=$1 AND tenant_id=$2', [req.params.id, tenantId]);
     res.json({ status: 'success', message: 'Noticia eliminada' });
   } catch (e) { res.status(500).json({ status: 'error', message: e.message }); }
@@ -219,7 +218,7 @@ export const uploadImage = async (req, res) => {
     });
     const { image_base64, folder } = req.body;
     if (!image_base64) return res.status(400).json({ status: 'error', message: 'Se requiere image_base64' });
-    const tenantId = getTenantId(req);
+    const tenantId = getStoreId(req);
     const result = await cloudinary.uploader.upload(image_base64, {
       folder: `tenants/${tenantId}/${folder || 'products'}`,
       resource_type: 'image',
@@ -231,7 +230,7 @@ export const uploadImage = async (req, res) => {
 // ── STATS / DASHBOARD ─────────────────────────────────────────────────────
 export const getDashboardStats = async (req, res) => {
   try {
-    const tenantId = getTenantId(req);
+    const tenantId = getStoreId(req);
     const [products, orders, users, coupons] = await Promise.all([
       query('SELECT COUNT(*) FROM products WHERE tenant_id=$1 AND is_active=true', [tenantId]),
       query("SELECT COUNT(*), COALESCE(SUM(total),0) as revenue FROM orders WHERE status != 'cancelled'"),
@@ -254,7 +253,7 @@ export const getDashboardStats = async (req, res) => {
 // ── LOCALES ────────────────────────────────────────────────────────────────
 export const getAdminStores = async (req, res) => {
   try {
-    const tenantId = getTenantId(req);
+    const tenantId = getStoreId(req);
     const result = await query('SELECT * FROM stores WHERE tenant_id=$1 ORDER BY id', [tenantId]);
     res.json({ status: 'success', data: result.rows });
   } catch (e) { res.status(500).json({ status: 'error', message: e.message }); }
@@ -262,7 +261,7 @@ export const getAdminStores = async (req, res) => {
 
 export const createStore = async (req, res) => {
   try {
-    const tenantId = getTenantId(req);
+    const tenantId = getStoreId(req);
     const { name, address, image_url, google_maps_url, delivery_app, delivery_link, phone } = req.body;
     const result = await query(
       `INSERT INTO stores (name, address, image_url, waze_link, delivery_link, phone, tenant_id)
@@ -275,7 +274,7 @@ export const createStore = async (req, res) => {
 
 export const updateStore = async (req, res) => {
   try {
-    const tenantId = getTenantId(req);
+    const tenantId = getStoreId(req);
     const { id } = req.params;
     const { name, address, image_url, google_maps_url, delivery_app, delivery_link, phone } = req.body;
     const result = await query(
@@ -290,7 +289,7 @@ export const updateStore = async (req, res) => {
 
 export const deleteStore = async (req, res) => {
   try {
-    const tenantId = getTenantId(req);
+    const tenantId = getStoreId(req);
     await query('DELETE FROM stores WHERE id=$1 AND tenant_id=$2', [req.params.id, tenantId]);
     res.json({ status: 'success', message: 'Local eliminado' });
   } catch (e) { res.status(500).json({ status: 'error', message: e.message }); }
@@ -328,7 +327,7 @@ export const updateOrderStatus = async (req, res) => {
 // ── CONFIGURACIÓN MERCADOPAGO ──────────────────────────────────────────────
 export const getMercadopagoConfig = async (req, res) => {
   try {
-    const tenantId = getTenantId(req);
+    const tenantId = getStoreId(req);
     const result = await query(
       'SELECT mp_public_key, mp_sandbox, mp_access_token, store_name, store_email, store_phone, store_address, cash_on_delivery FROM tenant_settings WHERE tenant_id = $1',
       [tenantId]
@@ -354,7 +353,7 @@ export const getMercadopagoConfig = async (req, res) => {
 
 export const saveMercadopagoConfig = async (req, res) => {
   try {
-    const tenantId = getTenantId(req);
+    const tenantId = getStoreId(req);
     const { mp_access_token, mp_public_key, mp_sandbox, cash_on_delivery, store_name, store_email, store_phone, store_address } = req.body;
 
     await query(

@@ -10,6 +10,7 @@ import OrderTracking from './components/OrderTracking';
 import AuthModal from './components/AuthModal';
 import VorazClub from './components/VorazClub';
 import AdminPanel from './components/AdminPanel';
+import SuperAdminPanel from './components/SuperAdminPanel';
 
 function App() {
   const { itemCount, dispatch } = useCart();
@@ -31,6 +32,7 @@ function App() {
   const [activeOrderId, setActiveOrderId] = useState(null);
   const [isAuthOpen, setIsAuthOpen] = useState(false);
   const [isAdminOpen, setIsAdminOpen] = useState(false);
+  const [isSuperAdminOpen, setIsSuperAdminOpen] = useState(false);
 
   useEffect(() => {
     loadAllData();
@@ -423,6 +425,14 @@ function App() {
             )}
             <motion.button
               whileTap={{ scale: 0.93 }}
+              onClick={() => setIsSuperAdminOpen(true)}
+              className="flex items-center space-x-1 bg-red-500/10 hover:bg-red-500/20 border border-red-500/30 text-red-400 px-3 py-2 rounded-xl text-sm font-bold transition"
+              title="GastroRed Superadmin"
+            >
+              <span>🍽️</span>
+            </motion.button>
+            <motion.button
+              whileTap={{ scale: 0.93 }}
               onClick={() => setIsCartOpen(true)}
               className="relative flex items-center space-x-2 bg-brand-primary hover:bg-brand-primary-hover text-white px-4 py-2 rounded-xl font-bold text-sm transition"
             >
@@ -595,6 +605,13 @@ function App() {
 
       {/* ADMIN PANEL */}
       {isAdminOpen && <AdminPanel onClose={() => setIsAdminOpen(false)} />}
+
+      {/* SUPERADMIN PANEL */}
+      {isSuperAdminOpen && (
+        <div className="fixed inset-0 z-[200] overflow-y-auto">
+          <SuperAdminPanel onBack={() => setIsSuperAdminOpen(false)} />
+        </div>
+      )}
     </div>
   );
 }
