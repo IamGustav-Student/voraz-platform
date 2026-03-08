@@ -35,3 +35,21 @@ export const listCoupons = async (req, res) => {
         res.status(500).json({ status: 'error', message: error.message });
     }
 };
+
+export const createCoupon = async (req, res) => {
+    const storeId = req.store?.id || 1;
+    const { code, description, discount_type, discount_value, min_order, max_uses, expires_at } = req.body;
+    if (!code || !discount_type || !discount_value) {
+        return res.status(400).json({ status: 'error', message: 'code, discount_type y discount_value son requeridos.' });
+    }
+    try {
+        const result = await query(
+            `INSERT INTO coupons (code, description, discount_type, discount_value, min_order, max_uses, expires_at, active, store_id)
+             VALUES ($1,$2,$3,$4,$5,$6,$7,true,$8) RETURNING *`,
+            [code.toUpperCase(), description || '', discount_type, discount_value, min_order || 0, max_uses || null, expires_at || null, storeId]
+        );
+        res.json({ status: 'success', data: result.rows[0] });
+    } catch (error) {
+        res.status(500).json({ status: 'error', message: error.message });
+    }
+};
