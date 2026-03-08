@@ -90,8 +90,8 @@ app.get('/api/settings', tenantMiddleware, async (req, res) => {
     const storeId = req.store?.id || 1;
     try {
         const result = await query(
-            `SELECT ts.cash_on_delivery, s.brand_name, s.brand_color_primary, s.brand_color_secondary,
-                    s.brand_logo_url, s.slogan, s.plan_type
+            `SELECT s.id, ts.cash_on_delivery, s.brand_name, s.brand_color_primary, s.brand_color_secondary,
+                    s.brand_logo_url, s.slogan, s.plan_type, s.subdomain
              FROM stores s
              LEFT JOIN tenant_settings ts ON ts.store_id = s.id
              WHERE s.id = $1`,
@@ -101,6 +101,7 @@ app.get('/api/settings', tenantMiddleware, async (req, res) => {
         res.json({
             status: 'success',
             data: {
+                id:                    cfg.id || 1,
                 cash_on_delivery:      cfg.cash_on_delivery !== false,
                 brand_name:            cfg.brand_name || 'GastroRed',
                 brand_color_primary:   cfg.brand_color_primary || '#E30613',
@@ -108,6 +109,7 @@ app.get('/api/settings', tenantMiddleware, async (req, res) => {
                 brand_logo_url:        cfg.brand_logo_url || null,
                 slogan:                cfg.slogan || null,
                 plan_type:             cfg.plan_type || 'Full Digital',
+                subdomain:             cfg.subdomain || null,
             }
         });
     } catch {

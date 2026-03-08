@@ -31,11 +31,10 @@ export function TenantProvider({ children }) {
       .then(r => r.json())
       .then(data => {
         const s = data.data || data;
-        if (!s || !s.brand_name) return;
         setTenant({
-          brandName: s.brand_name || s.name || TENANT.brandName,
+          brandName: s.brand_name || TENANT.brandName,
           slogan: s.slogan || TENANT.slogan,
-          tagline: s.tagline || TENANT.tagline,
+          tagline: TENANT.tagline,
           logo: s.brand_logo_url || TENANT.logo,
           colors: {
             primary: s.brand_color_primary || TENANT.theme.primary,
@@ -55,7 +54,8 @@ export function TenantProvider({ children }) {
           pointsName: s.points_name || TENANT.pointsName,
           cashOnDelivery: s.cash_on_delivery !== false,
           planType: s.plan_type || 'Expert',
-          storeId: s.id,
+          storeId: s.id || 1,
+          subdomain: s.subdomain || null,
           loaded: true,
         });
       })

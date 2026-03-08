@@ -85,7 +85,7 @@ export const createTenant = async (req, res) => {
 
     await query(
       `INSERT INTO tenant_settings (tenant_id, store_id, cash_on_delivery)
-       VALUES ($1, $2, true) ON CONFLICT (tenant_id) DO NOTHING`,
+       VALUES ($1, $2, true) ON CONFLICT DO NOTHING`,
       [subdomain.toLowerCase(), store.id]
     );
 
