@@ -1,14 +1,11 @@
 import { query } from '../config/db.js';
 
-const getTenantId = (req) =>
-  req.headers['x-tenant-id'] || req.query.tenant || process.env.TENANT_ID || 'voraz';
-
 export const getInfluencers = async (req, res) => {
   try {
-    const tenantId = getTenantId(req);
+    const storeId = req.store?.id || 1;
     const result = await query(
-      'SELECT * FROM influencers WHERE tenant_id = $1 ORDER BY id ASC',
-      [tenantId]
+      'SELECT * FROM influencers WHERE store_id = $1 ORDER BY id ASC',
+      [storeId]
     );
     res.json({ status: 'success', data: result.rows });
   } catch (error) {
@@ -18,10 +15,10 @@ export const getInfluencers = async (req, res) => {
 
 export const getVideos = async (req, res) => {
   try {
-    const tenantId = getTenantId(req);
+    const storeId = req.store?.id || 1;
     const result = await query(
-      'SELECT * FROM videos WHERE tenant_id = $1 ORDER BY created_at DESC',
-      [tenantId]
+      'SELECT * FROM community_videos WHERE store_id = $1 ORDER BY created_at DESC',
+      [storeId]
     );
     res.json({ status: 'success', data: result.rows });
   } catch (error) {
