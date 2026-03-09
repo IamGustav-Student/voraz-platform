@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
+import SuperAdminPanel from './SuperAdminPanel';
 
 const API_URL = (import.meta.env.VITE_API_URL || 'http://localhost:3000/api').trim();
 const GASTRORED_DOMAIN = (import.meta.env.VITE_GASTRORED_DOMAIN || 'gastrored.com.ar').trim();
@@ -103,8 +104,8 @@ function PlanCard({ name, price, period, badge, features, cta, highlighted = fal
     };
     return (
         <div className={`relative rounded-3xl p-8 flex flex-col transition-all duration-500 hover:translate-y-[-6px] ${highlighted
-                ? 'bg-gradient-to-br from-teal-900/60 to-teal-800/20 border-2 border-teal-500/60 shadow-2xl shadow-teal-900/40'
-                : 'bg-gradient-to-br from-white/5 to-white/[0.02] border border-white/10 hover:border-teal-500/30'
+            ? 'bg-gradient-to-br from-teal-900/60 to-teal-800/20 border-2 border-teal-500/60 shadow-2xl shadow-teal-900/40'
+            : 'bg-gradient-to-br from-white/5 to-white/[0.02] border border-white/10 hover:border-teal-500/30'
             }`}>
             {badge && (
                 <div className={`absolute -top-4 left-1/2 -translate-x-1/2 px-4 py-1.5 rounded-full text-xs font-black uppercase tracking-wider ${badgeColors[badgeColor]}`}>
@@ -138,8 +139,8 @@ function PlanCard({ name, price, period, badge, features, cta, highlighted = fal
             <button
                 onClick={onSelect}
                 className={`block w-full text-center py-4 rounded-xl font-black uppercase tracking-wide text-sm transition-all duration-300 ${highlighted
-                        ? 'bg-teal-500 hover:bg-teal-400 text-white shadow-lg shadow-teal-900/50'
-                        : 'bg-white/10 hover:bg-white/20 text-white border border-white/10'
+                    ? 'bg-teal-500 hover:bg-teal-400 text-white shadow-lg shadow-teal-900/50'
+                    : 'bg-white/10 hover:bg-white/20 text-white border border-white/10'
                     }`}
             >
                 {cta}
@@ -323,6 +324,7 @@ export default function GastroRedLanding() {
     const [scrolled, setScrolled] = useState(false);
     const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
     const [selectedPlan, setSelectedPlan] = useState(null); // abre el modal
+    const [showSuperAdmin, setShowSuperAdmin] = useState(false);
 
     useEffect(() => {
         const handler = () => setScrolled(window.scrollY > 30);
@@ -425,6 +427,13 @@ export default function GastroRedLanding() {
 
             {/* Modal de checkout */}
             {selectedPlan && <CheckoutModal plan={selectedPlan} onClose={() => setSelectedPlan(null)} />}
+
+            {/* Modal Superadmin */}
+            {showSuperAdmin && (
+                <div className="fixed inset-0 z-[300] overflow-y-auto">
+                    <SuperAdminPanel onBack={() => setShowSuperAdmin(false)} />
+                </div>
+            )}
 
             {/* ── NAVBAR ─────────────────────────────────────────────────────────── */}
             <nav className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${scrolled ? 'bg-[#080c12]/90 backdrop-blur-xl border-b border-white/5 shadow-2xl' : 'bg-transparent'
@@ -775,10 +784,20 @@ export default function GastroRedLanding() {
                             <a href="#planes" className="hover:text-teal-400 transition">Planes</a>
                             <a href="#contacto" className="hover:text-teal-400 transition">Contacto</a>
                         </div>
-                        <p className="text-gray-600 text-sm">© 2026 GastroRed — Sincronización Total</p>
+                        <div className="flex items-center gap-4">
+                            <p className="text-gray-600 text-sm">© 2026 GastroRed — Sincronización Total</p>
+                            <button
+                                onClick={() => setShowSuperAdmin(true)}
+                                className="text-xs text-gray-700 hover:text-teal-500 transition px-2 py-1 rounded border border-white/5 hover:border-teal-500/30"
+                                title="Acceso Superadmin"
+                            >
+                                🔒 Superadmin
+                            </button>
+                        </div>
                     </div>
                 </div>
             </footer>
+
         </div>
     );
 }

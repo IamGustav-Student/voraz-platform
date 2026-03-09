@@ -10,7 +10,6 @@ import OrderTracking from './components/OrderTracking';
 import AuthModal from './components/AuthModal';
 import VorazClub from './components/VorazClub';
 import AdminPanel from './components/AdminPanel';
-import SuperAdminPanel from './components/SuperAdminPanel';
 import GastroRedLanding from './components/GastroRedLanding';
 
 // Dominios que deben mostrar la landing de GastroRed en lugar de un tenant
@@ -50,7 +49,6 @@ function App() {
   const [activeOrderId, setActiveOrderId] = useState(null);
   const [isAuthOpen, setIsAuthOpen] = useState(false);
   const [isAdminOpen, setIsAdminOpen] = useState(false);
-  const [isSuperAdminOpen, setIsSuperAdminOpen] = useState(false);
 
   useEffect(() => {
     // Si ya sabemos que es el root domain, no hace falta chequear
@@ -457,14 +455,7 @@ function App() {
                 <span>Admin</span>
               </motion.button>
             )}
-            <motion.button
-              whileTap={{ scale: 0.93 }}
-              onClick={(e) => { if (e.shiftKey) setIsSuperAdminOpen(true); }}
-              className="flex items-center space-x-1 bg-white/5 hover:bg-white/5 border border-white/5 text-white/20 px-3 py-2 rounded-xl text-sm font-bold transition cursor-default"
-              title=""
-            >
-              <span>🍽️</span>
-            </motion.button>
+
             <motion.button
               whileTap={{ scale: 0.93 }}
               onClick={() => setIsCartOpen(true)}
@@ -639,13 +630,6 @@ function App() {
 
       {/* ADMIN PANEL */}
       {isAdminOpen && <AdminPanel onClose={() => setIsAdminOpen(false)} />}
-
-      {/* SUPERADMIN PANEL */}
-      {isSuperAdminOpen && (
-        <div className="fixed inset-0 z-[200] overflow-y-auto">
-          <SuperAdminPanel onBack={() => setIsSuperAdminOpen(false)} />
-        </div>
-      )}
     </div>
   );
 }

@@ -108,6 +108,30 @@ export default function SuperAdminPanel({ onBack }) {
     setCreating(false);
   };
 
+  const loadConfig = async () => {
+    try {
+      const res = await fetch(`${API_URL}/superadmin/config`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.message || 'Error al cargar config');
+      const cfg = data.data ?? data;
+      setConfig(cfg);
+      setConfigForm({
+        mp_access_token: '',
+        mp_sandbox_mode: cfg.mp_sandbox_mode || 'false',
+        price_full_digital_monthly: cfg.price_full_digital_monthly || '60000',
+        price_full_digital_annual: cfg.price_full_digital_annual || '600000',
+        price_expert_monthly: cfg.price_expert_monthly || '100000',
+        price_expert_annual: cfg.price_expert_annual || '1000000',
+        trial_days: cfg.trial_days || '7',
+        frontend_url: cfg.frontend_url || '',
+        backend_url: cfg.backend_url || '',
+        contact_email: cfg.contact_email || '',
+      });
+    } catch (e) { setMsg('Error al cargar config: ' + e.message); }
+  };
+
   const saveConfig = async (e) => {
     e.preventDefault();
     setSavingConfig(true);
