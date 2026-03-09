@@ -147,6 +147,8 @@ app.listen(PORT, async () => {
         console.error('🔴 Sin conexión a BD. Las migraciones se saltean. Verificá DATABASE_URL en Railway → Variables.');
         return;
     }
+    await runMigration('init.sql');             // categories, products (base)
+    await runMigration('phase6.sql');            // influencers, videos (community)
     await runMigration('phase7_orders.sql');
     await runMigration('phase8_auth.sql');
     await runMigration('phase9_whitelabel.sql');

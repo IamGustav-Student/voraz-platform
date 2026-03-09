@@ -18,9 +18,7 @@ ALTER TABLE stores ADD COLUMN IF NOT EXISTS admin_email      VARCHAR(150);
 ALTER TABLE stores ADD COLUMN IF NOT EXISTS mp_subscription_id VARCHAR(200);
 ALTER TABLE stores ADD COLUMN IF NOT EXISTS slogan           VARCHAR(200);
 
--- 2. Asegurar que stores tenga tenant_settings_id vinculado (para config SaaS)
---    Se usa store_id como FK en tenant_settings
-ALTER TABLE tenant_settings ADD COLUMN IF NOT EXISTS store_id INT;
+-- NOTA: store_id se agrega con FK en el paso 8 al final de este archivo
 
 -- 3. Agregar store_id a todas las tablas de datos
 ALTER TABLE products         ADD COLUMN IF NOT EXISTS store_id INT REFERENCES stores(id) DEFAULT 1;

@@ -1,5 +1,5 @@
 -- 1. Tabla de Influencers (Voraz Squad)
-CREATE TABLE influencers (
+CREATE TABLE IF NOT EXISTS influencers (
     id SERIAL PRIMARY KEY,
     name VARCHAR(100) NOT NULL,
     social_handle VARCHAR(50) NOT NULL, -- ej: @santimaratea
@@ -9,7 +9,7 @@ CREATE TABLE influencers (
 );
 
 -- 2. Tabla de Videos (Recitales y Eventos)
-CREATE TABLE videos (
+CREATE TABLE IF NOT EXISTS videos (
     id SERIAL PRIMARY KEY,
     title VARCHAR(100),
     youtube_id VARCHAR(20) NOT NULL, -- Solo el ID (ej: dQw4w9WgXcQ)
