@@ -36,29 +36,21 @@ function cleanSubdomain(s) {
   return (s || '').toLowerCase().trim().replace(/[^a-z0-9-]/g, '');
 }
 
-/** Sincroniza un store con la tabla tenants (legacy) y tenant_settings */
-async function syncTenantRecord(storeId, subdomain, storeName) {
-  if (!subdomain) return;
+/** Crea o actualiza tenant en tenants + tenant_settings */
+async function syncTenantRecord(tenantId, tenantName) {
+  if (!tenantId) return;
   try {
-    // Upsert en tabla tenants (legacy) — necesaria para que el middleware la encuentre
     await query(
-      `INSERT INTO tenants (id, name) VALUES ($1, $2)
+      `INSERT INTO tenants (id, name, subdomain) VALUES ($1, $2, $1)
        ON CONFLICT (id) DO UPDATE SET name = EXCLUDED.name`,
-      [subdomain, storeName]
-    );
-    // Upsert en tenant_settings
-    await query(
-      `INSERT INTO tenant_settings (store_id, tenant_id, cash_on_delivery)
-       VALUES ($1, $2, true)
-       ON CONFLICT (store_id) DO NOTHING`,
-      [storeId, subdomain]
+      [tenantId, tenantName]
     );
   } catch (e) {
     console.warn('syncTenantRecord warning:', e.message);
   }
 }
 
-// ── Crear tenant de trial (7 días gratis, sin pago) ──────────────────────────
+// ── Crear tenant de trial (7 días gratis, sin pago) ────────────────────────
 export const createTrialTenant = async (req, res) => {
   const { name, brand_name, subdomain, admin_email, slogan,
     brand_color_primary, brand_color_secondary } = req.body;
@@ -76,26 +68,36 @@ export const createTrialTenant = async (req, res) => {
     const expires = new Date();
     expires.setDate(expires.getDate() + trialDays);
 
+    // Crear en TENANTS (fuente de verdad)
     const result = await query(
-      `INSERT INTO stores
-         (name, brand_name, subdomain, plan_type, subscription_period,
+      `INSERT INTO tenants
+         (id, name, subdomain, brand_name, plan_type, subscription_period,
           subscription_expires_at, status, admin_email, brand_color_primary,
-          brand_color_secondary, slogan)
-       VALUES ($1,$2,$3,'Trial','monthly',$4,'trial',$5,$6,$7,$8)
+          brand_color_secondary, slogan, active)
+       VALUES ($1,$2,$1,$3,'Trial','monthly',$4,'trial',$5,$6,$7,$8,true)
        RETURNING id, name, brand_name, subdomain, status, subscription_expires_at`,
       [
-        name.trim(), (brand_name || name).trim(), cleanSub,
-        expires,
-        admin_email?.trim() || null,
+        cleanSub, name.trim(), (brand_name || name).trim(),
+        expires, admin_email?.trim() || null,
         brand_color_primary || '#E30613',
         brand_color_secondary || '#1A1A1A',
         slogan?.trim() || null,
       ]
     );
-    const store = result.rows[0];
+    const tenant = result.rows[0];
 
-    // Sincronizar con tenants + tenant_settings
-    await syncTenantRecord(store.id, cleanSub, store.name);
+    // Crear sucursal física inicial en STORES
+    const storeResult = await query(
+      `INSERT INTO stores (name, tenant_id) VALUES ($1, $2) RETURNING id`,
+      [name.trim(), cleanSub]
+    );
+
+    // Crear tenant_settings
+    await query(
+      `INSERT INTO tenant_settings (store_id, tenant_id, tenant_id_fk, cash_on_delivery)
+       VALUES ($1, $2, $2, true) ON CONFLICT (store_id) DO NOTHING`,
+      [storeResult.rows[0].id, cleanSub]
+    );
 
     res.status(201).json({
       status: 'success',
@@ -145,20 +147,21 @@ export const createPublicCheckout = async (req, res) => {
     const expires = new Date();
     expires.setDate(expires.getDate() + (period === 'annual' ? 365 : 30));
 
-    // Verificar que el subdomain no exista
-    const existing = await query('SELECT id FROM stores WHERE subdomain = $1', [cleanSub]);
+    // Verificar que el subdomain no exista en tenants
+    const existing = await query('SELECT id FROM tenants WHERE subdomain = $1', [cleanSub]);
     if (existing.rows.length)
       return res.status(409).json({ status: 'error', message: 'El subdomain ya está en uso. Elegí otro.' });
 
-    const storeResult = await query(
-      `INSERT INTO stores
-         (name, brand_name, subdomain, plan_type, subscription_period,
+    // Crear en TENANTS como pending_payment hasta confirmar el pago
+    const tenantResult = await query(
+      `INSERT INTO tenants
+         (id, name, subdomain, brand_name, plan_type, subscription_period,
           subscription_expires_at, status, admin_email,
-          brand_color_primary, brand_color_secondary, slogan)
-       VALUES ($1,$2,$3,$4,$5,$6,'pending_payment',$7,$8,$9,$10)
+          brand_color_primary, brand_color_secondary, slogan, active)
+       VALUES ($1,$2,$1,$3,$4,$5,$6,'pending_payment',$7,$8,$9,$10,true)
        RETURNING id, name, brand_name, subdomain`,
       [
-        name.trim(), (brand_name || name).trim(), cleanSub,
+        cleanSub, name.trim(), (brand_name || name).trim(),
         plan_type, period, expires,
         admin_email?.trim() || null,
         brand_color_primary || '#E30613',
@@ -166,10 +169,13 @@ export const createPublicCheckout = async (req, res) => {
         slogan?.trim() || null,
       ]
     );
-    const store = storeResult.rows[0];
+    const tenant = tenantResult.rows[0];
 
-    // Sincronizar con tenants + tenant_settings
-    await syncTenantRecord(store.id, cleanSub, store.name);
+    // Crear sucursal física inicial (pendiente de activación)
+    const storeResult = await query(
+      `INSERT INTO stores (name, tenant_id) VALUES ($1, $2) RETURNING id`,
+      [name.trim(), cleanSub]
+    );
 
     // Crear preferencia en MercadoPago
     const sandbox = config.mp_sandbox_mode === 'true';
@@ -182,19 +188,19 @@ export const createPublicCheckout = async (req, res) => {
     const preferenceBody = {
       items: [{
         id: `plan_${plan_type.replace(/\s/g, '_').toLowerCase()}_${period}`,
-        title: `GastroRed — ${store.brand_name}: Plan ${plan_type} (${periodLabel})`,
+        title: `GastroRed — ${tenant.brand_name}: Plan ${plan_type} (${periodLabel})`,
         quantity: 1,
         unit_price: amount,
         currency_id: 'ARS',
       }],
       payer: { email: admin_email || 'cliente@gastrored.com.ar' },
-      external_reference: `store_${store.id}_${plan_type.replace(/\s/g, '_')}_${period}`,
+      external_reference: `tenant_${cleanSub}_${plan_type.replace(/\s/g, '_')}_${period}`,
       statement_descriptor: 'GASTRORED',
       notification_url: `${backendUrl}/api/subscriptions/webhook`,
       back_urls: {
-        success: `${frontendUrl}?sub=success&store=${store.id}`,
-        failure: `${frontendUrl}?sub=failure&store=${store.id}`,
-        pending: `${frontendUrl}?sub=pending&store=${store.id}`,
+        success: `${frontendUrl}?sub=success&store=${storeResult.rows[0].id}&tenant=${cleanSub}`,
+        failure: `${frontendUrl}?sub=failure&store=${storeResult.rows[0].id}&tenant=${cleanSub}`,
+        pending: `${frontendUrl}?sub=pending&store=${storeResult.rows[0].id}&tenant=${cleanSub}`,
       },
       auto_return: 'approved',
     };
@@ -202,15 +208,17 @@ export const createPublicCheckout = async (req, res) => {
     const preference = await preferenceClient.create({ body: preferenceBody });
 
     await query(
-      `INSERT INTO subscription_payments (store_id, mp_payment_id, amount, plan_type, period, status)
-       VALUES ($1, $2, $3, $4, $5, 'pending')`,
-      [store.id, preference.id, amount, plan_type, period]
+      `INSERT INTO subscription_payments (store_id, tenant_id, mp_payment_id, amount, plan_type, period, status)
+       VALUES ($1, $2, $3, $4, $5, $6, 'pending')`,
+      [storeResult.rows[0].id, cleanSub, preference.id, amount, plan_type, period]
     );
+
 
     res.status(201).json({
       status: 'success',
       data: {
-        store_id: store.id,
+        tenant_id: cleanSub,
+        store_id: storeResult.rows[0].id,
         subdomain: cleanSub,
         plan_type,
         period,
@@ -229,7 +237,7 @@ export const createPublicCheckout = async (req, res) => {
   }
 };
 
-// ── Webhook — confirmar pago ──────────────────────────────────────────────────
+// ── Webhook — confirmar pago ─────────────────────────────────────────────────
 export const handleSubscriptionWebhook = async (req, res) => {
   const { type, data } = req.body;
   if (type !== 'payment') return res.sendStatus(200);
@@ -246,34 +254,45 @@ export const handleSubscriptionWebhook = async (req, res) => {
     if (payment.status !== 'approved') return res.sendStatus(200);
 
     const ref = payment.external_reference || '';
-    const match = ref.match(/^store_(\d+)_(.+)_(monthly|annual)$/);
-    if (!match) return res.sendStatus(200);
+    // Soporta formato nuevo: tenant_{subdomain}_{plan}_{period}
+    // Y formato legacy: store_{id}_{plan}_{period}
+    const tenantMatch = ref.match(/^tenant_([a-z0-9-]+)_(.+)_(monthly|annual)$/);
+    const storeMatch = ref.match(/^store_(\d+)_(.+)_(monthly|annual)$/);
 
-    const [, storeId, rawPlanType, period] = match;
-    const planType = rawPlanType.replace(/_/g, ' ');
     const expires = new Date();
+    let tenantId = null;
+    let planType, period;
+
+    if (tenantMatch) {
+      [, tenantId, planType, period] = tenantMatch;
+      planType = planType.replace(/_/g, ' ');
+    } else if (storeMatch) {
+      const [, storeId, rawPlan, per] = storeMatch;
+      planType = rawPlan.replace(/_/g, ' ');
+      period = per;
+      // Buscar tenant_id desde subscription_payments (store_id legacy)
+      const sp = await query('SELECT tenant_id FROM subscription_payments WHERE store_id=$1 LIMIT 1', [storeId]);
+      tenantId = sp.rows[0]?.tenant_id || null;
+    } else {
+      return res.sendStatus(200);
+    }
+
     expires.setDate(expires.getDate() + (period === 'annual' ? 365 : 30));
 
-    const storeResult = await query(
-      `UPDATE stores SET status='active', plan_type=$1, subscription_period=$2,
-       subscription_expires_at=$3, mp_subscription_id=$4 WHERE id=$5
-       RETURNING id, name, subdomain`,
-      [planType, period, expires, String(payment.id), storeId]
-    );
+    if (tenantId) {
+      await query(
+        `UPDATE tenants SET status='active', plan_type=$1, subscription_period=$2,
+         subscription_expires_at=$3, mp_subscription_id=$4 WHERE id=$5`,
+        [planType, period, expires, String(payment.id), tenantId]
+      );
+    }
 
     await query(
-      `UPDATE subscription_payments SET status='approved', mp_payment_id=$1
-       WHERE mp_payment_id=$2`,
+      `UPDATE subscription_payments SET status='approved', mp_payment_id=$1 WHERE mp_payment_id=$2`,
       [String(payment.id), String(data.id)]
     );
 
-    // Sincronizar tenant con el sistema completo
-    if (storeResult.rows[0]) {
-      const s = storeResult.rows[0];
-      await syncTenantRecord(s.id, s.subdomain, s.name);
-    }
-
-    console.log(`✅ Suscripción aprobada: store_id=${storeId} plan=${planType} period=${period}`);
+    console.log(`✅ Suscripción aprobada: tenant=${tenantId} plan=${planType} period=${period}`);
     res.sendStatus(200);
   } catch (e) {
     console.error('Subscription webhook error:', e.message);
@@ -281,15 +300,18 @@ export const handleSubscriptionWebhook = async (req, res) => {
   }
 };
 
-// ── Status de suscripción ─────────────────────────────────────────────────────
+// ── Status de suscripción (por store_id físico, busca tenant relacionado) ────────
 export const getSubscriptionStatus = async (req, res) => {
   const { store_id } = req.params;
   try {
     const config = await getConfig();
     const prices = getPrices(config);
+    // Buscar desde el store físico → su tenant
+    const storeRes = await query('SELECT tenant_id FROM stores WHERE id = $1', [store_id]);
+    const tenantId = storeRes.rows[0]?.tenant_id || store_id;
     const result = await query(
-      'SELECT plan_type, subscription_period, subscription_expires_at, status FROM stores WHERE id = $1',
-      [store_id]
+      'SELECT id, subdomain, plan_type, subscription_period, subscription_expires_at, status FROM tenants WHERE id = $1',
+      [tenantId]
     );
     if (!result.rows.length)
       return res.status(404).json({ status: 'error', message: 'Comercio no encontrado.' });
@@ -364,36 +386,45 @@ export const createSubscriptionCheckout = async (req, res) => {
 
 // ── Activación manual / sandbox (sin webhook) ─────────────────────────────────
 export const activateSandboxStore = async (req, res) => {
-  const { store_id, secret } = req.body;
-  if (!store_id) return res.status(400).json({ status: 'error', message: 'store_id requerido.' });
+  const { store_id, tenant_id, secret } = req.body;
+  const targetId = tenant_id || store_id;
+  if (!targetId) return res.status(400).json({ status: 'error', message: 'tenant_id o store_id requerido.' });
 
   try {
     const config = await getConfig();
     const isSandbox = config.mp_sandbox_mode === 'true';
     const validSecret = process.env.GASTRORED_SUPERADMIN_SECRET || 'gastrored_super_secret';
 
-    // Solo permitir si sandbox está activo O si se provee el secret del superadmin
     if (!isSandbox && secret !== validSecret) {
-      return res.status(403).json({
-        status: 'error',
-        message: 'Solo disponible en modo sandbox o con clave de superadmin.',
-      });
+      return res.status(403).json({ status: 'error', message: 'Solo disponible en modo sandbox o con clave de superadmin.' });
     }
 
-    const storeCheck = await query(
-      `SELECT id, name, subdomain, status FROM stores WHERE id = $1`,
-      [store_id]
-    );
-    if (!storeCheck.rows.length)
+    // Resolver tenant_id: si viene store_id numérico, buscar su tenant
+    let resolvedTenantId = tenant_id;
+    let physicalStoreId = null;
+    if (!resolvedTenantId) {
+      const storeRes = await query('SELECT tenant_id FROM stores WHERE id = $1', [store_id]);
+      resolvedTenantId = storeRes.rows[0]?.tenant_id;
+      physicalStoreId = store_id;
+    }
+
+    if (!resolvedTenantId)
       return res.status(404).json({ status: 'error', message: 'Comercio no encontrado.' });
 
-    const store = storeCheck.rows[0];
+    const tenantCheck = await query(
+      `SELECT id, name, subdomain, status, plan_type FROM tenants WHERE id = $1`,
+      [resolvedTenantId]
+    );
+    if (!tenantCheck.rows.length)
+      return res.status(404).json({ status: 'error', message: 'Tenant no encontrado.' });
+
+    const tenant = tenantCheck.rows[0];
     const trialDays = parseInt(config.trial_days || '7');
     const expires = new Date();
     expires.setDate(expires.getDate() + (isSandbox ? trialDays : 30));
 
     await query(
-      `UPDATE stores
+      `UPDATE tenants
        SET status = 'active',
            subscription_expires_at = CASE
              WHEN subscription_expires_at IS NULL OR subscription_expires_at < NOW()
@@ -401,26 +432,27 @@ export const activateSandboxStore = async (req, res) => {
              ELSE subscription_expires_at
            END
        WHERE id = $2`,
-      [expires, store_id]
+      [expires, resolvedTenantId]
     );
 
     // Registrar pago de prueba en historial
-    await query(
-      `INSERT INTO subscription_payments (store_id, mp_payment_id, amount, plan_type, period, status)
-       VALUES ($1, $2, 0, $3, 'monthly', 'approved')`,
-      [store_id, `sandbox_manual_${Date.now()}`, store.plan_type || 'Trial']
-    );
-
-    // Sincronizar con tenants + tenant_settings
-    await syncTenantRecord(store.id, store.subdomain, store.name);
+    const storeIdForPayment = physicalStoreId || (await query('SELECT id FROM stores WHERE tenant_id=$1 LIMIT 1', [resolvedTenantId])).rows[0]?.id;
+    if (storeIdForPayment) {
+      await query(
+        `INSERT INTO subscription_payments (store_id, tenant_id, mp_payment_id, amount, plan_type, period, status)
+         VALUES ($1, $2, $3, 0, $4, 'monthly', 'approved')`,
+        [storeIdForPayment, resolvedTenantId, `sandbox_manual_${Date.now()}`, tenant.plan_type || 'Trial']
+      );
+    }
 
     res.json({
       status: 'success',
-      message: `Comercio ${store.name} activado correctamente (sandbox).`,
+      message: `Comercio ${tenant.name} activado correctamente (sandbox).`,
       data: {
-        store_id: store.id,
-        subdomain: store.subdomain,
-        expires_at: expires,
+        tenant_id: resolvedTenantId,
+        subdomain: tenant.subdomain,
+        status: 'active',
+        subscription_expires_at: expires,
       },
     });
   } catch (e) {

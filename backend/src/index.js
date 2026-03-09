@@ -59,22 +59,22 @@ app.use('/api/subscriptions', subscriptionRoutes);
 app.get('/api/tenant-check', tenantMiddleware, (req, res) => {
     res.json({
         is_landing: req.isLanding === true,
-        has_tenant: !!req.store,
-        store: req.store ? {
-            id: req.store.id,
-            brand_name: req.store.brand_name,
-            subdomain: req.store.subdomain,
+        has_tenant: !!req.tenant,
+        store: req.tenant ? {
+            id: req.tenant.id,
+            brand_name: req.tenant.brand_name,
+            subdomain: req.tenant.subdomain,
         } : null,
     });
 });
 
 
-// ── Manifest PWA dinámico (necesita host pero no bloquea si no encuentra) ────
+// ── Manifest PWA dinámico ───────────────────────────────────────────────────
 app.get('/api/manifest', async (req, res) => {
     const host = (req.headers['x-store-domain'] || req.headers.host || '').split(':')[0].toLowerCase();
     try {
         const result = await query(
-            'SELECT brand_name, brand_color_primary, brand_logo_url, brand_favicon_url, slogan FROM stores WHERE custom_domain=$1 OR subdomain=$1 LIMIT 1',
+            'SELECT brand_name, brand_color_primary, brand_logo_url, brand_favicon_url, slogan FROM tenants WHERE custom_domain=$1 OR subdomain=$1 LIMIT 1',
             [host]
         );
         const s = result.rows[0] || {};
@@ -100,23 +100,24 @@ app.get('/api/manifest', async (req, res) => {
     }
 });
 
+
 // ── Configuración pública del tenant ─────────────────────────────────────────
 app.get('/api/settings', tenantMiddleware, async (req, res) => {
-    const storeId = req.store?.id || 1;
+    const tenantId = req.tenant?.id || 'voraz';
     try {
         const result = await query(
-            `SELECT s.id, ts.cash_on_delivery, s.brand_name, s.brand_color_primary, s.brand_color_secondary,
-                    s.brand_logo_url, s.slogan, s.plan_type, s.subdomain
-             FROM stores s
-             LEFT JOIN tenant_settings ts ON ts.store_id = s.id
-             WHERE s.id = $1`,
-            [storeId]
+            `SELECT t.id, ts.cash_on_delivery, t.brand_name, t.brand_color_primary, t.brand_color_secondary,
+                    t.brand_logo_url, t.slogan, t.plan_type, t.subdomain
+             FROM tenants t
+             LEFT JOIN tenant_settings ts ON ts.tenant_id_fk = t.id
+             WHERE t.id = $1`,
+            [tenantId]
         );
         const cfg = result.rows[0] || {};
         res.json({
             status: 'success',
             data: {
-                id: cfg.id || 1,
+                id: cfg.id || tenantId,
                 cash_on_delivery: cfg.cash_on_delivery !== false,
                 brand_name: cfg.brand_name || 'GastroRed',
                 brand_color_primary: cfg.brand_color_primary || '#E30613',
@@ -174,4 +175,5 @@ app.listen(PORT, async () => {
     await runMigration('phase14_reconcile_tenant.sql'); // GastroRed: reconcilia tenant_id → store_id
     await runMigration('phase15_gastrored_config.sql'); // GastroRed: tabla de config global
     await runMigration('phase16_multitenant_fix.sql');  // GastroRed: fix multi-tenancy completo
+    await runMigration('phase17_tenants_stores_refactor.sql'); // GastroRed: tenants=SaaS clients, stores=sucursales
 });

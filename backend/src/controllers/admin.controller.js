@@ -1,7 +1,10 @@
 import { query } from '../config/db.js';
 import { v2 as cloudinary } from 'cloudinary';
 
-const getStoreId = (req) => req.store?.id || 1;
+// Devuelve el tenant_id (subdomain) del tenant actual
+const getTenantId = (req) => req.tenant?.id || req.store?.id || 'voraz';
+// Backward-compat: para queries que aún usan store_id INT en tablas de datos
+const getStoreId = (req) => req.tenant?.id || req.store?.id || 'voraz';
 
 // ── PRODUCTOS ──────────────────────────────────────────────────────────────
 export const getAdminProducts = async (req, res) => {
@@ -256,14 +259,13 @@ export const getDashboardStats = async (req, res) => {
   } catch (e) { res.status(500).json({ status: 'error', message: e.message }); }
 };
 
-// ── LOCALES (sucursales del tenant) ───────────────────────────────────────
+// ── LOCALES (sucursales físicas del tenant) ─────────────────────────────
 export const getAdminStores = async (req, res) => {
   try {
-    const storeId = getStoreId(req);
-    // Devuelve el tenant principal + sus sucursales hijas (store_id = storeId pero id != storeId)
+    const tenantId = getTenantId(req);
     const result = await query(
-      `SELECT * FROM stores WHERE id=$1 OR (store_id=$1 AND id!=$1) ORDER BY id`,
-      [storeId]
+      `SELECT * FROM stores WHERE tenant_id = $1 ORDER BY id`,
+      [tenantId]
     );
     res.json({ status: 'success', data: result.rows });
   } catch (e) { res.status(500).json({ status: 'error', message: e.message }); }
@@ -271,12 +273,12 @@ export const getAdminStores = async (req, res) => {
 
 export const createStore = async (req, res) => {
   try {
-    const storeId = getStoreId(req);
+    const tenantId = getTenantId(req);
     const { name, address, image_url, google_maps_url, delivery_link, phone } = req.body;
     const result = await query(
-      `INSERT INTO stores (name, address, image_url, waze_link, delivery_link, phone, store_id)
+      `INSERT INTO stores (name, address, image_url, waze_link, delivery_link, phone, tenant_id)
        VALUES ($1,$2,$3,$4,$5,$6,$7) RETURNING *`,
-      [name, address, image_url || null, google_maps_url || null, delivery_link || null, phone || null, storeId]
+      [name, address, image_url || null, google_maps_url || null, delivery_link || null, phone || null, tenantId]
     );
     res.status(201).json({ status: 'success', data: result.rows[0] });
   } catch (e) { res.status(500).json({ status: 'error', message: e.message }); }
@@ -284,13 +286,13 @@ export const createStore = async (req, res) => {
 
 export const updateStore = async (req, res) => {
   try {
-    const storeId = getStoreId(req);
+    const tenantId = getTenantId(req);
     const { id } = req.params;
     const { name, address, image_url, google_maps_url, delivery_link, phone } = req.body;
     const result = await query(
       `UPDATE stores SET name=$1, address=$2, image_url=$3, waze_link=$4, delivery_link=$5, phone=$6
-       WHERE id=$7 AND store_id=$8 RETURNING *`,
-      [name, address, image_url || null, google_maps_url || null, delivery_link || null, phone || null, id, storeId]
+       WHERE id=$7 AND tenant_id=$8 RETURNING *`,
+      [name, address, image_url || null, google_maps_url || null, delivery_link || null, phone || null, id, tenantId]
     );
     if (!result.rows.length) return res.status(404).json({ status: 'error', message: 'Local no encontrado' });
     res.json({ status: 'success', data: result.rows[0] });
@@ -299,8 +301,8 @@ export const updateStore = async (req, res) => {
 
 export const deleteStore = async (req, res) => {
   try {
-    const storeId = getStoreId(req);
-    await query('DELETE FROM stores WHERE id=$1 AND store_id=$2', [req.params.id, storeId]);
+    const tenantId = getTenantId(req);
+    await query('DELETE FROM stores WHERE id=$1 AND tenant_id=$2', [req.params.id, tenantId]);
     res.json({ status: 'success', message: 'Local eliminado' });
   } catch (e) { res.status(500).json({ status: 'error', message: e.message }); }
 };
