@@ -144,9 +144,49 @@ export const updateStoreStatus = async (req, res) => {
   const { status } = req.body;
   if (!['active', 'suspended', 'trial'].includes(status)) return res.status(400).json({ status: 'error', message: 'Estado inválido.' });
   try {
-    const result = await query('UPDATE stores SET status = $1 WHERE id = $2 RETURNING id, name, status', [status, id]);
+    // Si se activa, renovar subscription_expires_at si es NULL o ya venció
+    let result;
+    if (status === 'active') {
+      const newExpiry = new Date();
+      newExpiry.setDate(newExpiry.getDate() + 30);
+      result = await query(
+        `UPDATE stores
+         SET status = $1,
+             subscription_expires_at = CASE
+               WHEN subscription_expires_at IS NULL OR subscription_expires_at < NOW()
+               THEN $2
+               ELSE subscription_expires_at
+             END
+         WHERE id = $3
+         RETURNING id, name, status, subdomain, subscription_expires_at`,
+        [status, newExpiry, id]
+      );
+    } else {
+      result = await query(
+        'UPDATE stores SET status = $1 WHERE id = $2 RETURNING id, name, status, subdomain',
+        [status, id]
+      );
+    }
     if (!result.rows.length) return res.status(404).json({ status: 'error', message: 'Comercio no encontrado.' });
-    res.json({ status: 'success', data: result.rows[0] });
+    const store = result.rows[0];
+
+    // Sincronizar con tabla tenants (legacy) para que todo el sistema lo reconozca
+    if (store.subdomain) {
+      await query(
+        `INSERT INTO tenants (id, name) VALUES ($1, $2)
+         ON CONFLICT (id) DO UPDATE SET name = EXCLUDED.name`,
+        [store.subdomain, store.name]
+      );
+      // Asegurarse de que tenant_settings existe
+      await query(
+        `INSERT INTO tenant_settings (store_id, tenant_id, cash_on_delivery)
+         VALUES ($1, $2, true)
+         ON CONFLICT (store_id) DO NOTHING`,
+        [store.id, store.subdomain]
+      );
+    }
+
+    res.json({ status: 'success', data: store });
   } catch (e) { res.status(500).json({ status: 'error', message: e.message }); }
 };
 

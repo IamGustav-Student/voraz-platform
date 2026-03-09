@@ -54,10 +54,27 @@ export const tenantMiddleware = async (req, res, next) => {
 
     const store = result.rows[0];
 
+    // Si el pago está pendiente → mostrar landing (no romper como tenant vacío)
+    if (store.status === 'pending_payment') {
+      req.isLanding = true;
+      req.store = null;
+      return next();
+    }
+
     if (store.status === 'suspended') {
       return res.status(402).json({
         status: 'error',
         message: 'Suscripción vencida. Contactá a GastroRed para renovar.',
+        store_id: store.id,
+      });
+    }
+
+    // Si estaba activo pero la suscripción venció → suspender automáticamente y avisar
+    if (store.status === 'active' && store.subscription_expires_at && new Date(store.subscription_expires_at) < new Date()) {
+      await query("UPDATE stores SET status='suspended' WHERE id=$1", [store.id]);
+      return res.status(402).json({
+        status: 'error',
+        message: 'Tu suscripción venció. Contactá a GastroRed para renovarla.',
         store_id: store.id,
       });
     }

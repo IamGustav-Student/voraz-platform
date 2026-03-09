@@ -318,13 +318,136 @@ function CheckoutModal({ plan, onClose }) {
 }
 
 // ════════════════════════════════════════════════════════════════════════════
-// LANDING PAGE PRINCIPAL
+// POST PAYMENT — Pantalla de activación (retorno desde MercadoPago)
 // ════════════════════════════════════════════════════════════════════════════
+function PostPaymentScreen({ storeId, subResult, onContinue }) {
+    const [status, setStatus] = useState('loading');   // loading | active | pending | failed
+    const [store, setStore] = useState(null);
+    const [attempts, setAttempts] = useState(0);
+    const MAX_ATTEMPTS = 12; // 12 × 3s = 36 segs
+
+    useEffect(() => {
+        let timer;
+        const checkStatus = async () => {
+            try {
+                // En sandbox: intentar activar primero (bypass al webhook)
+                if (subResult === 'success') {
+                    await fetch(`${API_URL}/subscriptions/activate-sandbox`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ store_id: parseInt(storeId) }),
+                    }).catch(() => { }); // silencioso si falla
+                }
+
+                const res = await fetch(`${API_URL}/subscriptions/status/${storeId}`);
+                const data = await res.json();
+                if (data?.data?.status === 'active') {
+                    setStore(data.data);
+                    setStatus('active');
+                    return;
+                }
+                if (data?.data?.status === 'suspended') {
+                    setStatus('failed');
+                    return;
+                }
+            } catch { /* silencioso */ }
+
+            setAttempts(a => {
+                const next = a + 1;
+                if (next >= MAX_ATTEMPTS) {
+                    setStatus('pending');
+                    return next;
+                }
+                timer = setTimeout(checkStatus, 3000);
+                return next;
+            });
+        };
+        checkStatus();
+        return () => clearTimeout(timer);
+    }, [storeId, subResult]);
+
+    if (status === 'loading') return (
+        <div className="fixed inset-0 z-[200] bg-[#080c12] flex flex-col items-center justify-center text-white gap-4">
+            <div className="w-12 h-12 border-4 border-teal-500 border-t-transparent rounded-full animate-spin" />
+            <p className="text-lg font-bold">Verificando tu pago…</p>
+            <p className="text-gray-500 text-sm">Esto tarda unos segundos</p>
+        </div>
+    );
+
+    if (status === 'active' && store) return (
+        <div className="fixed inset-0 z-[200] bg-[#080c12] flex flex-col items-center justify-center text-white gap-6 px-4">
+            <div className="text-7xl">🎉</div>
+            <h2 className="text-3xl font-black text-center">¡Tu comercio está activo!</h2>
+            <div className="bg-teal-900/30 border border-teal-500/30 rounded-2xl p-6 text-center max-w-md">
+                <p className="text-sm text-gray-400 mb-2">Accedé a tu carta en:</p>
+                <a href={`https://${store.subdomain || ''}.${GASTRORED_DOMAIN}`}
+                    target="_blank" rel="noreferrer"
+                    className="text-teal-400 font-mono font-bold text-lg hover:underline block mb-4">
+                    {store.subdomain}.{GASTRORED_DOMAIN}
+                </a>
+                <p className="text-xs text-gray-500">
+                    Plan: <strong className="text-white">{store.plan_type}</strong>
+                    {store.subscription_expires_at && ` · Válido hasta: ${new Date(store.subscription_expires_at).toLocaleDateString('es-AR')}`}
+                </p>
+            </div>
+            <div className="flex flex-col gap-3 w-full max-w-sm">
+                <a href={`https://${store.subdomain}.${GASTRORED_DOMAIN}/admin`}
+                    target="_blank" rel="noreferrer"
+                    className="w-full bg-teal-500 hover:bg-teal-400 text-white py-4 rounded-xl font-black text-center text-sm">
+                    Ir al panel de admin →
+                </a>
+                <button onClick={onContinue} className="text-gray-500 hover:text-white text-sm py-2">
+                    Volver a la landing
+                </button>
+            </div>
+        </div>
+    );
+
+    // pending o failed → instrucciones manuales
+    return (
+        <div className="fixed inset-0 z-[200] bg-[#080c12] flex flex-col items-center justify-center text-white gap-5 px-4">
+            <div className="text-5xl">{status === 'failed' ? '⚠️' : '⏳'}</div>
+            <h2 className="text-2xl font-black text-center">
+                {status === 'failed' ? 'Pago no confirmado' : 'Activación pendiente'}
+            </h2>
+            <p className="text-gray-400 text-center max-w-md text-sm">
+                {status === 'failed'
+                    ? 'No se pudo confirmar el pago. Si el cargo ya fue realizado, contactanos y lo activamos manualmente.'
+                    : 'Tu pago está siendo procesado. En unos minutos recibirás un email con el acceso a tu comercio.'}
+            </p>
+            <p className="text-xs text-gray-600 font-mono">store_id: {storeId}</p>
+            <div className="flex flex-col gap-3 w-full max-w-sm">
+                <a href={`mailto:hola@${GASTRORED_DOMAIN}?subject=Activación%20store%20${storeId}`}
+                    className="w-full bg-white/10 hover:bg-white/20 text-white py-3 rounded-xl font-bold text-center text-sm">
+                    Contactar soporte 📩
+                </a>
+                <button onClick={onContinue} className="text-gray-500 hover:text-white text-sm py-2">
+                    Volver a la landing
+                </button>
+            </div>
+        </div>
+    );
+}
+
+
 export default function GastroRedLanding() {
     const [scrolled, setScrolled] = useState(false);
     const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
     const [selectedPlan, setSelectedPlan] = useState(null); // abre el modal
     const [showSuperAdmin, setShowSuperAdmin] = useState(false);
+    const [postPayment, setPostPayment] = useState(null); // { storeId, result }
+
+    // Detectar retorno desde MercadoPago (?sub=success|failure|pending&store=ID)
+    useEffect(() => {
+        const params = new URLSearchParams(window.location.search);
+        const sub = params.get('sub');
+        const storeId = params.get('store');
+        if (sub && storeId) {
+            setPostPayment({ storeId, result: sub });
+            // Limpiar params de la URL sin recargar
+            window.history.replaceState({}, '', window.location.pathname);
+        }
+    }, []);
 
     useEffect(() => {
         const handler = () => setScrolled(window.scrollY > 30);
@@ -424,6 +547,15 @@ export default function GastroRedLanding() {
 
     return (
         <div className="min-h-screen bg-[#080c12] text-white font-sans overflow-x-hidden">
+
+            {/* Pantalla post-pago (retorno desde MercadoPago) */}
+            {postPayment && (
+                <PostPaymentScreen
+                    storeId={postPayment.storeId}
+                    subResult={postPayment.result}
+                    onContinue={() => setPostPayment(null)}
+                />
+            )}
 
             {/* Modal de checkout */}
             {selectedPlan && <CheckoutModal plan={selectedPlan} onClose={() => setSelectedPlan(null)} />}

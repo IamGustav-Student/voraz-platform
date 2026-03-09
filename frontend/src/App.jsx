@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { getMenu, getInfluencers, getVideos, getStores, getNews } from './services/api';
 import { Helmet } from 'react-helmet-async';
-import { TENANT, formatPrice } from './config/tenant.js';
+import { TENANT, formatPrice, loadTenantConfig } from './config/tenant.js';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useCart } from './context/CartContext';
 import { useAuth } from './context/AuthContext';
@@ -51,6 +51,9 @@ function App() {
   const [isAdminOpen, setIsAdminOpen] = useState(false);
 
   useEffect(() => {
+    // Cargar branding dinámico del tenant desde la API
+    loadTenantConfig();
+
     // Si ya sabemos que es el root domain, no hace falta chequear
     if (!landingChecked) {
       const API_URL = (import.meta.env.VITE_API_URL || 'http://localhost:3000/api').trim();

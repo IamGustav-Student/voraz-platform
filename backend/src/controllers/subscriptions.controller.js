@@ -36,6 +36,28 @@ function cleanSubdomain(s) {
   return (s || '').toLowerCase().trim().replace(/[^a-z0-9-]/g, '');
 }
 
+/** Sincroniza un store con la tabla tenants (legacy) y tenant_settings */
+async function syncTenantRecord(storeId, subdomain, storeName) {
+  if (!subdomain) return;
+  try {
+    // Upsert en tabla tenants (legacy) — necesaria para que el middleware la encuentre
+    await query(
+      `INSERT INTO tenants (id, name) VALUES ($1, $2)
+       ON CONFLICT (id) DO UPDATE SET name = EXCLUDED.name`,
+      [subdomain, storeName]
+    );
+    // Upsert en tenant_settings
+    await query(
+      `INSERT INTO tenant_settings (store_id, tenant_id, cash_on_delivery)
+       VALUES ($1, $2, true)
+       ON CONFLICT (store_id) DO NOTHING`,
+      [storeId, subdomain]
+    );
+  } catch (e) {
+    console.warn('syncTenantRecord warning:', e.message);
+  }
+}
+
 // ── Crear tenant de trial (7 días gratis, sin pago) ──────────────────────────
 export const createTrialTenant = async (req, res) => {
   const { name, brand_name, subdomain, admin_email, slogan,
@@ -72,12 +94,8 @@ export const createTrialTenant = async (req, res) => {
     );
     const store = result.rows[0];
 
-    // Crear tenant_settings
-    await query(
-      `INSERT INTO tenant_settings (store_id, tenant_id, cash_on_delivery)
-       VALUES ($1, $2, true) ON CONFLICT (store_id) DO NOTHING`,
-      [store.id, cleanSub]
-    );
+    // Sincronizar con tenants + tenant_settings
+    await syncTenantRecord(store.id, cleanSub, store.name);
 
     res.status(201).json({
       status: 'success',
@@ -150,12 +168,8 @@ export const createPublicCheckout = async (req, res) => {
     );
     const store = storeResult.rows[0];
 
-    // tenant_settings
-    await query(
-      `INSERT INTO tenant_settings (store_id, tenant_id, cash_on_delivery)
-       VALUES ($1, $2, true) ON CONFLICT (store_id) DO NOTHING`,
-      [store.id, cleanSub]
-    );
+    // Sincronizar con tenants + tenant_settings
+    await syncTenantRecord(store.id, cleanSub, store.name);
 
     // Crear preferencia en MercadoPago
     const sandbox = config.mp_sandbox_mode === 'true';
@@ -240,9 +254,10 @@ export const handleSubscriptionWebhook = async (req, res) => {
     const expires = new Date();
     expires.setDate(expires.getDate() + (period === 'annual' ? 365 : 30));
 
-    await query(
+    const storeResult = await query(
       `UPDATE stores SET status='active', plan_type=$1, subscription_period=$2,
-       subscription_expires_at=$3, mp_subscription_id=$4 WHERE id=$5`,
+       subscription_expires_at=$3, mp_subscription_id=$4 WHERE id=$5
+       RETURNING id, name, subdomain`,
       [planType, period, expires, String(payment.id), storeId]
     );
 
@@ -251,6 +266,12 @@ export const handleSubscriptionWebhook = async (req, res) => {
        WHERE mp_payment_id=$2`,
       [String(payment.id), String(data.id)]
     );
+
+    // Sincronizar tenant con el sistema completo
+    if (storeResult.rows[0]) {
+      const s = storeResult.rows[0];
+      await syncTenantRecord(s.id, s.subdomain, s.name);
+    }
 
     console.log(`✅ Suscripción aprobada: store_id=${storeId} plan=${planType} period=${period}`);
     res.sendStatus(200);
@@ -337,6 +358,73 @@ export const createSubscriptionCheckout = async (req, res) => {
     });
   } catch (e) {
     console.error('Subscription checkout error:', e.message);
+    res.status(500).json({ status: 'error', message: e.message });
+  }
+};
+
+// ── Activación manual / sandbox (sin webhook) ─────────────────────────────────
+export const activateSandboxStore = async (req, res) => {
+  const { store_id, secret } = req.body;
+  if (!store_id) return res.status(400).json({ status: 'error', message: 'store_id requerido.' });
+
+  try {
+    const config = await getConfig();
+    const isSandbox = config.mp_sandbox_mode === 'true';
+    const validSecret = process.env.GASTRORED_SUPERADMIN_SECRET || 'gastrored_super_secret';
+
+    // Solo permitir si sandbox está activo O si se provee el secret del superadmin
+    if (!isSandbox && secret !== validSecret) {
+      return res.status(403).json({
+        status: 'error',
+        message: 'Solo disponible en modo sandbox o con clave de superadmin.',
+      });
+    }
+
+    const storeCheck = await query(
+      `SELECT id, name, subdomain, status FROM stores WHERE id = $1`,
+      [store_id]
+    );
+    if (!storeCheck.rows.length)
+      return res.status(404).json({ status: 'error', message: 'Comercio no encontrado.' });
+
+    const store = storeCheck.rows[0];
+    const trialDays = parseInt(config.trial_days || '7');
+    const expires = new Date();
+    expires.setDate(expires.getDate() + (isSandbox ? trialDays : 30));
+
+    await query(
+      `UPDATE stores
+       SET status = 'active',
+           subscription_expires_at = CASE
+             WHEN subscription_expires_at IS NULL OR subscription_expires_at < NOW()
+             THEN $1
+             ELSE subscription_expires_at
+           END
+       WHERE id = $2`,
+      [expires, store_id]
+    );
+
+    // Registrar pago de prueba en historial
+    await query(
+      `INSERT INTO subscription_payments (store_id, mp_payment_id, amount, plan_type, period, status)
+       VALUES ($1, $2, 0, $3, 'monthly', 'approved')`,
+      [store_id, `sandbox_manual_${Date.now()}`, store.plan_type || 'Trial']
+    );
+
+    // Sincronizar con tenants + tenant_settings
+    await syncTenantRecord(store.id, store.subdomain, store.name);
+
+    res.json({
+      status: 'success',
+      message: `Comercio ${store.name} activado correctamente (sandbox).`,
+      data: {
+        store_id: store.id,
+        subdomain: store.subdomain,
+        expires_at: expires,
+      },
+    });
+  } catch (e) {
+    console.error('activateSandboxStore error:', e.message);
     res.status(500).json({ status: 'error', message: e.message });
   }
 };
