@@ -72,9 +72,6 @@ function App() {
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
-  // Mostrar landing si corresponde
-  if (showLanding) return <GastroRedLanding />;
-
   useEffect(() => {
     if (currentView !== 'tracking') window.scrollTo({ top: 0, behavior: 'smooth' });
   }, [currentView]);
