@@ -68,6 +68,35 @@ app.get('/api/tenant-check', tenantMiddleware, (req, res) => {
     });
 });
 
+// ── Debug endpoint (diagnóstico de routing — solo en dev/staging) ─────────────
+app.get('/api/debug-tenant', async (req, res) => {
+    const host = (req.headers['x-store-domain'] || req.headers.host || '').split(':')[0].toLowerCase().trim();
+    const suffix = (process.env.GASTRORED_ROOT_DOMAIN || 'gastrored.com.ar').toLowerCase();
+    const subdomainPart = host.endsWith(`.${suffix}`) ? host.slice(0, host.length - suffix.length - 1) : null;
+    try {
+        const rows = await query('SELECT id, name, status FROM tenants ORDER BY id LIMIT 20');
+        let lookupResult = null;
+        if (subdomainPart) {
+            // Intentar con columna subdomain
+            let r;
+            try {
+                r = await query('SELECT id, status, subdomain FROM tenants WHERE id=$1 OR subdomain=$1 LIMIT 1', [subdomainPart]);
+            } catch {
+                r = await query('SELECT id, status, id as subdomain FROM tenants WHERE id=$1 LIMIT 1', [subdomainPart]);
+            }
+            lookupResult = r.rows[0] || null;
+        }
+        res.json({
+            received_host: host,
+            gastrored_suffix: suffix,
+            extracted_subdomain: subdomainPart,
+            lookup_result: lookupResult,
+            all_tenants: rows.rows,
+        });
+    } catch (e) {
+        res.json({ error: e.message });
+    }
+});
 
 // ── Manifest PWA dinámico ───────────────────────────────────────────────────
 app.get('/api/manifest', async (req, res) => {

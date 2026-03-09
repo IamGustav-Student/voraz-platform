@@ -102,7 +102,7 @@ export const createTrialTenant = async (req, res) => {
     res.status(201).json({
       status: 'success',
       data: {
-        ...store,
+        ...tenant,
         trial_days: trialDays,
         message: `¡Listo! Tu prueba gratuita de ${trialDays} días comenzó. Accedé a tu carta en: ${cleanSub}.${config.frontend_url?.replace('https://', '') || 'gastrored.com.ar'}`,
       },
