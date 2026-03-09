@@ -1,11 +1,34 @@
 import { query } from '../config/db.js';
 
+// Store de fallback (Voraz — tenant id=1)
 const FALLBACK_STORE = { id: 1, plan_type: 'Expert', status: 'active', brand_name: 'Voraz' };
+
+// Dominios del root de GastroRed que deben mostrar la landing, no un tenant
+const GASTRORED_ROOT_DOMAINS = [
+  'gastrored.com.ar',
+  'www.gastrored.com.ar',
+  process.env.GASTRORED_ROOT_DOMAIN,
+].filter(Boolean).map(d => d.toLowerCase());
+
+// Dominios de infraestructura que hacen fallback a Voraz (dev/CI)
+const isInfraHost = (host) =>
+  host === 'localhost' ||
+  host.startsWith('127.') ||
+  host.includes('.up.railway.app') ||
+  host.includes('.railway.app') ||
+  host.includes('voraz-platform.vercel.app'); // URL de Vercel del tenant Voraz
 
 export const tenantMiddleware = async (req, res, next) => {
   const host = (req.headers['x-store-domain'] || req.headers.host || '').split(':')[0].toLowerCase().trim();
 
   if (!host) return res.status(400).json({ status: 'error', message: 'Host requerido.' });
+
+  // Si es el dominio root de GastroRed → landing page
+  if (GASTRORED_ROOT_DOMAINS.includes(host)) {
+    req.isLanding = true;
+    req.store = null;
+    return next();
+  }
 
   try {
     const result = await query(
@@ -18,12 +41,15 @@ export const tenantMiddleware = async (req, res, next) => {
     );
 
     if (!result.rows.length) {
-      const isLocal = host === 'localhost' || host.startsWith('127.') || host.includes('.railway.app') || host.includes('.vercel.app') || host.includes('.up.railway.app');
-      if (isLocal) {
+      // Dominios de infra (Railway/Vercel dev) → fallback a Voraz sin landing
+      if (isInfraHost(host)) {
         req.store = FALLBACK_STORE;
         return next();
       }
-      return res.status(404).json({ status: 'error', message: `Comercio no encontrado para el dominio: ${host}` });
+      // Dominio desconocido no registrado → indicar landing al frontend
+      req.isLanding = true;
+      req.store = null;
+      return next();
     }
 
     const store = result.rows[0];

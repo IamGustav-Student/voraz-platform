@@ -54,6 +54,21 @@ app.get('/api/test-db', async (req, res) => {
 app.use('/api/superadmin', superadminRoutes);
 app.use('/api/subscriptions', subscriptionRoutes);
 
+// ── Tenant check (antes del middleware \u2014 sin bloquear) ───────────────────────
+// El frontend lo llama para saber si debe mostrar la landing de GastroRed
+app.get('/api/tenant-check', tenantMiddleware, (req, res) => {
+    res.json({
+        is_landing: req.isLanding === true,
+        has_tenant: !!req.store,
+        store: req.store ? {
+            id: req.store.id,
+            brand_name: req.store.brand_name,
+            subdomain: req.store.subdomain,
+        } : null,
+    });
+});
+
+
 // ── Manifest PWA dinámico (necesita host pero no bloquea si no encuentra) ────
 app.get('/api/manifest', async (req, res) => {
     const host = (req.headers['x-store-domain'] || req.headers.host || '').split(':')[0].toLowerCase();

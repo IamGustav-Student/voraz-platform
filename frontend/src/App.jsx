@@ -11,10 +11,28 @@ import AuthModal from './components/AuthModal';
 import VorazClub from './components/VorazClub';
 import AdminPanel from './components/AdminPanel';
 import SuperAdminPanel from './components/SuperAdminPanel';
+import GastroRedLanding from './components/GastroRedLanding';
+
+// Dominios que deben mostrar la landing de GastroRed en lugar de un tenant
+const GASTRORED_ROOT_DOMAINS = [
+  import.meta.env.VITE_GASTRORED_ROOT_DOMAIN || '',
+  'gastrored.com.ar',
+  'www.gastrored.com.ar',
+].filter(Boolean);
+
+const isGastroRedRootDomain = () => {
+  if (typeof window === 'undefined') return false;
+  const host = window.location.hostname.toLowerCase();
+  return GASTRORED_ROOT_DOMAINS.some(d => d && host === d.toLowerCase());
+};
 
 function App() {
   const { itemCount, dispatch } = useCart();
   const { user } = useAuth();
+
+  // ── Detección de landing GastroRed ───────────────────────────────────────
+  const [showLanding, setShowLanding] = useState(isGastroRedRootDomain());
+  const [landingChecked, setLandingChecked] = useState(isGastroRedRootDomain());
 
   const [products, setProducts] = useState([]);
   const [influencers, setInfluencers] = useState([]);
@@ -35,11 +53,27 @@ function App() {
   const [isSuperAdminOpen, setIsSuperAdminOpen] = useState(false);
 
   useEffect(() => {
+    // Si ya sabemos que es el root domain, no hace falta chequear
+    if (!landingChecked) {
+      const API_URL = (import.meta.env.VITE_API_URL || 'http://localhost:3000/api').trim();
+      fetch(`${API_URL}/tenant-check`, {
+        headers: { 'x-store-domain': window.location.hostname },
+      })
+        .then(r => r.json())
+        .then(data => {
+          if (data.is_landing) setShowLanding(true);
+        })
+        .catch(() => { }) // fallback silencioso → muestra tenant
+        .finally(() => setLandingChecked(true));
+    }
     loadAllData();
     const handleScroll = () => setIsScrolled(window.scrollY > 10);
     window.addEventListener('scroll', handleScroll);
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
+
+  // Mostrar landing si corresponde
+  if (showLanding) return <GastroRedLanding />;
 
   useEffect(() => {
     if (currentView !== 'tracking') window.scrollTo({ top: 0, behavior: 'smooth' });
