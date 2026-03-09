@@ -1,4 +1,7 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
+
+const API_URL = (import.meta.env.VITE_API_URL || 'http://localhost:3000/api').trim();
+const GASTRORED_DOMAIN = (import.meta.env.VITE_GASTRORED_DOMAIN || 'gastrored.com.ar').trim();
 
 // ── Logo GastroRed como SVG inline (sin dependencia de archivo externo) ──────
 function GastroRedLogo({ size = 48, className = '' }) {
@@ -92,7 +95,7 @@ function StepCard({ number, title, desc, icon }) {
 }
 
 // ── Plan card ─────────────────────────────────────────────────────────────────
-function PlanCard({ name, price, period, badge, features, cta, highlighted = false, badgeColor = 'teal' }) {
+function PlanCard({ name, price, period, badge, features, cta, highlighted = false, badgeColor = 'teal', onSelect }) {
     const badgeColors = {
         teal: 'bg-teal-500 text-white',
         yellow: 'bg-yellow-400 text-black',
@@ -126,21 +129,21 @@ function PlanCard({ name, price, period, badge, features, cta, highlighted = fal
                     <li key={i} className={`flex items-start gap-3 text-sm ${f.disabled ? 'opacity-40' : ''}`}>
                         <span className={`mt-0.5 flex-shrink-0 w-5 h-5 rounded-full flex items-center justify-center text-xs ${f.disabled ? 'bg-gray-700 text-gray-500' : 'bg-teal-500/20 text-teal-400'
                             }`}>
-                            {f.disabled ? '✕' : '✓'}
+                            {f.disabled ? '\u2715' : '\u2713'}
                         </span>
                         <span className={f.disabled ? 'text-gray-600' : 'text-gray-300'}>{f.text}</span>
                     </li>
                 ))}
             </ul>
-            <a
-                href="#contacto"
-                className={`block text-center py-4 rounded-xl font-black uppercase tracking-wide text-sm transition-all duration-300 ${highlighted
+            <button
+                onClick={onSelect}
+                className={`block w-full text-center py-4 rounded-xl font-black uppercase tracking-wide text-sm transition-all duration-300 ${highlighted
                         ? 'bg-teal-500 hover:bg-teal-400 text-white shadow-lg shadow-teal-900/50'
                         : 'bg-white/10 hover:bg-white/20 text-white border border-white/10'
                     }`}
             >
                 {cta}
-            </a>
+            </button>
         </div>
     );
 }
@@ -156,12 +159,170 @@ function Stat({ value, label }) {
 }
 
 // ════════════════════════════════════════════════════════════════════════════
+// CHECKOUT MODAL
+// ════════════════════════════════════════════════════════════════════════════
+function CheckoutModal({ plan, onClose }) {
+    const isTrial = plan.plan_type === 'Trial';
+    const EMPTY = { name: '', subdomain: '', admin_email: '', slogan: '', subscription_period: 'monthly' };
+    const [form, setForm] = useState(EMPTY);
+    const [loading, setLoading] = useState(false);
+    const [error, setError] = useState('');
+    const [success, setSuccess] = useState(null);
+
+    const set = (k, v) => setForm(f => ({ ...f, [k]: v }));
+    const cleanSub = form.subdomain.toLowerCase().replace(/[^a-z0-9-]/g, '');
+
+    const handleSubmit = async (e) => {
+        e.preventDefault();
+        setError('');
+        setLoading(true);
+        try {
+            if (isTrial) {
+                const res = await fetch(`${API_URL}/subscriptions/trial`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ ...form, subdomain: cleanSub }),
+                });
+                const data = await res.json();
+                if (!res.ok) throw new Error(data.message);
+                setSuccess(data.data);
+            } else {
+                const res = await fetch(`${API_URL}/subscriptions/checkout-public`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        ...form,
+                        subdomain: cleanSub,
+                        plan_type: plan.plan_type,
+                    }),
+                });
+                const data = await res.json();
+                if (!res.ok) throw new Error(data.message);
+                // Redirigir a MercadoPago
+                window.location.href = data.data.init_point;
+            }
+        } catch (err) {
+            setError(err.message || 'Error inesperado. Intentá de nuevo.');
+        }
+        setLoading(false);
+    };
+
+    // Pantalla de éxito para trial
+    if (success) {
+        return (
+            <div className="fixed inset-0 z-[100] bg-black/80 backdrop-blur-sm flex items-center justify-center p-4" onClick={onClose}>
+                <div className="bg-[#0d1117] border border-teal-500/30 rounded-3xl p-8 max-w-md w-full text-center" onClick={e => e.stopPropagation()}>
+                    <div className="text-6xl mb-4">🎉</div>
+                    <h3 className="text-2xl font-black text-white mb-2">¡Tu prueba comenzó!</h3>
+                    <p className="text-gray-400 text-sm mb-6">{success.message}</p>
+                    <div className="bg-teal-900/30 border border-teal-500/30 rounded-xl p-4 mb-6 text-left">
+                        <p className="text-xs text-gray-400 mb-1">Tu carta está en:</p>
+                        <a href={`https://${success.subdomain}.${GASTRORED_DOMAIN}`} target="_blank" rel="noreferrer"
+                            className="text-teal-400 font-mono font-bold hover:underline text-sm">
+                            {success.subdomain}.{GASTRORED_DOMAIN}
+                        </a>
+                        <p className="text-xs text-gray-500 mt-2">store_id: <strong className="text-white">{success.id}</strong> — válido hasta: <strong className="text-white">{new Date(success.subscription_expires_at).toLocaleDateString('es-AR')}</strong></p>
+                    </div>
+                    <div className="space-y-2">
+                        <a href={`https://${success.subdomain}.${GASTRORED_DOMAIN}/admin`} target="_blank" rel="noreferrer"
+                            className="block w-full bg-teal-500 hover:bg-teal-400 text-white py-3 rounded-xl font-black text-sm">
+                            Ir al panel de admin →
+                        </a>
+                        <button onClick={onClose} className="block w-full text-gray-500 hover:text-white py-2 text-sm">Cerrar</button>
+                    </div>
+                </div>
+            </div>
+        );
+    }
+
+    return (
+        <div className="fixed inset-0 z-[100] bg-black/80 backdrop-blur-sm flex items-center justify-center p-4" onClick={onClose}>
+            <div className="bg-[#0d1117] border border-white/10 rounded-3xl p-8 max-w-lg w-full" onClick={e => e.stopPropagation()}>
+                {/* Header */}
+                <div className="flex items-center justify-between mb-6">
+                    <div>
+                        <div className="text-xs text-teal-400 font-bold uppercase tracking-widest mb-0.5">{isTrial ? 'Prueba gratuita' : 'Suscripción'}</div>
+                        <h2 className="text-2xl font-black text-white">Plan {plan.plan_type}</h2>
+                        {!isTrial && (
+                            <p className="text-sm text-gray-400">
+                                ${(plan.prices?.[form.subscription_period] || 0).toLocaleString('es-AR')}/mes
+                            </p>
+                        )}
+                    </div>
+                    <button onClick={onClose} className="w-9 h-9 rounded-xl bg-white/5 hover:bg-white/10 flex items-center justify-center text-gray-400 hover:text-white transition">
+                        ✕
+                    </button>
+                </div>
+
+                <form onSubmit={handleSubmit} className="space-y-4">
+                    {/* Período (solo para planes pagos) */}
+                    {!isTrial && (
+                        <div className="flex gap-2 p-1 bg-white/5 rounded-xl">
+                            <button type="button" onClick={() => set('subscription_period', 'monthly')}
+                                className={`flex-1 py-2 rounded-lg text-sm font-bold transition ${form.subscription_period === 'monthly' ? 'bg-teal-500 text-white' : 'text-gray-400 hover:text-white'
+                                    }`}>
+                                Mensual
+                            </button>
+                            <button type="button" onClick={() => set('subscription_period', 'annual')}
+                                className={`flex-1 py-2 rounded-lg text-sm font-bold transition ${form.subscription_period === 'annual' ? 'bg-teal-500 text-white' : 'text-gray-400 hover:text-white'
+                                    }`}>
+                                Anual <span className="text-xs text-green-400">(2 meses gratis)</span>
+                            </button>
+                        </div>
+                    )}
+
+                    <input placeholder="Nombre del restaurante *" value={form.name}
+                        onChange={e => set('name', e.target.value)} required
+                        className="w-full bg-black/30 border border-white/10 rounded-xl px-4 py-3 text-white text-sm focus:outline-none focus:border-teal-500" />
+
+                    <div>
+                        <input placeholder="Subdomain * (ej: miburguer)" value={form.subdomain}
+                            onChange={e => set('subdomain', e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, ''))} required
+                            className="w-full bg-black/30 border border-white/10 rounded-xl px-4 py-3 text-white text-sm focus:outline-none focus:border-teal-500" />
+                        {cleanSub && (
+                            <p className="mt-1.5 text-xs text-teal-400 font-mono">
+                                Tu carta: <strong>{cleanSub}.{GASTRORED_DOMAIN}</strong>
+                            </p>
+                        )}
+                    </div>
+
+                    <input placeholder="Email del dueño *" type="email" value={form.admin_email}
+                        onChange={e => set('admin_email', e.target.value)} required
+                        className="w-full bg-black/30 border border-white/10 rounded-xl px-4 py-3 text-white text-sm focus:outline-none focus:border-teal-500" />
+
+                    {error && (
+                        <div className="bg-red-900/30 border border-red-500/30 rounded-xl px-4 py-3 text-red-400 text-sm">
+                            {error}
+                        </div>
+                    )}
+
+                    <button type="submit" disabled={loading}
+                        className="w-full bg-teal-500 hover:bg-teal-400 disabled:opacity-50 text-white py-4 rounded-xl font-black uppercase tracking-wide transition">
+                        {loading
+                            ? 'Procesando...'
+                            : isTrial
+                                ? 'Activar prueba gratuita →'
+                                : `Ir a pagar $${(plan.prices?.[form.subscription_period] || 0).toLocaleString('es-AR')} →`}
+                    </button>
+
+                    <p className="text-center text-xs text-gray-600">
+                        {isTrial
+                            ? 'Sin tarjeta de crédito. Cancelá cuando quieras.'
+                            : 'Redirigimos a MercadoPago de forma segura.'}
+                    </p>
+                </form>
+            </div>
+        </div>
+    );
+}
+
+// ════════════════════════════════════════════════════════════════════════════
 // LANDING PAGE PRINCIPAL
 // ════════════════════════════════════════════════════════════════════════════
 export default function GastroRedLanding() {
     const [scrolled, setScrolled] = useState(false);
-    const [activeSection, setActiveSection] = useState('inicio');
     const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+    const [selectedPlan, setSelectedPlan] = useState(null); // abre el modal
 
     useEffect(() => {
         const handler = () => setScrolled(window.scrollY > 30);
@@ -197,12 +358,14 @@ export default function GastroRedLanding() {
 
     const plans = [
         {
+            plan_type: 'Trial',
             name: 'Prueba Gratis',
             price: 0,
             period: '7 días',
-            badge: '🎁 Sin tarjeta',
+            badge: '\uD83C\uDF81 Sin tarjeta',
             badgeColor: 'gray',
             cta: 'Empezar gratis',
+            prices: { monthly: 0, annual: 0 },
             features: [
                 { text: 'Menú digital completo' },
                 { text: 'Panel de administración' },
@@ -215,13 +378,15 @@ export default function GastroRedLanding() {
             ],
         },
         {
+            plan_type: 'Full Digital',
             name: 'Full Digital',
             price: 60000,
             period: 'mes',
-            badge: '⭐ Más elegido',
+            badge: '\u2B50 Más elegido',
             badgeColor: 'teal',
             highlighted: true,
             cta: 'Empezar ahora',
+            prices: { monthly: 60000, annual: 600000 },
             features: [
                 { text: 'Todo lo de Prueba Gratis' },
                 { text: 'Hasta 50 productos activos' },
@@ -234,12 +399,14 @@ export default function GastroRedLanding() {
             ],
         },
         {
+            plan_type: 'Expert',
             name: 'Expert',
             price: 100000,
             period: 'mes',
-            badge: '🏆 Máximo poder',
+            badge: '\uD83C\uDFC6 Máximo poder',
             badgeColor: 'yellow',
             cta: 'Quiero Expert',
+            prices: { monthly: 100000, annual: 1000000 },
             features: [
                 { text: 'Todo lo de Full Digital' },
                 { text: 'Productos ilimitados' },
@@ -255,6 +422,9 @@ export default function GastroRedLanding() {
 
     return (
         <div className="min-h-screen bg-[#080c12] text-white font-sans overflow-x-hidden">
+
+            {/* Modal de checkout */}
+            {selectedPlan && <CheckoutModal plan={selectedPlan} onClose={() => setSelectedPlan(null)} />}
 
             {/* ── NAVBAR ─────────────────────────────────────────────────────────── */}
             <nav className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${scrolled ? 'bg-[#080c12]/90 backdrop-blur-xl border-b border-white/5 shadow-2xl' : 'bg-transparent'
@@ -510,7 +680,7 @@ export default function GastroRedLanding() {
                         </p>
                     </div>
                     <div className="grid md:grid-cols-3 gap-6 mt-8">
-                        {plans.map(p => <PlanCard key={p.name} {...p} />)}
+                        {plans.map(p => <PlanCard key={p.name} {...p} onSelect={() => setSelectedPlan(p)} />)}
                     </div>
                     <p className="text-center text-gray-600 text-sm mt-8">
                         Precios en ARS. Facturación mensual. Podés cancelar cuando quieras.

@@ -9,6 +9,8 @@ import {
   updateStoreStatus,
   updateStorePlan,
   getPlanPrices,
+  getGastroRedConfig,
+  updateGastroRedConfig,
 } from '../controllers/superadmin.controller.js';
 
 const router = Router();
@@ -24,5 +26,9 @@ router.post('/stores', createTenant);
 router.patch('/stores/:id/status', updateStoreStatus);
 router.patch('/stores/:id/plan', updateStorePlan);
 router.get('/plans', getPlanPrices);
+
+// Configuración de la plataforma
+router.get('/config', getGastroRedConfig);
+router.put('/config', updateGastroRedConfig);
 
 export default router;

@@ -48,8 +48,11 @@ export default function SuperAdminPanel({ onBack }) {
   const [showCreate, setShowCreate] = useState(false);
   const [createForm, setCreateForm] = useState(EMPTY_FORM);
   const [creating, setCreating] = useState(false);
-  // Último tenant creado — para mostrar URLs de acceso
   const [lastCreated, setLastCreated] = useState(null);
+  // Config
+  const [config, setConfig] = useState(null);
+  const [configForm, setConfigForm] = useState({});
+  const [savingConfig, setSavingConfig] = useState(false);
 
   const load = useCallback(async (t) => {
     const tk = t || token;
@@ -79,7 +82,7 @@ export default function SuperAdminPanel({ onBack }) {
     } catch (e) { setLoginErr(e.message); }
   };
 
-  useEffect(() => { if (token) load(); }, [token, load]);
+  useEffect(() => { if (token) { load(); loadConfig(); } }, [token, load]);
 
   const setStatus = async (id, status) => {
     try { await sfetch(`/stores/${id}/status`, token, { method: 'PATCH', body: JSON.stringify({ status }) }); load(); }
@@ -103,6 +106,26 @@ export default function SuperAdminPanel({ onBack }) {
       load();
     } catch (e) { setMsg('Error: ' + e.message); }
     setCreating(false);
+  };
+
+  const saveConfig = async (e) => {
+    e.preventDefault();
+    setSavingConfig(true);
+    try {
+      // Solo enviar mp_access_token si el usuario ingresó algo
+      const payload = { ...configForm };
+      if (!payload.mp_access_token.trim()) delete payload.mp_access_token;
+      const res = await fetch(`${API_URL}/superadmin/config`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+        body: JSON.stringify(payload),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.message);
+      setMsg('✅ Configuración guardada');
+      loadConfig();
+    } catch (e) { setMsg('Error: ' + e.message); }
+    setSavingConfig(false);
   };
 
   // Helper: preview URL del tenant
@@ -217,11 +240,11 @@ export default function SuperAdminPanel({ onBack }) {
       )}
 
       {/* Tabs */}
-      <div className="px-6 flex gap-2 mb-6">
-        {['stores', 'crear'].map(t => (
-          <button key={t} onClick={() => { setTab(t); setShowCreate(t === 'crear'); }}
+      <div className="px-6 flex gap-2 mb-6 flex-wrap">
+        {['stores', 'crear', 'config'].map(t => (
+          <button key={t} onClick={() => { setTab(t); setShowCreate(t === 'crear'); if (t === 'config') loadConfig(); }}
             className={`px-4 py-2 rounded-xl text-sm font-bold uppercase transition ${tab === t ? 'bg-red-600 text-white' : 'bg-white/5 text-gray-400 hover:text-white'}`}>
-            {t === 'stores' ? `🏪 Comercios (${stores.length})` : '➕ Nuevo Comercio'}
+            {t === 'stores' ? `🏪 Comercios (${stores.length})` : t === 'crear' ? '➕ Nuevo Comercio' : '⚙️ Configuración'}
           </button>
         ))}
         <button onClick={() => load()} className="ml-auto text-xs text-gray-500 hover:text-white px-3 py-1.5 rounded-lg bg-white/5">↻ Actualizar</button>
@@ -403,6 +426,105 @@ export default function SuperAdminPanel({ onBack }) {
                 Cancelar
               </button>
             </div>
+          </form>
+        )}
+
+        {/* ── Panel de Configuración ──────────────────────────────────────────── */}
+        {tab === 'config' && (
+          <form onSubmit={saveConfig} className="max-w-2xl space-y-6">
+            {/* MercadoPago */}
+            <div className="bg-white/5 border border-white/10 rounded-2xl p-6">
+              <h3 className="text-white font-bold text-base mb-1 flex items-center gap-2">💳 MercadoPago</h3>
+              <p className="text-gray-500 text-xs mb-4">Configurá las credenciales con las que GastroRed cobra las suscripciones.</p>
+
+              <div className="space-y-3">
+                <div>
+                  <label className="text-xs text-gray-400 mb-1 block">Access Token</label>
+                  {config?.mp_access_token_masked && (
+                    <p className="text-xs text-teal-400 font-mono mb-1">Token actual: {config.mp_access_token_masked}</p>
+                  )}
+                  {config?.mp_token_from_env && (
+                    <p className="text-xs text-yellow-400 mb-1">⚠️ Token tomado del env var GASTRORED_MP_ACCESS_TOKEN</p>
+                  )}
+                  <input
+                    type="password"
+                    placeholder="APP_USR-... (dejá vacío para no cambiar)"
+                    value={configForm.mp_access_token || ''}
+                    onChange={e => setConfigForm(f => ({ ...f, mp_access_token: e.target.value }))}
+                    className="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-2.5 text-white text-sm focus:outline-none focus:border-teal-500 font-mono"
+                  />
+                </div>
+                <div className="flex items-center gap-3">
+                  <label className="text-xs text-gray-400">Modo:</label>
+                  <button type="button" onClick={() => setConfigForm(f => ({ ...f, mp_sandbox_mode: f.mp_sandbox_mode === 'true' ? 'false' : 'true' }))}
+                    className={`px-4 py-1.5 rounded-lg text-xs font-bold transition ${configForm.mp_sandbox_mode === 'true' ? 'bg-yellow-500/20 text-yellow-400 border border-yellow-500/30' : 'bg-green-500/20 text-green-400 border border-green-500/30'}`}>
+                    {configForm.mp_sandbox_mode === 'true' ? '🧪 Sandbox (testing)' : '🚀 Producción'}
+                  </button>
+                  <span className="text-xs text-gray-600">{configForm.mp_sandbox_mode === 'true' ? 'Pagos de prueba, no se cobra realmente' : 'Pagos reales'}</span>
+                </div>
+              </div>
+            </div>
+
+            {/* Precios */}
+            <div className="bg-white/5 border border-white/10 rounded-2xl p-6">
+              <h3 className="text-white font-bold text-base mb-4">💰 Precios de planes (ARS)</h3>
+              <div className="grid grid-cols-2 gap-3">
+                {[
+                  { key: 'price_full_digital_monthly', label: 'Full Digital — Mensual' },
+                  { key: 'price_full_digital_annual', label: 'Full Digital — Anual' },
+                  { key: 'price_expert_monthly', label: 'Expert — Mensual' },
+                  { key: 'price_expert_annual', label: 'Expert — Anual' },
+                ].map(({ key, label }) => (
+                  <div key={key}>
+                    <label className="text-xs text-gray-400 mb-1 block">{label}</label>
+                    <input type="number" value={configForm[key] || ''}
+                      onChange={e => setConfigForm(f => ({ ...f, [key]: e.target.value }))}
+                      className="w-full bg-black/40 border border-white/10 rounded-xl px-3 py-2 text-white text-sm focus:outline-none focus:border-teal-500"
+                    />
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Otros parámetros */}
+            <div className="bg-white/5 border border-white/10 rounded-2xl p-6">
+              <h3 className="text-white font-bold text-base mb-4">⚙️ Parámetros generales</h3>
+              <div className="space-y-3">
+                <div>
+                  <label className="text-xs text-gray-400 mb-1 block">Días de prueba gratuita</label>
+                  <input type="number" min="1" max="30" value={configForm.trial_days || '7'}
+                    onChange={e => setConfigForm(f => ({ ...f, trial_days: e.target.value }))}
+                    className="w-32 bg-black/40 border border-white/10 rounded-xl px-3 py-2 text-white text-sm focus:outline-none focus:border-teal-500"
+                  />
+                </div>
+                <div>
+                  <label className="text-xs text-gray-400 mb-1 block">URL del Frontend (para redirecciones de MP)</label>
+                  <input type="url" value={configForm.frontend_url || ''}
+                    onChange={e => setConfigForm(f => ({ ...f, frontend_url: e.target.value }))}
+                    className="w-full bg-black/40 border border-white/10 rounded-xl px-3 py-2 text-white text-sm font-mono focus:outline-none focus:border-teal-500"
+                  />
+                </div>
+                <div>
+                  <label className="text-xs text-gray-400 mb-1 block">URL del Backend (para webhooks de MP)</label>
+                  <input type="url" value={configForm.backend_url || ''}
+                    onChange={e => setConfigForm(f => ({ ...f, backend_url: e.target.value }))}
+                    className="w-full bg-black/40 border border-white/10 rounded-xl px-3 py-2 text-white text-sm font-mono focus:outline-none focus:border-teal-500"
+                  />
+                </div>
+                <div>
+                  <label className="text-xs text-gray-400 mb-1 block">Email de contacto</label>
+                  <input type="email" value={configForm.contact_email || ''}
+                    onChange={e => setConfigForm(f => ({ ...f, contact_email: e.target.value }))}
+                    className="w-full bg-black/40 border border-white/10 rounded-xl px-3 py-2 text-white text-sm focus:outline-none focus:border-teal-500"
+                  />
+                </div>
+              </div>
+            </div>
+
+            <button type="submit" disabled={savingConfig}
+              className="w-full bg-teal-500 hover:bg-teal-400 disabled:opacity-50 text-white py-3 rounded-xl font-black uppercase tracking-wide transition">
+              {savingConfig ? 'Guardando...' : '💾 Guardar configuración'}
+            </button>
           </form>
         )}
       </div>

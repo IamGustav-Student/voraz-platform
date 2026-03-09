@@ -168,5 +168,69 @@ export const updateStorePlan = async (req, res) => {
 };
 
 export const getPlanPrices = async (req, res) => {
-  res.json({ status: 'success', data: PLAN_PRICES });
+  try {
+    const result = await query('SELECT key, value FROM gastrored_config');
+    const cfg = Object.fromEntries(result.rows.map(r => [r.key, r.value]));
+    res.json({
+      status: 'success', data: {
+        'Full Digital': {
+          monthly: parseInt(cfg.price_full_digital_monthly || '60000'),
+          annual: parseInt(cfg.price_full_digital_annual || '600000'),
+        },
+        'Expert': {
+          monthly: parseInt(cfg.price_expert_monthly || '100000'),
+          annual: parseInt(cfg.price_expert_annual || '1000000'),
+        },
+      }
+    });
+  } catch {
+    res.json({ status: 'success', data: PLAN_PRICES });
+  }
+};
+
+// ── Configuración global de GastroRed ────────────────────────────────────────
+
+export const getGastroRedConfig = async (req, res) => {
+  try {
+    const result = await query('SELECT key, value FROM gastrored_config ORDER BY key');
+    const config = Object.fromEntries(result.rows.map(r => [r.key, r.value]));
+    // Ocultar el token parcialmente por seguridad
+    if (config.mp_access_token && config.mp_access_token.length > 8) {
+      config.mp_access_token_masked = config.mp_access_token.slice(0, 6) + '••••••••' + config.mp_access_token.slice(-4);
+    } else {
+      config.mp_access_token_masked = config.mp_access_token ? '••••••••' : '';
+    }
+    // También indicar si viene del env var
+    config.mp_token_from_env = !!(process.env.GASTRORED_MP_ACCESS_TOKEN && !config.mp_access_token?.trim());
+    res.json({ status: 'success', data: config });
+  } catch (e) {
+    res.status(500).json({ status: 'error', message: e.message });
+  }
+};
+
+export const updateGastroRedConfig = async (req, res) => {
+  const allowed = [
+    'mp_access_token', 'mp_sandbox_mode',
+    'price_full_digital_monthly', 'price_full_digital_annual',
+    'price_expert_monthly', 'price_expert_annual',
+    'trial_days', 'frontend_url', 'backend_url', 'contact_email',
+  ];
+  try {
+    const updates = [];
+    for (const [key, value] of Object.entries(req.body)) {
+      if (!allowed.includes(key)) continue;
+      await query(
+        `INSERT INTO gastrored_config (key, value, updated_at)
+         VALUES ($1, $2, NOW())
+         ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value, updated_at = NOW()`,
+        [key, String(value).trim()]
+      );
+      updates.push(key);
+    }
+    if (!updates.length)
+      return res.status(400).json({ status: 'error', message: 'No se recibió ningún campo válido.' });
+    res.json({ status: 'success', message: `Configuración actualizada: ${updates.join(', ')}` });
+  } catch (e) {
+    res.status(500).json({ status: 'error', message: e.message });
+  }
 };

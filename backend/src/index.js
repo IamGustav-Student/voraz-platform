@@ -172,4 +172,5 @@ app.listen(PORT, async () => {
     await runMigration('phase12_cash_payment.sql');
     await runMigration('phase13_gastrored_saas.sql');
     await runMigration('phase14_reconcile_tenant.sql'); // GastroRed: reconcilia tenant_id → store_id
+    await runMigration('phase15_gastrored_config.sql'); // GastroRed: tabla de config global
 });
