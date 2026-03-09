@@ -7,7 +7,6 @@ export const getStores = async (req, res) => {
       `SELECT id, name, address, phone, image_url, waze_link, delivery_link
        FROM stores
        WHERE id = $1
-          OR (store_id = $1 AND id != $1)
        ORDER BY id ASC`,
       [storeId]
     );
