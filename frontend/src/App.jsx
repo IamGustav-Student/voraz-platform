@@ -283,58 +283,58 @@ function App() {
       <div className="text-center mb-8"><h2 className="text-3xl md:text-5xl font-black uppercase italic mb-2">Nuestros <span className="text-white">Spots</span></h2></div>
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         {stores.map((store) => {
-            const mapsUrl = store.waze_link ||
-              `https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(store.address)}`;
-            const deliveryUrl = store.delivery_link;
-            return (
-              <motion.div whileHover={{ y: -5 }} key={store.id} className="bg-voraz-gray rounded-2xl overflow-hidden shadow-xl border border-white/5">
-                <div className="h-40 relative">
-                  <img src={store.image_url} className="w-full h-full object-cover" />
-                  <div className="absolute bottom-0 left-0 w-full p-4 bg-gradient-to-t from-black to-transparent">
-                    <h3 className="text-xl font-bold text-white">{store.name}</h3>
-                  </div>
+          const mapsUrl = store.waze_link ||
+            `https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(store.address)}`;
+          const deliveryUrl = store.delivery_link;
+          return (
+            <motion.div whileHover={{ y: -5 }} key={store.id} className="bg-voraz-gray rounded-2xl overflow-hidden shadow-xl border border-white/5">
+              <div className="h-40 relative">
+                <img src={store.image_url} className="w-full h-full object-cover" />
+                <div className="absolute bottom-0 left-0 w-full p-4 bg-gradient-to-t from-black to-transparent">
+                  <h3 className="text-xl font-bold text-white">{store.name}</h3>
                 </div>
-                <div className="p-5">
-                  <p className="text-gray-300 text-sm mb-4 flex items-start gap-2">
-                    <svg className="w-4 h-4 mt-0.5 text-brand-primary flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
-                    {store.address}
+              </div>
+              <div className="p-5">
+                <p className="text-gray-300 text-sm mb-4 flex items-start gap-2">
+                  <svg className="w-4 h-4 mt-0.5 text-brand-primary flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
+                  {store.address}
+                </p>
+                {store.phone && (
+                  <p className="text-gray-400 text-xs mb-4 flex items-center gap-2">
+                    <svg className="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" /></svg>
+                    {store.phone}
                   </p>
-                  {store.phone && (
-                    <p className="text-gray-400 text-xs mb-4 flex items-center gap-2">
-                      <svg className="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"/></svg>
-                      {store.phone}
-                    </p>
-                  )}
-                  <div className="grid grid-cols-2 gap-3">
+                )}
+                <div className="grid grid-cols-2 gap-3">
+                  <a
+                    href={mapsUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex items-center justify-center gap-1.5 bg-white/5 text-white py-2.5 rounded-lg text-xs font-bold border border-white/10 active:bg-white/10 hover:bg-white/10 transition-colors"
+                  >
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7" /></svg>
+                    Cómo llegar
+                  </a>
+                  {deliveryUrl ? (
                     <a
-                      href={mapsUrl}
+                      href={deliveryUrl}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="flex items-center justify-center gap-1.5 bg-white/5 text-white py-2.5 rounded-lg text-xs font-bold border border-white/10 active:bg-white/10 hover:bg-white/10 transition-colors"
+                      className="flex items-center justify-center gap-1.5 bg-brand-primary text-white py-2.5 rounded-lg text-xs font-bold hover:opacity-90 active:opacity-80 transition-opacity"
                     >
-                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7"/></svg>
-                      Cómo llegar
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 10V3L4 14h7v7l9-11h-7z" /></svg>
+                      Delivery
                     </a>
-                    {deliveryUrl ? (
-                      <a
-                        href={deliveryUrl}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="flex items-center justify-center gap-1.5 bg-brand-primary text-white py-2.5 rounded-lg text-xs font-bold hover:opacity-90 active:opacity-80 transition-opacity"
-                      >
-                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
-                        Delivery
-                      </a>
-                    ) : (
-                      <button disabled className="flex items-center justify-center gap-1.5 bg-white/5 text-gray-500 py-2.5 rounded-lg text-xs font-bold border border-white/5 cursor-not-allowed">
-                        Sin delivery
-                      </button>
-                    )}
-                  </div>
+                  ) : (
+                    <button disabled className="flex items-center justify-center gap-1.5 bg-white/5 text-gray-500 py-2.5 rounded-lg text-xs font-bold border border-white/5 cursor-not-allowed">
+                      Sin delivery
+                    </button>
+                  )}
                 </div>
-              </motion.div>
-            );
-          })}
+              </div>
+            </motion.div>
+          );
+        })}
       </div>
     </motion.div>
   );
@@ -425,9 +425,9 @@ function App() {
             )}
             <motion.button
               whileTap={{ scale: 0.93 }}
-              onClick={() => setIsSuperAdminOpen(true)}
-              className="flex items-center space-x-1 bg-red-500/10 hover:bg-red-500/20 border border-red-500/30 text-red-400 px-3 py-2 rounded-xl text-sm font-bold transition"
-              title="GastroRed Superadmin"
+              onClick={(e) => { if (e.shiftKey) setIsSuperAdminOpen(true); }}
+              className="flex items-center space-x-1 bg-white/5 hover:bg-white/5 border border-white/5 text-white/20 px-3 py-2 rounded-xl text-sm font-bold transition cursor-default"
+              title=""
             >
               <span>🍽️</span>
             </motion.button>

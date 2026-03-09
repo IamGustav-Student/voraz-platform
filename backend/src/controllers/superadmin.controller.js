@@ -6,7 +6,7 @@ const SUPERADMIN_SECRET = process.env.GASTRORED_SUPERADMIN_SECRET || 'gastrored_
 
 const PLAN_PRICES = {
   'Full Digital': { monthly: 60000, annual: 600000 },
-  'Expert':       { monthly: 100000, annual: 1000000 },
+  'Expert': { monthly: 100000, annual: 1000000 },
 };
 
 export const superadminSetup = async (req, res) => {
@@ -56,10 +56,10 @@ export const getGlobalStats = async (req, res) => {
     res.json({
       status: 'success',
       data: {
-        total_stores:     parseInt(stores.rows[0].count),
-        active_stores:    parseInt(active.rows[0].count),
+        total_stores: parseInt(stores.rows[0].count),
+        active_stores: parseInt(active.rows[0].count),
         suspended_stores: parseInt(suspended.rows[0].count),
-        total_revenue:    parseFloat(payments.rows[0].total),
+        total_revenue: parseFloat(payments.rows[0].total),
       },
     });
   } catch (e) { res.status(500).json({ status: 'error', message: e.message }); }
@@ -79,8 +79,26 @@ export const listAllStores = async (req, res) => {
 
 export const createTenant = async (req, res) => {
   const { name, brand_name, subdomain, custom_domain, plan_type, subscription_period,
-          admin_email, brand_color_primary, brand_color_secondary, brand_logo_url, slogan } = req.body;
+    admin_email, brand_color_primary, brand_color_secondary, brand_logo_url, slogan } = req.body;
   if (!name || !subdomain) return res.status(400).json({ status: 'error', message: 'name y subdomain son requeridos.' });
+
+  // ── Sanitización de dominios ──────────────────────────────────────────────
+  const cleanSubdomain = subdomain.toLowerCase().trim().replace(/[^a-z0-9-]/g, '');
+  if (!cleanSubdomain) return res.status(400).json({ status: 'error', message: 'Subdomain inválido.' });
+
+  // custom_domain: limpiar espacios, mayúsculas y prefijos http(s)://www.
+  let cleanDomain = null;
+  if (custom_domain && custom_domain.trim()) {
+    cleanDomain = custom_domain
+      .trim()
+      .toLowerCase()
+      .replace(/^https?:\/\//i, '')  // quitar http:// o https://
+      .replace(/^www\./i, '')         // quitar www.
+      .replace(/\/.*$/, '')           // quitar path si lo hay
+      .trim();
+    if (!cleanDomain) cleanDomain = null;
+  }
+
   try {
     const now = new Date();
     const period = subscription_period || 'monthly';
@@ -95,21 +113,23 @@ export const createTenant = async (req, res) => {
        VALUES ($1,$2,$3,$4,$5,$6,$7,'active',$8,$9,$10,$11,$12)
        RETURNING *`,
       [
-        name, brand_name || name, subdomain.toLowerCase(), custom_domain || null,
+        name.trim(), (brand_name || name).trim(), cleanSubdomain, cleanDomain,
         plan_type || 'Full Digital', period, expires,
-        admin_email || null,
+        admin_email?.trim() || null,
         brand_color_primary || '#E30613',
         brand_color_secondary || '#1A1A1A',
         brand_logo_url || null,
-        slogan || null,
+        slogan?.trim() || null,
       ]
     );
     const store = result.rows[0];
 
+    // Crear registro en tenant_settings usando el store_id como FK canónica
     await query(
-      `INSERT INTO tenant_settings (tenant_id, store_id, cash_on_delivery)
-       VALUES ($1, $2, true) ON CONFLICT DO NOTHING`,
-      [subdomain.toLowerCase(), store.id]
+      `INSERT INTO tenant_settings (store_id, tenant_id, cash_on_delivery)
+       VALUES ($1, $2, true)
+       ON CONFLICT (store_id) DO NOTHING`,
+      [store.id, cleanSubdomain]
     );
 
     res.status(201).json({ status: 'success', data: store });

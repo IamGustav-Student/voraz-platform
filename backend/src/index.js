@@ -6,17 +6,17 @@ import path from 'path';
 import { fileURLToPath } from 'url';
 import { query, testConnection } from './config/db.js';
 
-import productsRoutes     from './routes/products.routes.js';
-import communityRoutes    from './routes/community.routes.js';
-import storesRoutes       from './routes/stores.routes.js';
-import newsRoutes         from './routes/news.routes.js';
-import ordersRoutes       from './routes/orders.routes.js';
-import paymentsRoutes     from './routes/payments.routes.js';
-import authRoutes         from './routes/auth.routes.js';
-import usersRoutes        from './routes/users.routes.js';
-import couponsRoutes      from './routes/coupons.routes.js';
-import adminRoutes        from './routes/admin.routes.js';
-import superadminRoutes   from './routes/superadmin.routes.js';
+import productsRoutes from './routes/products.routes.js';
+import communityRoutes from './routes/community.routes.js';
+import storesRoutes from './routes/stores.routes.js';
+import newsRoutes from './routes/news.routes.js';
+import ordersRoutes from './routes/orders.routes.js';
+import paymentsRoutes from './routes/payments.routes.js';
+import authRoutes from './routes/auth.routes.js';
+import usersRoutes from './routes/users.routes.js';
+import couponsRoutes from './routes/coupons.routes.js';
+import adminRoutes from './routes/admin.routes.js';
+import superadminRoutes from './routes/superadmin.routes.js';
 import subscriptionRoutes from './routes/subscriptions.routes.js';
 
 import { tenantMiddleware } from './middleware/tenant.middleware.js';
@@ -101,15 +101,15 @@ app.get('/api/settings', tenantMiddleware, async (req, res) => {
         res.json({
             status: 'success',
             data: {
-                id:                    cfg.id || 1,
-                cash_on_delivery:      cfg.cash_on_delivery !== false,
-                brand_name:            cfg.brand_name || 'GastroRed',
-                brand_color_primary:   cfg.brand_color_primary || '#E30613',
+                id: cfg.id || 1,
+                cash_on_delivery: cfg.cash_on_delivery !== false,
+                brand_name: cfg.brand_name || 'GastroRed',
+                brand_color_primary: cfg.brand_color_primary || '#E30613',
                 brand_color_secondary: cfg.brand_color_secondary || '#1A1A1A',
-                brand_logo_url:        cfg.brand_logo_url || null,
-                slogan:                cfg.slogan || null,
-                plan_type:             cfg.plan_type || 'Full Digital',
-                subdomain:             cfg.subdomain || null,
+                brand_logo_url: cfg.brand_logo_url || null,
+                slogan: cfg.slogan || null,
+                plan_type: cfg.plan_type || 'Full Digital',
+                subdomain: cfg.subdomain || null,
             }
         });
     } catch {
@@ -118,16 +118,16 @@ app.get('/api/settings', tenantMiddleware, async (req, res) => {
 });
 
 // ── Rutas con tenant middleware ───────────────────────────────────────────────
-app.use('/api/products',  tenantMiddleware, productsRoutes);
+app.use('/api/products', tenantMiddleware, productsRoutes);
 app.use('/api/community', tenantMiddleware, communityRoutes);
-app.use('/api/stores',    tenantMiddleware, storesRoutes);
-app.use('/api/news',      tenantMiddleware, newsRoutes);
-app.use('/api/orders',    tenantMiddleware, ordersRoutes);
-app.use('/api/payments',  tenantMiddleware, paymentsRoutes);
-app.use('/api/auth',      tenantMiddleware, authRoutes);
-app.use('/api/users',     usersRoutes);
-app.use('/api/coupons',   tenantMiddleware, couponsRoutes);
-app.use('/api/admin',     tenantMiddleware, adminRoutes);
+app.use('/api/stores', tenantMiddleware, storesRoutes);
+app.use('/api/news', tenantMiddleware, newsRoutes);
+app.use('/api/orders', tenantMiddleware, ordersRoutes);
+app.use('/api/payments', tenantMiddleware, paymentsRoutes);
+app.use('/api/auth', tenantMiddleware, authRoutes);
+app.use('/api/users', usersRoutes);
+app.use('/api/coupons', tenantMiddleware, couponsRoutes);
+app.use('/api/admin', tenantMiddleware, adminRoutes);
 
 // ── Migraciones ───────────────────────────────────────────────────────────────
 const runMigration = async (sqlFile) => {
@@ -156,4 +156,5 @@ app.listen(PORT, async () => {
     await runMigration('phase11_tenant_settings.sql');
     await runMigration('phase12_cash_payment.sql');
     await runMigration('phase13_gastrored_saas.sql');
+    await runMigration('phase14_reconcile_tenant.sql'); // GastroRed: reconcilia tenant_id → store_id
 });

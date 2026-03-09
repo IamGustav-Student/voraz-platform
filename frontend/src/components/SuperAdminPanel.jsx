@@ -1,6 +1,8 @@
 import { useState, useEffect, useCallback } from 'react';
 
 const API_URL = (import.meta.env.VITE_API_URL || 'http://localhost:3000/api').trim();
+// Dominio base de GastroRed para preview de URLs de tenant
+const GASTRORED_DOMAIN = (import.meta.env.VITE_GASTRORED_DOMAIN || 'gastrored.com.ar').trim();
 
 const superadminHeaders = (token) => ({
   'Content-Type': 'application/json',
@@ -17,8 +19,22 @@ const sfetch = async (path, token, options = {}) => {
   return data.data ?? data;
 };
 
-const PLAN_COLORS = { 'Full Digital': 'text-blue-400 bg-blue-900/20 border-blue-500/30', 'Expert': 'text-yellow-400 bg-yellow-900/20 border-yellow-500/30' };
-const STATUS_COLORS = { active: 'text-green-400 bg-green-900/20', suspended: 'text-red-400 bg-red-900/20', trial: 'text-yellow-400 bg-yellow-900/20' };
+const PLAN_COLORS = {
+  'Full Digital': 'text-blue-400 bg-blue-900/20 border-blue-500/30',
+  'Expert': 'text-yellow-400 bg-yellow-900/20 border-yellow-500/30',
+};
+const STATUS_COLORS = {
+  active: 'text-green-400 bg-green-900/20',
+  suspended: 'text-red-400 bg-red-900/20',
+  trial: 'text-yellow-400 bg-yellow-900/20',
+};
+
+const EMPTY_FORM = {
+  name: '', brand_name: '', subdomain: '', custom_domain: '',
+  plan_type: 'Full Digital', subscription_period: 'monthly',
+  admin_email: '', brand_color_primary: '#E30613',
+  brand_color_secondary: '#1A1A1A', slogan: '',
+};
 
 export default function SuperAdminPanel({ onBack }) {
   const [token, setToken] = useState(() => sessionStorage.getItem('sa_token') || '');
@@ -30,11 +46,10 @@ export default function SuperAdminPanel({ onBack }) {
   const [loading, setLoading] = useState(false);
   const [msg, setMsg] = useState('');
   const [showCreate, setShowCreate] = useState(false);
-  const [createForm, setCreateForm] = useState({
-    name: '', brand_name: '', subdomain: '', custom_domain: '', plan_type: 'Full Digital',
-    subscription_period: 'monthly', admin_email: '', brand_color_primary: '#E30613',
-    brand_color_secondary: '#1A1A1A', slogan: '',
-  });
+  const [createForm, setCreateForm] = useState(EMPTY_FORM);
+  const [creating, setCreating] = useState(false);
+  // Último tenant creado — para mostrar URLs de acceso
+  const [lastCreated, setLastCreated] = useState(null);
 
   const load = useCallback(async (t) => {
     const tk = t || token;
@@ -77,18 +92,29 @@ export default function SuperAdminPanel({ onBack }) {
   };
 
   const handleCreate = async (e) => {
-    e.preventDefault(); setMsg('');
+    e.preventDefault(); setMsg(''); setCreating(true); setLastCreated(null);
     try {
-      await sfetch('/stores', token, { method: 'POST', body: JSON.stringify(createForm) });
-      setMsg('Comercio creado correctamente');
+      const store = await sfetch('/stores', token, { method: 'POST', body: JSON.stringify(createForm) });
+      setLastCreated(store);
+      setMsg('✅ Comercio creado correctamente');
       setShowCreate(false);
-      setCreateForm({ name: '', brand_name: '', subdomain: '', custom_domain: '', plan_type: 'Full Digital', subscription_period: 'monthly', admin_email: '', brand_color_primary: '#E30613', brand_color_secondary: '#1A1A1A', slogan: '' });
+      setTab('stores');
+      setCreateForm(EMPTY_FORM);
       load();
     } catch (e) { setMsg('Error: ' + e.message); }
+    setCreating(false);
+  };
+
+  // Helper: preview URL del tenant
+  const tenantUrl = (store) => {
+    if (store.custom_domain) return `https://${store.custom_domain}`;
+    if (store.subdomain) return `https://${store.subdomain}.${GASTRORED_DOMAIN}`;
+    return null;
   };
 
   const fmt = (n) => parseInt(n || 0).toLocaleString('es-AR');
 
+  // ── LOGIN ──────────────────────────────────────────────────────────────────
   if (!token) {
     return (
       <div className="min-h-screen bg-black flex items-center justify-center px-4">
@@ -99,9 +125,11 @@ export default function SuperAdminPanel({ onBack }) {
             <p className="text-gray-500 text-sm">Panel de Administración SaaS</p>
           </div>
           <form onSubmit={handleLogin} className="space-y-4">
-            <input type="email" placeholder="Email superadmin" value={loginForm.email} onChange={e => setLoginForm(f => ({ ...f, email: e.target.value }))}
+            <input type="email" placeholder="Email superadmin" value={loginForm.email}
+              onChange={e => setLoginForm(f => ({ ...f, email: e.target.value }))}
               className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white text-sm focus:outline-none focus:border-red-500" required />
-            <input type="password" placeholder="Contraseña" value={loginForm.password} onChange={e => setLoginForm(f => ({ ...f, password: e.target.value }))}
+            <input type="password" placeholder="Contraseña" value={loginForm.password}
+              onChange={e => setLoginForm(f => ({ ...f, password: e.target.value }))}
               className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white text-sm focus:outline-none focus:border-red-500" required />
             {loginErr && <p className="text-red-400 text-xs font-bold">{loginErr}</p>}
             <button type="submit" className="w-full bg-red-600 hover:bg-red-700 text-white py-3 rounded-xl font-black uppercase tracking-wide transition">
@@ -114,6 +142,7 @@ export default function SuperAdminPanel({ onBack }) {
     );
   }
 
+  // ── PANEL PRINCIPAL ────────────────────────────────────────────────────────
   return (
     <div className="min-h-screen bg-black text-white">
       {/* Header */}
@@ -127,7 +156,10 @@ export default function SuperAdminPanel({ onBack }) {
         </div>
         <div className="flex gap-2">
           {onBack && <button onClick={onBack} className="text-xs text-gray-500 hover:text-white px-3 py-1.5 rounded-lg bg-white/5">← Volver</button>}
-          <button onClick={() => { sessionStorage.removeItem('sa_token'); setToken(''); }} className="text-xs text-red-500 hover:text-red-300 px-3 py-1.5 rounded-lg bg-white/5">Cerrar sesión</button>
+          <button onClick={() => { sessionStorage.removeItem('sa_token'); setToken(''); }}
+            className="text-xs text-red-500 hover:text-red-300 px-3 py-1.5 rounded-lg bg-white/5">
+            Cerrar sesión
+          </button>
         </div>
       </div>
 
@@ -149,16 +181,45 @@ export default function SuperAdminPanel({ onBack }) {
         </div>
       )}
 
+      {/* Mensaje de feedback */}
       {msg && (
-        <div className={`mx-6 px-4 py-3 rounded-xl text-sm font-bold mb-4 ${msg.startsWith('Error') ? 'bg-red-900/30 text-red-400' : 'bg-green-900/30 text-green-400'}`}>
+        <div className={`mx-6 px-4 py-3 rounded-xl text-sm font-bold mb-2 ${msg.startsWith('Error') ? 'bg-red-900/30 text-red-400' : 'bg-green-900/30 text-green-400'}`}>
           {msg} <button onClick={() => setMsg('')} className="ml-2 opacity-60">✕</button>
+        </div>
+      )}
+
+      {/* URLs del último tenant creado */}
+      {lastCreated && (
+        <div className="mx-6 mb-4 bg-blue-900/20 border border-blue-500/30 rounded-xl p-4">
+          <p className="text-blue-300 font-bold text-sm mb-2">🎉 Tenant creado — URLs de acceso:</p>
+          <div className="space-y-1 text-xs font-mono">
+            <div className="flex items-center gap-2">
+              <span className="text-gray-400">Subdomain:</span>
+              <a href={`https://${lastCreated.subdomain}.${GASTRORED_DOMAIN}`} target="_blank" rel="noreferrer"
+                className="text-blue-400 hover:underline">{lastCreated.subdomain}.{GASTRORED_DOMAIN}</a>
+            </div>
+            {lastCreated.custom_domain && (
+              <div className="flex items-center gap-2">
+                <span className="text-gray-400">Dominio propio:</span>
+                <a href={`https://${lastCreated.custom_domain}`} target="_blank" rel="noreferrer"
+                  className="text-blue-400 hover:underline">{lastCreated.custom_domain}</a>
+                <span className="text-yellow-500 text-[10px]">⚠️ Requiere configurar DNS</span>
+              </div>
+            )}
+            <div className="flex items-center gap-2 pt-1">
+              <span className="text-gray-400">store_id:</span>
+              <span className="text-white font-bold">{lastCreated.id}</span>
+              <span className="text-gray-500">(usar para seeder: <code>STORE_ID={lastCreated.id} node sembrar-real.js</code>)</span>
+            </div>
+          </div>
+          <button onClick={() => setLastCreated(null)} className="mt-2 text-xs text-gray-500 hover:text-white">Cerrar</button>
         </div>
       )}
 
       {/* Tabs */}
       <div className="px-6 flex gap-2 mb-6">
         {['stores', 'crear'].map(t => (
-          <button key={t} onClick={() => { setTab(t); if (t === 'crear') setShowCreate(true); else setShowCreate(false); }}
+          <button key={t} onClick={() => { setTab(t); setShowCreate(t === 'crear'); }}
             className={`px-4 py-2 rounded-xl text-sm font-bold uppercase transition ${tab === t ? 'bg-red-600 text-white' : 'bg-white/5 text-gray-400 hover:text-white'}`}>
             {t === 'stores' ? `🏪 Comercios (${stores.length})` : '➕ Nuevo Comercio'}
           </button>
@@ -167,7 +228,7 @@ export default function SuperAdminPanel({ onBack }) {
       </div>
 
       <div className="px-6 pb-20">
-        {/* Lista comercios */}
+        {/* Lista de comercios */}
         {tab === 'stores' && !showCreate && (
           <div className="space-y-3">
             {loading && <p className="text-gray-500 text-sm">Cargando...</p>}
@@ -177,20 +238,42 @@ export default function SuperAdminPanel({ onBack }) {
                   <div className="flex items-center gap-3">
                     {s.brand_logo_url
                       ? <img src={s.brand_logo_url} alt="" className="w-10 h-10 rounded-lg object-cover" />
-                      : <div className="w-10 h-10 rounded-lg flex items-center justify-center text-xl" style={{ background: s.brand_color_primary || '#E30613' }}>
-                          {(s.brand_name || s.name)?.[0]?.toUpperCase()}
-                        </div>
+                      : <div className="w-10 h-10 rounded-lg flex items-center justify-center text-xl font-black text-white"
+                        style={{ background: s.brand_color_primary || '#E30613' }}>
+                        {(s.brand_name || s.name)?.[0]?.toUpperCase()}
+                      </div>
                     }
                     <div>
                       <p className="font-bold text-white">{s.brand_name || s.name}</p>
-                      <p className="text-xs text-gray-500">{s.subdomain}.gastrored.com.ar {s.custom_domain && `· ${s.custom_domain}`}</p>
-                      {s.admin_email && <p className="text-xs text-gray-600">{s.admin_email}</p>}
+                      {/* URL de acceso del tenant */}
+                      <div className="text-xs text-gray-500 space-y-0.5">
+                        {s.subdomain && (
+                          <p>
+                            <span className="text-gray-600">sub: </span>
+                            <a href={`https://${s.subdomain}.${GASTRORED_DOMAIN}`} target="_blank" rel="noreferrer"
+                              className="text-blue-500 hover:text-blue-400 hover:underline">
+                              {s.subdomain}.{GASTRORED_DOMAIN}
+                            </a>
+                          </p>
+                        )}
+                        {s.custom_domain && (
+                          <p>
+                            <span className="text-gray-600">dominio: </span>
+                            <a href={`https://${s.custom_domain}`} target="_blank" rel="noreferrer"
+                              className="text-green-500 hover:text-green-400 hover:underline">
+                              {s.custom_domain}
+                            </a>
+                          </p>
+                        )}
+                      </div>
+                      {s.admin_email && <p className="text-xs text-gray-600 mt-0.5">{s.admin_email}</p>}
                     </div>
                   </div>
 
                   <div className="flex items-center gap-2 flex-wrap">
                     <span className={`text-xs font-bold px-2 py-1 rounded-full border ${PLAN_COLORS[s.plan_type] || 'text-gray-400'}`}>{s.plan_type}</span>
                     <span className={`text-xs font-bold px-2 py-1 rounded-full ${STATUS_COLORS[s.status] || 'text-gray-400 bg-gray-900/20'}`}>{s.status}</span>
+                    <span className="text-xs text-gray-600 font-mono">id:{s.id}</span>
                   </div>
                 </div>
 
@@ -209,8 +292,16 @@ export default function SuperAdminPanel({ onBack }) {
                   )}
                   {s.subscription_expires_at && (
                     <span className={`text-xs px-2 py-1.5 rounded-lg ${new Date(s.subscription_expires_at) < new Date() ? 'bg-red-900/30 text-red-400' : 'bg-white/5 text-gray-400'}`}>
-                      {new Date(s.subscription_expires_at) < new Date() ? '⚠️ Expiró' : `Vence: ${new Date(s.subscription_expires_at).toLocaleDateString('es-AR')}`}
+                      {new Date(s.subscription_expires_at) < new Date()
+                        ? '⚠️ Expiró'
+                        : `Vence: ${new Date(s.subscription_expires_at).toLocaleDateString('es-AR')}`}
                     </span>
+                  )}
+                  {tenantUrl(s) && (
+                    <a href={tenantUrl(s)} target="_blank" rel="noreferrer"
+                      className="text-xs px-3 py-1.5 bg-white/5 hover:bg-white/10 rounded-lg font-bold text-gray-400 hover:text-white">
+                      🔗 Ver sitio
+                    </a>
                   )}
                 </div>
               </div>
@@ -219,43 +310,73 @@ export default function SuperAdminPanel({ onBack }) {
           </div>
         )}
 
-        {/* Crear comercio */}
+        {/* Formulario de creación */}
         {showCreate && (
           <form onSubmit={handleCreate} className="bg-white/5 border border-white/10 rounded-2xl p-6 max-w-2xl space-y-4">
             <h2 className="font-black text-xl text-white">Nuevo Comercio</h2>
 
             <div className="grid grid-cols-2 gap-3">
-              <input placeholder="Nombre del negocio *" value={createForm.name} onChange={e => setCreateForm(f => ({ ...f, name: e.target.value }))} required
+              <input placeholder="Nombre del negocio *" value={createForm.name}
+                onChange={e => setCreateForm(f => ({ ...f, name: e.target.value }))} required
                 className="col-span-2 bg-black/30 border border-white/10 rounded-xl px-4 py-3 text-white text-sm" />
-              <input placeholder="Nombre de marca (para la app)" value={createForm.brand_name} onChange={e => setCreateForm(f => ({ ...f, brand_name: e.target.value }))}
+
+              <input placeholder="Nombre de marca (para la app)" value={createForm.brand_name}
+                onChange={e => setCreateForm(f => ({ ...f, brand_name: e.target.value }))}
                 className="col-span-2 bg-black/30 border border-white/10 rounded-xl px-4 py-3 text-white text-sm" />
+
+              {/* Subdomain con preview en tiempo real */}
               <div className="col-span-2">
-                <input placeholder="Subdomain * (ej: miburguer → miburguer.gastrored.com.ar)" value={createForm.subdomain}
+                <input placeholder="Subdomain * (ej: miburguer)" value={createForm.subdomain}
                   onChange={e => setCreateForm(f => ({ ...f, subdomain: e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, '') }))} required
                   className="w-full bg-black/30 border border-white/10 rounded-xl px-4 py-3 text-white text-sm" />
-                {createForm.subdomain && <p className="text-xs text-green-400 mt-1">URL: {createForm.subdomain}.gastrored.com.ar</p>}
+                {createForm.subdomain && (
+                  <div className="mt-1.5 flex items-center gap-1.5 text-xs">
+                    <span className="text-gray-500">URL del tenant:</span>
+                    <span className="text-green-400 font-mono font-bold">{createForm.subdomain}.{GASTRORED_DOMAIN}</span>
+                  </div>
+                )}
               </div>
-              <input placeholder="Dominio propio (opcional, ej: miburguer.com.ar)" value={createForm.custom_domain}
-                onChange={e => setCreateForm(f => ({ ...f, custom_domain: e.target.value }))}
-                className="col-span-2 bg-black/30 border border-white/10 rounded-xl px-4 py-3 text-white text-sm" />
+
+              {/* Dominio propio con instrucción DNS */}
+              <div className="col-span-2">
+                <input placeholder="Dominio propio (opcional, ej: pedir.miburguer.com)" value={createForm.custom_domain}
+                  onChange={e => setCreateForm(f => ({ ...f, custom_domain: e.target.value }))}
+                  className="w-full bg-black/30 border border-white/10 rounded-xl px-4 py-3 text-white text-sm" />
+                {createForm.custom_domain.trim() && (
+                  <div className="mt-1.5 text-xs text-yellow-500 bg-yellow-900/20 rounded-lg px-3 py-2">
+                    ⚠️ Para que funcione, el cliente debe configurar un CNAME en su DNS:<br />
+                    <code className="font-mono">{createForm.custom_domain.toLowerCase().replace(/^https?:\/\//i, '').replace(/^www\./i, '').split('/')[0] || 'su-dominio.com'}</code>
+                    {' → '}
+                    <code className="font-mono text-green-400">{API_URL.replace('/api', '').replace('https://', '').replace('http://', '')}</code>
+                  </div>
+                )}
+              </div>
+
               <input placeholder="Email del dueño" type="email" value={createForm.admin_email}
                 onChange={e => setCreateForm(f => ({ ...f, admin_email: e.target.value }))}
                 className="col-span-2 bg-black/30 border border-white/10 rounded-xl px-4 py-3 text-white text-sm" />
-              <input placeholder="Slogan" value={createForm.slogan} onChange={e => setCreateForm(f => ({ ...f, slogan: e.target.value }))}
+
+              <input placeholder="Slogan" value={createForm.slogan}
+                onChange={e => setCreateForm(f => ({ ...f, slogan: e.target.value }))}
                 className="col-span-2 bg-black/30 border border-white/10 rounded-xl px-4 py-3 text-white text-sm" />
+
               <div>
                 <label className="text-xs text-gray-400 block mb-1">Color primario</label>
-                <input type="color" value={createForm.brand_color_primary} onChange={e => setCreateForm(f => ({ ...f, brand_color_primary: e.target.value }))}
+                <input type="color" value={createForm.brand_color_primary}
+                  onChange={e => setCreateForm(f => ({ ...f, brand_color_primary: e.target.value }))}
                   className="w-full h-10 bg-black/30 border border-white/10 rounded-xl cursor-pointer" />
               </div>
               <div>
                 <label className="text-xs text-gray-400 block mb-1">Color secundario</label>
-                <input type="color" value={createForm.brand_color_secondary} onChange={e => setCreateForm(f => ({ ...f, brand_color_secondary: e.target.value }))}
+                <input type="color" value={createForm.brand_color_secondary}
+                  onChange={e => setCreateForm(f => ({ ...f, brand_color_secondary: e.target.value }))}
                   className="w-full h-10 bg-black/30 border border-white/10 rounded-xl cursor-pointer" />
               </div>
+
               <div>
                 <label className="text-xs text-gray-400 block mb-1">Plan</label>
-                <select value={createForm.plan_type} onChange={e => setCreateForm(f => ({ ...f, plan_type: e.target.value }))}
+                <select value={createForm.plan_type}
+                  onChange={e => setCreateForm(f => ({ ...f, plan_type: e.target.value }))}
                   className="w-full bg-black/30 border border-white/10 rounded-xl px-4 py-3 text-white text-sm">
                   <option value="Full Digital">Full Digital — $60.000/mes</option>
                   <option value="Expert">Expert — $100.000/mes</option>
@@ -263,7 +384,8 @@ export default function SuperAdminPanel({ onBack }) {
               </div>
               <div>
                 <label className="text-xs text-gray-400 block mb-1">Período</label>
-                <select value={createForm.subscription_period} onChange={e => setCreateForm(f => ({ ...f, subscription_period: e.target.value }))}
+                <select value={createForm.subscription_period}
+                  onChange={e => setCreateForm(f => ({ ...f, subscription_period: e.target.value }))}
                   className="w-full bg-black/30 border border-white/10 rounded-xl px-4 py-3 text-white text-sm">
                   <option value="monthly">Mensual</option>
                   <option value="annual">Anual (2 meses gratis)</option>
@@ -272,8 +394,14 @@ export default function SuperAdminPanel({ onBack }) {
             </div>
 
             <div className="flex gap-3 pt-2">
-              <button type="submit" className="flex-1 bg-red-600 hover:bg-red-700 py-3 rounded-xl font-black text-sm uppercase">Crear Comercio</button>
-              <button type="button" onClick={() => { setShowCreate(false); setTab('stores'); }} className="px-6 py-3 rounded-xl bg-white/10 hover:bg-white/20 text-sm">Cancelar</button>
+              <button type="submit" disabled={creating}
+                className="flex-1 bg-red-600 hover:bg-red-700 disabled:opacity-50 py-3 rounded-xl font-black text-sm uppercase">
+                {creating ? 'Creando...' : 'Crear Comercio'}
+              </button>
+              <button type="button" onClick={() => { setShowCreate(false); setTab('stores'); }}
+                className="px-6 py-3 rounded-xl bg-white/10 hover:bg-white/20 text-sm">
+                Cancelar
+              </button>
             </div>
           </form>
         )}
