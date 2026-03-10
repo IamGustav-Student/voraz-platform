@@ -115,13 +115,8 @@ export const createTenant = async (req, res) => {
        VALUES ($1,$2,$3,$4,$5,$6,$7,'active',$8,$9,$10,$11,$12,$13,true)
        RETURNING *`,
       [
-        cleanSub,
-        name.trim(),
-        cleanSub,
-        cleanDomain,
-        plan_type || 'Full Digital',
-        period,
-        expires,
+        cleanSub, name.trim(), cleanSub, cleanDomain,
+        plan_type || 'Full Digital', period, expires,
         (brand_name || name).trim(),
         brand_color_primary || '#E30613',
         brand_color_secondary || '#1A1A1A',
@@ -134,21 +129,47 @@ export const createTenant = async (req, res) => {
 
     // 2. Crear sucursal principal (store) para este tenant
     const storeResult = await query(
-      `INSERT INTO stores (name, tenant_id)
-       VALUES ($1, $2)
-       RETURNING *`,
+      `INSERT INTO stores (name, tenant_id) VALUES ($1, $2) RETURNING *`,
       [name.trim(), cleanSub]
     );
+    const store = storeResult.rows[0];
 
     // 3. Crear tenant_settings
     await query(
       `INSERT INTO tenant_settings (store_id, tenant_id, tenant_id_fk, cash_on_delivery)
-       VALUES ($1, $2, $3, true)
-       ON CONFLICT (store_id) DO NOTHING`,
-      [storeResult.rows[0].id, cleanSub, cleanSub]
+       VALUES ($1, $2, $3, true) ON CONFLICT (store_id) DO NOTHING`,
+      [store.id, cleanSub, cleanSub]
     );
 
-    res.status(201).json({ status: 'success', data: tenant });
+    // 4. Crear usuario administrador si se proveen credenciales
+    let adminUser = null;
+    const effectiveAdminEmail = admin_email?.trim() || null;
+    const { admin_name, admin_password } = req.body;
+    if (effectiveAdminEmail && admin_password && admin_password.length >= 6) {
+      const hash = await bcrypt.hash(admin_password, 10);
+      const adminResult = await query(
+        `INSERT INTO users (email, password_hash, name, store_id, tenant_id, role, points)
+         VALUES ($1, $2, $3, $4, $5, 'admin', 0)
+         ON CONFLICT (email, store_id) DO UPDATE
+           SET password_hash = EXCLUDED.password_hash, name = EXCLUDED.name, role = 'admin'
+         RETURNING id, email, name, role`,
+        [effectiveAdminEmail, hash, (admin_name || name).trim(), store.id, cleanSub]
+      );
+      adminUser = adminResult.rows[0];
+    }
+
+    res.status(201).json({
+      status: 'success',
+      data: {
+        ...tenant,
+        admin_user: adminUser ? {
+          email: adminUser.email,
+          name: adminUser.name,
+          role: adminUser.role,
+          login_url: `https://${cleanSub}.${process.env.GASTRORED_ROOT_DOMAIN || 'gastrored.com.ar'}/admin`,
+        } : null,
+      },
+    });
   } catch (e) {
     if (e.code === '23505') return res.status(409).json({ status: 'error', message: 'El subdomain o dominio ya existe.' });
     res.status(500).json({ status: 'error', message: e.message });

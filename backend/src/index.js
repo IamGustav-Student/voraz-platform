@@ -205,4 +205,5 @@ app.listen(PORT, async () => {
     await runMigration('phase15_gastrored_config.sql'); // GastroRed: tabla de config global
     await runMigration('phase16_multitenant_fix.sql');  // GastroRed: fix multi-tenancy completo
     await runMigration('phase17_tenants_stores_refactor.sql'); // GastroRed: tenants=SaaS clients, stores=sucursales
+    await runMigration('phase18_tenant_admin_user.sql');       // GastroRed: admin user por tenant, email único por store
 });

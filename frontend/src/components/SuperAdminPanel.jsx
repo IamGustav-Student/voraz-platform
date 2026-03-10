@@ -32,7 +32,8 @@ const STATUS_COLORS = {
 const EMPTY_FORM = {
   name: '', brand_name: '', subdomain: '', custom_domain: '',
   plan_type: 'Full Digital', subscription_period: 'monthly',
-  admin_email: '', brand_color_primary: '#E30613',
+  admin_email: '', admin_name: '', admin_password: '',
+  brand_color_primary: '#E30613',
   brand_color_secondary: '#1A1A1A', slogan: '',
 };
 
@@ -253,15 +254,22 @@ export default function SuperAdminPanel({ onBack }) {
                 <span className="text-yellow-500 text-[10px]">⚠️ Requiere configurar DNS</span>
               </div>
             )}
-            <div className="flex items-center gap-2 pt-1">
-              <span className="text-gray-400">store_id:</span>
-              <span className="text-white font-bold">{lastCreated.id}</span>
-              <span className="text-gray-500">(usar para seeder: <code>STORE_ID={lastCreated.id} node sembrar-real.js</code>)</span>
-            </div>
+            {lastCreated.admin_user && (
+              <div className="mt-3 bg-green-900/20 border border-green-500/20 rounded-lg p-3 space-y-1">
+                <p className="text-green-400 font-bold not-italic">🔑 Credenciales del Admin</p>
+                <p><span className="text-gray-400">Email: </span><span className="text-white">{lastCreated.admin_user.email}</span></p>
+                <p><span className="text-gray-400">Contraseña: </span><span className="text-yellow-300">(la que ingresaste al crear)</span></p>
+                <p><span className="text-gray-400">Panel: </span>
+                  <a href={lastCreated.admin_user.login_url} target="_blank" rel="noreferrer"
+                    className="text-blue-400 hover:underline">{lastCreated.admin_user.login_url}</a>
+                </p>
+              </div>
+            )}
           </div>
           <button onClick={() => setLastCreated(null)} className="mt-2 text-xs text-gray-500 hover:text-white">Cerrar</button>
         </div>
       )}
+
 
       {/* Tabs */}
       <div className="px-6 flex gap-2 mb-6 flex-wrap">
@@ -399,9 +407,27 @@ export default function SuperAdminPanel({ onBack }) {
                 )}
               </div>
 
-              <input placeholder="Email del dueño" type="email" value={createForm.admin_email}
+              <input placeholder="Email del dueño (será el usuario admin) *" type="email" value={createForm.admin_email}
                 onChange={e => setCreateForm(f => ({ ...f, admin_email: e.target.value }))}
+                required
                 className="col-span-2 bg-black/30 border border-white/10 rounded-xl px-4 py-3 text-white text-sm" />
+
+              {/* Credenciales del administrador */}
+              <div className="col-span-2 bg-yellow-900/10 border border-yellow-500/20 rounded-xl p-4">
+                <p className="text-yellow-400 text-xs font-bold mb-3">🔑 Credenciales del Administrador</p>
+                <div className="space-y-2">
+                  <input placeholder="Nombre del administrador *" value={createForm.admin_name}
+                    onChange={e => setCreateForm(f => ({ ...f, admin_name: e.target.value }))}
+                    required
+                    className="w-full bg-black/30 border border-white/10 rounded-xl px-4 py-2.5 text-white text-sm" />
+                  <input type="password" placeholder="Contraseña del admin (mín. 6 caracteres) *"
+                    value={createForm.admin_password}
+                    onChange={e => setCreateForm(f => ({ ...f, admin_password: e.target.value }))}
+                    required minLength={6}
+                    className="w-full bg-black/30 border border-white/10 rounded-xl px-4 py-2.5 text-white text-sm" />
+                </div>
+                <p className="text-gray-500 text-[11px] mt-2">El dueño usará este email y contraseña para acceder al panel /admin de su comercio.</p>
+              </div>
 
               <input placeholder="Slogan" value={createForm.slogan}
                 onChange={e => setCreateForm(f => ({ ...f, slogan: e.target.value }))}

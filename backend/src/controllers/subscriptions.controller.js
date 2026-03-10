@@ -1,5 +1,6 @@
 import { MercadoPagoConfig, Preference, Payment } from 'mercadopago';
 import { query } from '../config/db.js';
+import bcrypt from 'bcrypt';
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
@@ -117,12 +118,15 @@ export const createTrialTenant = async (req, res) => {
 // ── Crear checkout público (desde la landing, sin auth) ───────────────────────
 export const createPublicCheckout = async (req, res) => {
   const { name, brand_name, subdomain, admin_email, plan_type,
-    subscription_period, brand_color_primary, brand_color_secondary, slogan } = req.body;
+    subscription_period, brand_color_primary, brand_color_secondary, slogan,
+    admin_name, admin_password } = req.body;
 
   if (!name || !subdomain || !plan_type)
     return res.status(400).json({ status: 'error', message: 'name, subdomain y plan_type son requeridos.' });
   if (!['Full Digital', 'Expert'].includes(plan_type))
     return res.status(400).json({ status: 'error', message: 'Plan inválido.' });
+  if (!admin_email || !admin_password || admin_password.length < 6)
+    return res.status(400).json({ status: 'error', message: 'Email y contraseña del admin requeridos (mín. 6 caracteres).' });
 
   const cleanSub = cleanSubdomain(subdomain);
   if (!cleanSub)
@@ -175,6 +179,17 @@ export const createPublicCheckout = async (req, res) => {
     const storeResult = await query(
       `INSERT INTO stores (name, tenant_id) VALUES ($1, $2) RETURNING id`,
       [name.trim(), cleanSub]
+    );
+    const storeId = storeResult.rows[0].id;
+
+    // Crear usuario admin desde el inicio (el tenant queda pending pero el user ya existe)
+    const adminHash = await bcrypt.hash(admin_password, 10);
+    await query(
+      `INSERT INTO users (email, password_hash, name, store_id, tenant_id, role, points)
+       VALUES ($1, $2, $3, $4, $5, 'admin', 0)
+       ON CONFLICT (email, store_id) DO UPDATE
+         SET password_hash = EXCLUDED.password_hash, name = EXCLUDED.name, role = 'admin'`,
+      [admin_email.trim(), adminHash, (admin_name || name).trim(), storeId, cleanSub]
     );
 
     // Crear preferencia en MercadoPago

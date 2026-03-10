@@ -164,7 +164,11 @@ function Stat({ value, label }) {
 // ════════════════════════════════════════════════════════════════════════════
 function CheckoutModal({ plan, onClose }) {
     const isTrial = plan.plan_type === 'Trial';
-    const EMPTY = { name: '', subdomain: '', admin_email: '', slogan: '', subscription_period: 'monthly' };
+    const EMPTY = {
+        name: '', subdomain: '', admin_email: '',
+        admin_name: '', admin_password: '',
+        slogan: '', subscription_period: 'monthly'
+    };
     const [form, setForm] = useState(EMPTY);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState('');
@@ -222,7 +226,13 @@ function CheckoutModal({ plan, onClose }) {
                             className="text-teal-400 font-mono font-bold hover:underline text-sm">
                             {success.subdomain}.{GASTRORED_DOMAIN}
                         </a>
-                        <p className="text-xs text-gray-500 mt-2">store_id: <strong className="text-white">{success.id}</strong> — válido hasta: <strong className="text-white">{new Date(success.subscription_expires_at).toLocaleDateString('es-AR')}</strong></p>
+                        <p className="text-xs text-gray-500 mt-2">
+                            Válido hasta: <strong className="text-white">{new Date(success.subscription_expires_at).toLocaleDateString('es-AR')}</strong>
+                        </p>
+                        <div className="mt-3 pt-3 border-t border-teal-500/20">
+                            <p className="text-xs text-gray-400">🔑 Acceso al panel admin:</p>
+                            <p className="text-xs text-white font-mono">{form.admin_email}</p>
+                        </div>
                     </div>
                     <div className="space-y-2">
                         <a href={`https://${success.subdomain}.${GASTRORED_DOMAIN}/admin`} target="_blank" rel="noreferrer"
@@ -290,6 +300,19 @@ function CheckoutModal({ plan, onClose }) {
                     <input placeholder="Email del dueño *" type="email" value={form.admin_email}
                         onChange={e => set('admin_email', e.target.value)} required
                         className="w-full bg-black/30 border border-white/10 rounded-xl px-4 py-3 text-white text-sm focus:outline-none focus:border-teal-500" />
+
+                    {/* Credenciales de acceso al panel */}
+                    <div className="bg-white/5 border border-white/10 rounded-xl p-4 space-y-3">
+                        <p className="text-teal-400 text-xs font-bold">🔑 Credenciales para el panel de administración</p>
+                        <input placeholder="Tu nombre *" value={form.admin_name}
+                            onChange={e => set('admin_name', e.target.value)} required
+                            className="w-full bg-black/30 border border-white/10 rounded-xl px-4 py-2.5 text-white text-sm focus:outline-none focus:border-teal-500" />
+                        <input type="password" placeholder="Contraseña para ingresar al panel (mín. 6 caracteres) *"
+                            value={form.admin_password}
+                            onChange={e => set('admin_password', e.target.value)} required minLength={6}
+                            className="w-full bg-black/30 border border-white/10 rounded-xl px-4 py-2.5 text-white text-sm focus:outline-none focus:border-teal-500" />
+                        <p className="text-gray-600 text-[11px]">Con estas credenciales vas a poder acceder al panel /admin de tu comercio.</p>
+                    </div>
 
                     {error && (
                         <div className="bg-red-900/30 border border-red-500/30 rounded-xl px-4 py-3 text-red-400 text-sm">
