@@ -1,15 +1,32 @@
 import { query } from '../config/db.js';
 import { v2 as cloudinary } from 'cloudinary';
 
-// Devuelve el tenant_id (subdomain) del tenant actual
+// Devuelve el tenant_id VARCHAR del tenant actual (para queries en tabla tenants/stores)
 const getTenantId = (req) => req.tenant?.id || req.store?.id || 'voraz';
-// Backward-compat: para queries que aún usan store_id INT en tablas de datos
-const getStoreId = (req) => req.tenant?.id || req.store?.id || 'voraz';
+
+// Resuelve el store_id INTEGER real desde la tabla stores (para queries en productos, pedidos, etc.)
+// Es async porque necesita hacer una query a la DB.
+async function getStoreId(req) {
+  const tenantId = getTenantId(req);
+  if (/^\d+$/.test(String(tenantId))) return parseInt(tenantId);
+  try {
+    // Explicit casts to VARCHAR prevent integer syntax errors if schema is misconfigured
+    const r = await query('SELECT id FROM stores WHERE CAST(tenant_id AS VARCHAR) = CAST($1 AS VARCHAR) ORDER BY id ASC LIMIT 1', [tenantId]);
+    const foundId = r.rows[0]?.id;
+    if (foundId && !isNaN(parseInt(foundId))) {
+      return parseInt(foundId);
+    }
+    return 1;
+  } catch (err) {
+    console.error('Error in getStoreId:', err.message);
+    return 1;
+  }
+}
 
 // ── PRODUCTOS ──────────────────────────────────────────────────────────────
 export const getAdminProducts = async (req, res) => {
   try {
-    const storeId = getStoreId(req);
+    const storeId = await getStoreId(req);
     const result = await query(
       `SELECT p.*, c.name as category_name FROM products p
        LEFT JOIN categories c ON p.category_id = c.id
@@ -22,7 +39,7 @@ export const getAdminProducts = async (req, res) => {
 
 export const createProduct = async (req, res) => {
   try {
-    const storeId = getStoreId(req);
+    const storeId = await getStoreId(req);
     const { name, description, price, category_id, image_url, badge } = req.body;
     const result = await query(
       `INSERT INTO products (name, description, price, category_id, image_url, badge, store_id)
@@ -35,7 +52,7 @@ export const createProduct = async (req, res) => {
 
 export const updateProduct = async (req, res) => {
   try {
-    const storeId = getStoreId(req);
+    const storeId = await getStoreId(req);
     const { id } = req.params;
     const { name, description, price, category_id, image_url, badge, is_active } = req.body;
     const result = await query(
@@ -51,7 +68,7 @@ export const updateProduct = async (req, res) => {
 
 export const deleteProduct = async (req, res) => {
   try {
-    const storeId = getStoreId(req);
+    const storeId = await getStoreId(req);
     const { id } = req.params;
     await query('UPDATE products SET is_active=false WHERE id=$1 AND store_id=$2', [id, storeId]);
     res.json({ status: 'success', message: 'Producto desactivado' });
@@ -60,16 +77,16 @@ export const deleteProduct = async (req, res) => {
 
 export const getCategories = async (req, res) => {
   try {
-    const storeId = getStoreId(req);
-    const result = await query('SELECT * FROM categories WHERE store_id=$1 ORDER BY id', [storeId]);
+    const storeId = await getStoreId(req);
+    const result = await query('SELECT id, name, slug, image_url, store_id FROM categories WHERE store_id=$1 ORDER BY id', [storeId]);
     res.json({ status: 'success', data: result.rows });
   } catch (e) { res.status(500).json({ status: 'error', message: e.message }); }
 };
 
 export const createCategory = async (req, res) => {
   try {
-    const storeId = getStoreId(req);
-    const { name, description, image_url } = req.body;
+    const storeId = await getStoreId(req);
+    const { name, image_url, description } = req.body;
     const slug = name.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '');
     const result = await query(
       'INSERT INTO categories (name, slug, description, image_url, store_id) VALUES ($1,$2,$3,$4,$5) RETURNING *',
@@ -84,9 +101,9 @@ export const createCategory = async (req, res) => {
 
 export const updateCategory = async (req, res) => {
   try {
-    const storeId = getStoreId(req);
+    const storeId = await getStoreId(req);
     const { id } = req.params;
-    const { name, description, image_url } = req.body;
+    const { name, image_url, description } = req.body;
     const result = await query(
       'UPDATE categories SET name=$1, description=$2, image_url=$3 WHERE id=$4 AND store_id=$5 RETURNING *',
       [name, description || null, image_url || null, id, storeId]
@@ -98,7 +115,7 @@ export const updateCategory = async (req, res) => {
 
 export const deleteCategory = async (req, res) => {
   try {
-    const storeId = getStoreId(req);
+    const storeId = await getStoreId(req);
     const { id } = req.params;
     const used = await query('SELECT COUNT(*) FROM products WHERE category_id=$1 AND is_active=true', [id]);
     if (parseInt(used.rows[0].count) > 0) {
@@ -112,7 +129,7 @@ export const deleteCategory = async (req, res) => {
 // ── CUPONES ────────────────────────────────────────────────────────────────
 export const getAdminCoupons = async (req, res) => {
   try {
-    const storeId = getStoreId(req);
+    const storeId = await getStoreId(req);
     const result = await query('SELECT * FROM coupons WHERE store_id=$1 ORDER BY id DESC', [storeId]);
     res.json({ status: 'success', data: result.rows });
   } catch (e) { res.status(500).json({ status: 'error', message: e.message }); }
@@ -120,7 +137,7 @@ export const getAdminCoupons = async (req, res) => {
 
 export const createCoupon = async (req, res) => {
   try {
-    const storeId = getStoreId(req);
+    const storeId = await getStoreId(req);
     const { code, description, discount_type, discount_value, min_order, max_uses, expires_at } = req.body;
     const result = await query(
       `INSERT INTO coupons (code, description, discount_type, discount_value, min_order, max_uses, expires_at, store_id)
@@ -136,7 +153,7 @@ export const createCoupon = async (req, res) => {
 
 export const updateCoupon = async (req, res) => {
   try {
-    const storeId = getStoreId(req);
+    const storeId = await getStoreId(req);
     const { id } = req.params;
     const { active } = req.body;
     const result = await query(
@@ -149,7 +166,7 @@ export const updateCoupon = async (req, res) => {
 
 export const deleteCoupon = async (req, res) => {
   try {
-    const storeId = getStoreId(req);
+    const storeId = await getStoreId(req);
     await query('DELETE FROM coupons WHERE id=$1 AND store_id=$2', [req.params.id, storeId]);
     res.json({ status: 'success', message: 'Cupón eliminado' });
   } catch (e) { res.status(500).json({ status: 'error', message: e.message }); }
@@ -158,7 +175,7 @@ export const deleteCoupon = async (req, res) => {
 // ── VIDEOS ─────────────────────────────────────────────────────────────────
 export const createVideo = async (req, res) => {
   try {
-    const storeId = getStoreId(req);
+    const storeId = await getStoreId(req);
     let { title, youtube_url } = req.body;
     const match = youtube_url.match(/(?:v=|youtu\.be\/|embed\/)([a-zA-Z0-9_-]{11})/);
     if (!match) return res.status(400).json({ status: 'error', message: 'URL de YouTube inválida' });
@@ -174,7 +191,7 @@ export const createVideo = async (req, res) => {
 
 export const deleteVideo = async (req, res) => {
   try {
-    const storeId = getStoreId(req);
+    const storeId = await getStoreId(req);
     await query('DELETE FROM videos WHERE id=$1 AND store_id=$2', [req.params.id, storeId]);
     res.json({ status: 'success', message: 'Video eliminado' });
   } catch (e) { res.status(500).json({ status: 'error', message: e.message }); }
@@ -183,7 +200,7 @@ export const deleteVideo = async (req, res) => {
 // ── NOTICIAS ───────────────────────────────────────────────────────────────
 export const createNews = async (req, res) => {
   try {
-    const storeId = getStoreId(req);
+    const storeId = await getStoreId(req);
     const { title, content, image_url, date } = req.body;
     const result = await query(
       'INSERT INTO news (title, content, image_url, date, store_id) VALUES ($1,$2,$3,$4,$5) RETURNING *',
@@ -195,7 +212,7 @@ export const createNews = async (req, res) => {
 
 export const updateNews = async (req, res) => {
   try {
-    const storeId = getStoreId(req);
+    const storeId = await getStoreId(req);
     const { id } = req.params;
     const { title, content, image_url } = req.body;
     const result = await query(
@@ -208,7 +225,7 @@ export const updateNews = async (req, res) => {
 
 export const deleteNews = async (req, res) => {
   try {
-    const storeId = getStoreId(req);
+    const storeId = await getStoreId(req);
     await query('DELETE FROM news WHERE id=$1 AND store_id=$2', [req.params.id, storeId]);
     res.json({ status: 'success', message: 'Noticia eliminada' });
   } catch (e) { res.status(500).json({ status: 'error', message: e.message }); }
@@ -239,7 +256,7 @@ export const uploadImage = async (req, res) => {
 // ── STATS / DASHBOARD ─────────────────────────────────────────────────────
 export const getDashboardStats = async (req, res) => {
   try {
-    const storeId = getStoreId(req);
+    const storeId = await getStoreId(req);
     const [products, orders, users, coupons] = await Promise.all([
       query('SELECT COUNT(*) FROM products WHERE store_id=$1 AND is_active=true', [storeId]),
       query("SELECT COUNT(*), COALESCE(SUM(total),0) as revenue FROM orders WHERE store_id=$1 AND status != 'cancelled'", [storeId]),
@@ -264,7 +281,7 @@ export const getAdminStores = async (req, res) => {
   try {
     const tenantId = getTenantId(req);
     const result = await query(
-      `SELECT * FROM stores WHERE tenant_id = $1 ORDER BY id`,
+      `SELECT * FROM stores WHERE CAST(tenant_id AS VARCHAR) = CAST($1 AS VARCHAR) ORDER BY id`,
       [tenantId]
     );
     res.json({ status: 'success', data: result.rows });
@@ -291,7 +308,7 @@ export const updateStore = async (req, res) => {
     const { name, address, image_url, google_maps_url, delivery_link, phone } = req.body;
     const result = await query(
       `UPDATE stores SET name=$1, address=$2, image_url=$3, waze_link=$4, delivery_link=$5, phone=$6
-       WHERE id=$7 AND tenant_id=$8 RETURNING *`,
+       WHERE id=$7 AND CAST(tenant_id AS VARCHAR)=CAST($8 AS VARCHAR) RETURNING *`,
       [name, address, image_url || null, google_maps_url || null, delivery_link || null, phone || null, id, tenantId]
     );
     if (!result.rows.length) return res.status(404).json({ status: 'error', message: 'Local no encontrado' });
@@ -302,7 +319,7 @@ export const updateStore = async (req, res) => {
 export const deleteStore = async (req, res) => {
   try {
     const tenantId = getTenantId(req);
-    await query('DELETE FROM stores WHERE id=$1 AND tenant_id=$2', [req.params.id, tenantId]);
+    await query('DELETE FROM stores WHERE id=$1 AND CAST(tenant_id AS VARCHAR)=CAST($2 AS VARCHAR)', [req.params.id, tenantId]);
     res.json({ status: 'success', message: 'Local eliminado' });
   } catch (e) { res.status(500).json({ status: 'error', message: e.message }); }
 };
@@ -310,7 +327,7 @@ export const deleteStore = async (req, res) => {
 // ── PEDIDOS ADMIN ──────────────────────────────────────────────────────────
 export const getAdminOrders = async (req, res) => {
   try {
-    const storeId = getStoreId(req);
+    const storeId = await getStoreId(req);
     const result = await query(
       `SELECT o.*, u.name as user_name, u.email as user_email
        FROM orders o LEFT JOIN users u ON o.user_id = u.id
@@ -342,7 +359,7 @@ export const updateOrderStatus = async (req, res) => {
 // ── CONFIGURACIÓN MERCADOPAGO ──────────────────────────────────────────────
 export const getMercadopagoConfig = async (req, res) => {
   try {
-    const storeId = getStoreId(req);
+    const storeId = await getStoreId(req);
     const result = await query(
       'SELECT mp_public_key, mp_sandbox, mp_access_token, store_name, store_email, store_phone, store_address, cash_on_delivery FROM tenant_settings WHERE store_id = $1 LIMIT 1',
       [storeId]
@@ -368,23 +385,24 @@ export const getMercadopagoConfig = async (req, res) => {
 
 export const saveMercadopagoConfig = async (req, res) => {
   try {
-    const storeId = getStoreId(req);
+    const storeId = await getStoreId(req);
+    const tenantId = getTenantId(req);
     const { mp_access_token, mp_public_key, mp_sandbox, cash_on_delivery, store_name, store_email, store_phone, store_address } = req.body;
 
     await query(
-      `INSERT INTO tenant_settings (store_id, tenant_id, mp_access_token, mp_public_key, mp_sandbox, cash_on_delivery, store_name, store_email, store_phone, store_address, updated_at)
-       VALUES ($1,$1::text,$2,$3,$4,$5,$6,$7,$8,$9,NOW())
+      `INSERT INTO tenant_settings (store_id, tenant_id, tenant_id_fk, mp_access_token, mp_public_key, mp_sandbox, cash_on_delivery, store_name, store_email, store_phone, store_address, updated_at)
+       VALUES ($1,$2,$2,$3,$4,$5,$6,$7,$8,$9,$10,NOW())
        ON CONFLICT (store_id) DO UPDATE SET
-         mp_access_token  = COALESCE(NULLIF($2,''), tenant_settings.mp_access_token),
-         mp_public_key    = COALESCE(NULLIF($3,''), tenant_settings.mp_public_key),
-         mp_sandbox       = $4,
-         cash_on_delivery = $5,
-         store_name       = COALESCE(NULLIF($6,''), tenant_settings.store_name),
-         store_email      = COALESCE(NULLIF($7,''), tenant_settings.store_email),
-         store_phone      = COALESCE(NULLIF($8,''), tenant_settings.store_phone),
-         store_address    = COALESCE(NULLIF($9,''), tenant_settings.store_address),
+         mp_access_token  = COALESCE(NULLIF($3,''), tenant_settings.mp_access_token),
+         mp_public_key    = COALESCE(NULLIF($4,''), tenant_settings.mp_public_key),
+         mp_sandbox       = $5,
+         cash_on_delivery = $6,
+         store_name       = COALESCE(NULLIF($7,''), tenant_settings.store_name),
+         store_email      = COALESCE(NULLIF($8,''), tenant_settings.store_email),
+         store_phone      = COALESCE(NULLIF($9,''), tenant_settings.store_phone),
+         store_address    = COALESCE(NULLIF($10,''), tenant_settings.store_address),
          updated_at       = NOW()`,
-      [storeId, mp_access_token || '', mp_public_key || '', mp_sandbox ?? false, cash_on_delivery !== false, store_name || '', store_email || '', store_phone || '', store_address || '']
+      [storeId, tenantId, mp_access_token || '', mp_public_key || '', mp_sandbox ?? false, cash_on_delivery !== false, store_name || '', store_email || '', store_phone || '', store_address || '']
     );
 
     res.json({ status: 'success', message: 'Configuración guardada correctamente.' });

@@ -22,7 +22,19 @@ pool.on('error', (err) => {
   console.error('🔴 Error en pool PostgreSQL:', String(err));
 });
 
-export const query = (text, params) => pool.query(text, params);
+export const query = async (text, params) => {
+  try {
+    return await pool.query(text, params);
+  } catch (err) {
+    console.error(`🔴 ---------------------------`);
+    console.error(`🔴 ERROR EN DB QUERY:`);
+    console.error(`🔴 Mensaje: ${err.message}`);
+    console.error(`🔴 Query: ${text}`);
+    console.error(`🔴 Params:`, params);
+    console.error(`🔴 ---------------------------`);
+    throw err;
+  }
+};
 
 export const testConnection = async () => {
   try {
