@@ -49,7 +49,7 @@ export const createOrder = async (req, res) => {
 
         const placeholders = productIds.map((_, i) => `$${i + 1}`).join(',');
         const lockResult = await client.query(
-            `SELECT id, COALESCE(stock_quantity, -1) as stock_quantity, store_id
+            `SELECT id, COALESCE(stock, -1) as stock, store_id
              FROM products
              WHERE id IN (${placeholders})
              FOR UPDATE`,
@@ -73,7 +73,7 @@ export const createOrder = async (req, res) => {
                 await client.query('ROLLBACK');
                 return res.status(403).json({ status: 'error', message: 'Producto no pertenece al comercio.' });
             }
-            if (product.stock_quantity >= 0 && product.stock_quantity < totalQty) {
+            if (product.stock >= 0 && product.stock < totalQty) {
                 await client.query('ROLLBACK');
                 return res.status(400).json({
                     status: 'error',
