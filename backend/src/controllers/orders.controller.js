@@ -1,4 +1,5 @@
-import { query } from '../config/db.js';
+import { pool, query } from '../config/db.js';
+import { getStoreId, getTenantId } from '../utils/tenant.js';
 
 const POINTS_PER_100_ARS = 1;
 
@@ -7,7 +8,7 @@ const calcPoints = (total) => Math.floor(parseFloat(total) / 100) * POINTS_PER_1
 export const createOrder = async (req, res) => {
     const {
         customer_name, customer_phone, order_type,
-        delivery_address, store_id, items, notes, total,
+        delivery_address, store_id: bodyStoreId, items, notes, total,
         user_id, coupon_id, discount, points_redeemed, payment_method
     } = req.body;
 
@@ -17,23 +18,78 @@ export const createOrder = async (req, res) => {
     if (order_type === 'delivery' && !delivery_address) {
         return res.status(400).json({ status: 'error', message: 'Dirección de entrega requerida.' });
     }
-    if (order_type === 'pickup' && !store_id) {
+    if (order_type === 'pickup' && !bodyStoreId) {
         return res.status(400).json({ status: 'error', message: 'Sucursal requerida para retiro.' });
+    }
+
+    const tenantStoreId = await getStoreId(req);
+    const tenantId = getTenantId(req);
+    let store_id = tenantStoreId;
+    if (bodyStoreId != null) {
+        const storeCheck = await query(
+            'SELECT id FROM stores WHERE id = $1 AND CAST(tenant_id AS VARCHAR) = CAST($2 AS VARCHAR) LIMIT 1',
+            [bodyStoreId, tenantId]
+        );
+        if (storeCheck.rows.length) store_id = storeCheck.rows[0].id;
     }
 
     const resolvedPaymentMethod = payment_method === 'cash' ? 'cash' : 'mercadopago';
     const finalTotal = Math.max(0, parseFloat(total) - (parseFloat(discount) || 0) - ((points_redeemed || 0) * 5));
     const pointsEarned = calcPoints(finalTotal);
 
+    const client = await pool.connect();
     try {
-        const orderResult = await query(
+        await client.query('BEGIN');
+
+        const productIds = [...new Set(items.map((i) => i.product_id))];
+        if (productIds.length === 0) {
+            await client.query('ROLLBACK');
+            return res.status(400).json({ status: 'error', message: 'Ítems inválidos.' });
+        }
+
+        const placeholders = productIds.map((_, i) => `$${i + 1}`).join(',');
+        const lockResult = await client.query(
+            `SELECT id, COALESCE(stock_quantity, -1) as stock_quantity, store_id
+             FROM products
+             WHERE id IN (${placeholders})
+             FOR UPDATE`,
+            productIds
+        );
+        const productsById = Object.fromEntries(lockResult.rows.map((r) => [r.id, r]));
+
+        const qtyByProduct = {};
+        for (const item of items) {
+            const pid = item.product_id;
+            const qty = parseInt(item.quantity, 10) || 0;
+            qtyByProduct[pid] = (qtyByProduct[pid] || 0) + qty;
+        }
+        for (const [pid, totalQty] of Object.entries(qtyByProduct)) {
+            const product = productsById[Number(pid)];
+            if (!product) {
+                await client.query('ROLLBACK');
+                return res.status(400).json({ status: 'error', message: `Producto ${pid} no encontrado o no disponible.` });
+            }
+            if (product.store_id != null && product.store_id !== store_id) {
+                await client.query('ROLLBACK');
+                return res.status(403).json({ status: 'error', message: 'Producto no pertenece al comercio.' });
+            }
+            if (product.stock_quantity >= 0 && product.stock_quantity < totalQty) {
+                await client.query('ROLLBACK');
+                return res.status(400).json({
+                    status: 'error',
+                    message: 'Stock insuficiente para uno o más productos.',
+                });
+            }
+        }
+
+        const orderResult = await client.query(
             `INSERT INTO orders
              (customer_name, customer_phone, order_type, delivery_address, store_id, total, notes,
               user_id, coupon_id, discount, points_earned, points_redeemed, payment_method)
              VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13) RETURNING *`,
             [
                 customer_name, customer_phone, order_type,
-                delivery_address || null, store_id || null, finalTotal, notes || null,
+                delivery_address || null, store_id, finalTotal, notes || null,
                 user_id || null, coupon_id || null,
                 discount || 0, pointsEarned, points_redeemed || 0, resolvedPaymentMethod
             ]
@@ -41,46 +97,51 @@ export const createOrder = async (req, res) => {
         const order = orderResult.rows[0];
 
         for (const item of items) {
-            await query(
+            await client.query(
                 `INSERT INTO order_items (order_id, product_id, product_name, product_price, quantity, notes, subtotal)
                  VALUES ($1,$2,$3,$4,$5,$6,$7)`,
                 [order.id, item.product_id, item.product_name, item.product_price, item.quantity, item.notes || null, item.subtotal]
             );
         }
 
+        // El descuento de stock se realiza al aprobar el pago (webhook Mercado Pago), no al crear el pedido.
+
         if (coupon_id) {
-            await query('UPDATE coupons SET used_count = used_count + 1 WHERE id = $1', [coupon_id]);
-            await query(
+            await client.query('UPDATE coupons SET used_count = used_count + 1 WHERE id = $1', [coupon_id]);
+            await client.query(
                 'INSERT INTO coupon_uses (coupon_id, user_id, order_id) VALUES ($1, $2, $3)',
                 [coupon_id, user_id || null, order.id]
             );
         }
 
-        if (user_id) {
-            if (points_redeemed > 0) {
-                await query('UPDATE users SET points = points - $1 WHERE id = $2', [points_redeemed, user_id]);
-                await query(
-                    `INSERT INTO points_history (user_id, order_id, points, type, description) VALUES ($1,$2,$3,'redeemed',$4)`,
-                    [user_id, order.id, -points_redeemed, `Puntos canjeados en pedido #${order.id}`]
-                );
-            }
+        if (user_id && points_redeemed > 0) {
+            await client.query('UPDATE users SET points = points - $1 WHERE id = $2', [points_redeemed, user_id]);
+            await client.query(
+                `INSERT INTO points_history (user_id, order_id, points, type, description) VALUES ($1,$2,$3,'redeemed',$4)`,
+                [user_id, order.id, -points_redeemed, `Puntos canjeados en pedido #${order.id}`]
+            );
         }
 
+        await client.query('COMMIT');
         res.status(201).json({ status: 'success', data: { order_id: order.id, points_earned: pointsEarned, final_total: finalTotal } });
     } catch (error) {
+        await client.query('ROLLBACK').catch(() => {});
         console.error('Error creando orden:', error);
         res.status(500).json({ status: 'error', message: error.message });
+    } finally {
+        client.release();
     }
 };
 
 export const getOrderById = async (req, res) => {
     const { id } = req.params;
+    const storeId = await getStoreId(req);
     try {
         const orderResult = await query(
             `SELECT o.*, s.name as store_name
              FROM orders o LEFT JOIN stores s ON o.store_id = s.id
-             WHERE o.id = $1`,
-            [id]
+             WHERE o.id = $1 AND o.store_id = $2`,
+            [id, storeId]
         );
         if (!orderResult.rows.length) {
             return res.status(404).json({ status: 'error', message: 'Pedido no encontrado.' });
@@ -95,6 +156,7 @@ export const getOrderById = async (req, res) => {
 export const updateOrderStatus = async (req, res) => {
     const { id } = req.params;
     const { status } = req.body;
+    const storeId = await getStoreId(req);
 
     const validStatuses = ['pending', 'confirmed', 'preparing', 'ready', 'delivering', 'delivered', 'cancelled'];
     if (!validStatuses.includes(status)) {
@@ -103,8 +165,8 @@ export const updateOrderStatus = async (req, res) => {
 
     try {
         const result = await query(
-            'UPDATE orders SET status = $1, updated_at = NOW() WHERE id = $2 RETURNING *',
-            [status, id]
+            'UPDATE orders SET status = $1, updated_at = NOW() WHERE id = $2 AND store_id = $3 RETURNING *',
+            [status, id, storeId]
         );
         if (!result.rows.length) {
             return res.status(404).json({ status: 'error', message: 'Pedido no encontrado.' });

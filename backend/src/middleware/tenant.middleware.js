@@ -2,6 +2,8 @@ import { query } from '../config/db.js';
 
 // ── Configuración ──────────────────────────────────────────────────────────────
 const FALLBACK_TENANT = { id: 'voraz', plan_type: 'Expert', status: 'active', brand_name: 'Voraz' };
+const CACHE_TTL_MS = 60 * 1000; // 1 minuto: reducir consultas a DB sin dejar de reaccionar a cambios
+const tenantCache = new Map(); // host -> { tenant, expiresAt }
 
 // Dominios root de GastroRed → siempre landing
 const GASTRORED_ROOT_DOMAINS = [
@@ -21,18 +23,52 @@ const isInfraHost = (host) =>
   host.includes('.railway.app') ||
   host.includes('voraz-platform.vercel.app');
 
-/**
- * Dado el host completo, extrae el tenant_id candidato.
- * Ejemplos:
- *   voraz.gastrored.com.ar     → 'voraz'
- *   miburguer.gastrored.com.ar → 'miburguer'
- *   miburguer.com.ar           → 'miburguer.com.ar'  (dominio propio — se busca por custom_domain)
- */
 function extractSubdomain(host) {
   if (host.endsWith(`.${GASTRORED_SUFFIX}`)) {
     return host.slice(0, host.length - GASTRORED_SUFFIX.length - 1);
   }
-  return null; // dominio propio o desconocido
+  return null;
+}
+
+/**
+ * Verifica si el tenant puede acceder: activo y suscripción no vencida.
+ * Retorna null si es válido, o un objeto { statusCode, body } para responder con error.
+ */
+function validateTenantAccess(tenant) {
+  if (!tenant) return null;
+  const status = (tenant.status || '').toLowerCase();
+  if (status === 'suspended') {
+    return {
+      statusCode: 403,
+      body: {
+        status: 'error',
+        message: 'Suscripción vencida o inactiva. Contactá a GastroRed para renovar.',
+        tenant_id: tenant.id,
+      },
+    };
+  }
+  if (status !== 'active') {
+    return {
+      statusCode: 403,
+      body: {
+        status: 'error',
+        message: 'Comercio no activo.',
+        tenant_id: tenant.id,
+      },
+    };
+  }
+  const expiresAt = tenant.subscription_expires_at ? new Date(tenant.subscription_expires_at) : null;
+  if (tenant.id !== 'voraz' && expiresAt && expiresAt < new Date()) {
+    return {
+      statusCode: 403,
+      body: {
+        status: 'error',
+        message: 'Tu suscripción venció. Contactá a GastroRed para renovarla.',
+        tenant_id: tenant.id,
+      },
+    };
+  }
+  return null;
 }
 
 export const tenantMiddleware = async (req, res, next) => {
@@ -56,69 +92,63 @@ export const tenantMiddleware = async (req, res, next) => {
     return next();
   }
 
-  // Extraer el subdomain si es un subdominio de GastroRed
-  const subdomainPart = extractSubdomain(host); // 'voraz' | null (si es dominio propio)
+  const subdomainPart = extractSubdomain(host);
 
   try {
-    let result;
+    let tenant = null;
+    const cached = tenantCache.get(host);
+    const now = Date.now();
 
-    if (subdomainPart) {
-      // Subdominio GastroRed: buscar por id (=subdomain) o por subdomain column (post-phase17)
-      // La query funciona tanto ANTES como DESPUÉS de que phase17 corre:
-      //   - Antes: tenants.id = 'voraz', no tiene columna subdomain → solo busca por id
-      //   - Después: tenants tiene subdomain column → busca por ambos
-      result = await query(
-        `SELECT id, plan_type, status, brand_name, brand_color_primary, brand_color_secondary,
-                brand_logo_url, brand_favicon_url, slogan, subscription_expires_at,
-                COALESCE(subdomain, id) as subdomain,
-                custom_domain
-         FROM tenants
-         WHERE id = $1
-            OR (subdomain IS NOT NULL AND subdomain = $1)
-         LIMIT 1`,
-        [subdomainPart]
-      ).catch(async () => {
-        // Si la columna subdomain no existe aún (pre-phase17) → usar solo id
-        return query(
-          `SELECT id, plan_type, status, brand_name, brand_color_primary, brand_color_secondary,
-                  brand_logo_url, brand_favicon_url, slogan, subscription_expires_at,
-                  id as subdomain, NULL as custom_domain
-           FROM tenants WHERE id = $1 LIMIT 1`,
-          [subdomainPart]
-        );
-      });
+    if (cached && cached.expiresAt > now) {
+      tenant = cached.tenant;
     } else {
-      // Dominio propio (custom_domain): buscar por custom_domain exacto
-      result = await query(
-        `SELECT id, plan_type, status, brand_name, brand_color_primary, brand_color_secondary,
-                brand_logo_url, brand_favicon_url, slogan, subscription_expires_at,
-                COALESCE(subdomain, id) as subdomain, custom_domain
-         FROM tenants
-         WHERE custom_domain = $1
-         LIMIT 1`,
-        [host]
-      ).catch(async () => {
-        return query(
+      let result;
+      if (subdomainPart) {
+        result = await query(
           `SELECT id, plan_type, status, brand_name, brand_color_primary, brand_color_secondary,
                   brand_logo_url, brand_favicon_url, slogan, subscription_expires_at,
-                  id as subdomain, NULL as custom_domain
-           FROM tenants WHERE id = $1 LIMIT 1`,
-          [host]
+                  COALESCE(subdomain, id) as subdomain, custom_domain
+           FROM tenants
+           WHERE id = $1 OR (subdomain IS NOT NULL AND subdomain = $1)
+           LIMIT 1`,
+          [subdomainPart]
+        ).catch(async () =>
+          query(
+            `SELECT id, plan_type, status, brand_name, brand_color_primary, brand_color_secondary,
+                    brand_logo_url, brand_favicon_url, slogan, subscription_expires_at,
+                    id as subdomain, NULL as custom_domain
+             FROM tenants WHERE id = $1 LIMIT 1`,
+            [subdomainPart]
+          )
         );
-      });
+      } else {
+        result = await query(
+          `SELECT id, plan_type, status, brand_name, brand_color_primary, brand_color_secondary,
+                  brand_logo_url, brand_favicon_url, slogan, subscription_expires_at,
+                  COALESCE(subdomain, id) as subdomain, custom_domain
+           FROM tenants WHERE custom_domain = $1 LIMIT 1`,
+          [host]
+        ).catch(async () =>
+          query(
+            `SELECT id, plan_type, status, brand_name, brand_color_primary, brand_color_secondary,
+                    brand_logo_url, brand_favicon_url, slogan, subscription_expires_at,
+                    id as subdomain, NULL as custom_domain
+             FROM tenants WHERE id = $1 LIMIT 1`,
+            [host]
+          )
+        );
+      }
+
+      if (!result.rows.length) {
+        req.isLanding = true;
+        req.tenant = null;
+        req.store = null;
+        return next();
+      }
+      tenant = result.rows[0];
+      tenantCache.set(host, { tenant, expiresAt: now + CACHE_TTL_MS });
     }
 
-    if (!result.rows.length) {
-      // Tenant desconocido → landing
-      req.isLanding = true;
-      req.tenant = null;
-      req.store = null;
-      return next();
-    }
-
-    const tenant = result.rows[0];
-
-    // pending_payment → mostrar landing (no redirigir a tenant vacío)
     if (tenant.status === 'pending_payment') {
       req.isLanding = true;
       req.tenant = null;
@@ -126,31 +156,21 @@ export const tenantMiddleware = async (req, res, next) => {
       return next();
     }
 
-    if (tenant.status === 'suspended') {
-      return res.status(402).json({
-        status: 'error',
-        message: 'Suscripción vencida. Contactá a GastroRed para renovar.',
-        tenant_id: tenant.id,
-      });
-    }
-
-    // Auto-suspender si venció (no aplica a Voraz)
-    if (tenant.id !== 'voraz' && tenant.status === 'active' &&
-      tenant.subscription_expires_at &&
-      new Date(tenant.subscription_expires_at) < new Date()) {
-      await query("UPDATE tenants SET status='suspended' WHERE id=$1", [tenant.id]);
-      return res.status(402).json({
-        status: 'error',
-        message: 'Tu suscripción venció. Contactá a GastroRed para renovarla.',
-        tenant_id: tenant.id,
-      });
+    const invalid = validateTenantAccess(tenant);
+    if (invalid) {
+      if (tenant.id !== 'voraz' && tenant.status === 'active' && tenant.subscription_expires_at && new Date(tenant.subscription_expires_at) < new Date()) {
+        try {
+          await query("UPDATE tenants SET status='suspended' WHERE id=$1", [tenant.id]);
+          tenantCache.delete(host);
+        } catch (_) {}
+      }
+      return res.status(invalid.statusCode).json(invalid.body);
     }
 
     req.tenant = tenant;
-    req.store = tenant; // backward compat
+    req.store = tenant;
     next();
   } catch (err) {
-    // En caso de error inesperado → fallback a Voraz (no romper la app)
     console.error('tenantMiddleware error:', err?.message || String(err));
     req.tenant = FALLBACK_TENANT;
     req.store = FALLBACK_TENANT;

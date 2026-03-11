@@ -1,27 +1,6 @@
 import { query } from '../config/db.js';
 import { v2 as cloudinary } from 'cloudinary';
-
-// Devuelve el tenant_id VARCHAR del tenant actual (para queries en tabla tenants/stores)
-const getTenantId = (req) => req.tenant?.id || req.store?.id || 'voraz';
-
-// Resuelve el store_id INTEGER real desde la tabla stores (para queries en productos, pedidos, etc.)
-// Es async porque necesita hacer una query a la DB.
-async function getStoreId(req) {
-  const tenantId = getTenantId(req);
-  if (/^\d+$/.test(String(tenantId))) return parseInt(tenantId);
-  try {
-    // Explicit casts to VARCHAR prevent integer syntax errors if schema is misconfigured
-    const r = await query('SELECT id FROM stores WHERE CAST(tenant_id AS VARCHAR) = CAST($1 AS VARCHAR) ORDER BY id ASC LIMIT 1', [tenantId]);
-    const foundId = r.rows[0]?.id;
-    if (foundId && !isNaN(parseInt(foundId))) {
-      return parseInt(foundId);
-    }
-    return 1;
-  } catch (err) {
-    console.error('Error in getStoreId:', err.message);
-    return 1;
-  }
-}
+import { getTenantId, getStoreId } from '../utils/tenant.js';
 
 // ── PRODUCTOS ──────────────────────────────────────────────────────────────
 export const getAdminProducts = async (req, res) => {
@@ -244,7 +223,7 @@ export const uploadImage = async (req, res) => {
     });
     const { image_base64, folder } = req.body;
     if (!image_base64) return res.status(400).json({ status: 'error', message: 'Se requiere image_base64' });
-    const storeId = getStoreId(req);
+    const storeId = await getStoreId(req);
     const result = await cloudinary.uploader.upload(image_base64, {
       folder: `tenants/${storeId}/${folder || 'products'}`,
       resource_type: 'image',
@@ -373,7 +352,7 @@ export const getMercadopagoConfig = async (req, res) => {
         access_token_set: !!(settings.mp_access_token),
         mp_sandbox: settings.mp_sandbox ?? false,
         cash_on_delivery: settings.cash_on_delivery !== false,
-        webhook_url: `${backendUrl}/api/payments/webhook`,
+        webhook_url: `${backendUrl}/api/payments/webhook?store_id=${storeId}`,
         store_name: settings.store_name || null,
         store_email: settings.store_email || null,
         store_phone: settings.store_phone || null,

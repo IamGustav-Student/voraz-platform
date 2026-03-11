@@ -2,6 +2,60 @@ import { useState, useEffect, useCallback, useRef } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { adminFetch } from '../services/api';
 
+// ── Skeletons de carga (Tailwind) para tablas ─────────────────────────────────
+function TableRowSkeleton({ cols = 4 }) {
+  return (
+    <div className="flex items-center gap-3 rounded-lg px-4 py-3 border border-white/5 bg-white/5 animate-pulse">
+      <div className="w-10 h-10 rounded bg-white/10 flex-shrink-0" />
+      <div className="flex-1 min-w-0 flex gap-2">
+        {Array.from({ length: cols }).map((_, i) => (
+          <div key={i} className="h-4 bg-white/10 rounded flex-1 max-w-[120px]" />
+        ))}
+      </div>
+      <div className="w-16 h-6 rounded bg-white/10 flex-shrink-0" />
+      <div className="w-14 h-6 rounded bg-white/10 flex-shrink-0" />
+    </div>
+  );
+}
+
+function ProductsTableSkeleton() {
+  return (
+    <div>
+      <h2 className="text-2xl font-bold mb-6">Productos</h2>
+      <div className="bg-white/5 rounded-xl p-5 border border-white/10 mb-8 h-48 animate-pulse" />
+      <div className="space-y-2">
+        {[1, 2, 3, 4, 5, 6].map((i) => (
+          <TableRowSkeleton key={i} cols={2} />
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function OrdersTableSkeleton() {
+  return (
+    <div>
+      <h2 className="text-2xl font-bold mb-6">Pedidos</h2>
+      <div className="space-y-2 mb-8">
+        {[1, 2, 3, 4].map((i) => (
+          <TableRowSkeleton key={i} cols={3} />
+        ))}
+      </div>
+      <div className="h-4 w-32 bg-white/10 rounded animate-pulse mb-3" />
+      <div className="space-y-2">
+        {[1, 2, 3].map((i) => (
+          <div key={i} className="flex items-center gap-4 rounded-lg px-4 py-3 border border-white/5 bg-white/5 opacity-60 animate-pulse">
+            <div className="w-12 h-3 bg-white/10 rounded" />
+            <div className="flex-1 h-4 bg-white/10 rounded max-w-[200px]" />
+            <div className="w-20 h-5 bg-white/10 rounded" />
+            <div className="w-16 h-6 bg-white/10 rounded" />
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 const SECTIONS = ['Dashboard', 'Categorías', 'Productos', 'Locales', 'Cupones', 'Videos', 'Noticias', 'Pedidos', 'MercadoPago'];
 
 // ── Componente reutilizable: input de imagen (URL o archivo local) ──────────
@@ -77,6 +131,19 @@ export default function AdminPanel({ onClose }) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [data, setData] = useState({});
+  const [toast, setToast] = useState(null);
+
+  const showToast = useCallback((message, type = 'info') => {
+    setToast({ message, type });
+    const t = setTimeout(() => setToast(null), 4500);
+    return () => clearTimeout(t);
+  }, []);
+
+  useEffect(() => {
+    if (!toast) return;
+    const t = setTimeout(() => setToast(null), 4500);
+    return () => clearTimeout(t);
+  }, [toast]);
 
   const load = useCallback(async (sec) => {
     if (!token) return;
@@ -199,7 +266,11 @@ export default function AdminPanel({ onClose }) {
         {/* ── CONTENIDO PRINCIPAL ── */}
         <main className="flex-1 overflow-y-auto p-4 md:p-6 text-white min-w-0">
           {error && <div className="bg-red-900/50 text-red-300 px-4 py-3 rounded-lg mb-4 text-sm">{error}</div>}
-          {loading ? (
+          {loading && section === 'Productos' ? (
+            <ProductsTableSkeleton />
+          ) : loading && section === 'Pedidos' ? (
+            <OrdersTableSkeleton />
+          ) : loading ? (
             <div className="flex items-center justify-center h-40">
               <div className="animate-spin w-8 h-8 border-2 border-red-500 border-t-transparent rounded-full" />
             </div>
@@ -208,7 +279,7 @@ export default function AdminPanel({ onClose }) {
               {section === 'Dashboard'   && <DashboardSection data={data.Dashboard} />}
               {section === 'Categorías'  && <CategoriesSection items={data['Categorías'] || []} token={token} reload={() => load('Categorías')} />}
               {section === 'Productos'   && <ProductsSection items={data.Productos || []} categories={data._categories || []} token={token} reload={() => load('Productos')} />}
-              {section === 'Locales'     && <StoresSection items={data.Locales || []} token={token} reload={() => load('Locales')} />}
+              {section === 'Locales'     && <StoresSection items={data.Locales || []} token={token} reload={() => load('Locales')} showToast={showToast} />}
               {section === 'Cupones'     && <CouponsSection items={data.Cupones || []} token={token} reload={() => load('Cupones')} />}
               {section === 'Videos'      && <VideosSection token={token} />}
               {section === 'Noticias'    && <NewsSection token={token} />}
@@ -218,6 +289,18 @@ export default function AdminPanel({ onClose }) {
           )}
         </main>
       </div>
+
+      {/* Toast global */}
+      {toast && (
+        <div
+          className={`fixed bottom-6 left-1/2 -translate-x-1/2 z-[100] px-4 py-3 rounded-lg shadow-lg text-sm font-medium max-w-md animate-in fade-in duration-200 ${
+            toast.type === 'error' ? 'bg-red-600 text-white' : toast.type === 'success' ? 'bg-green-600 text-white' : 'bg-gray-800 text-white border border-white/20'
+          }`}
+          role="alert"
+        >
+          {toast.message}
+        </div>
+      )}
     </div>
   );
 }
@@ -453,12 +536,61 @@ const DELIVERY_APPS = [
   { value: 'propio', label: 'Delivery propio (web/WhatsApp)' },
 ];
 
-function StoresSection({ items, token, reload }) {
+function StoresSection({ items, token, reload, showToast }) {
   const emptyForm = { name: '', address: '', image_url: '', google_maps_url: '', delivery_app: '', delivery_link: '', phone: '' };
   const [form, setForm] = useState(emptyForm);
   const [editing, setEditing] = useState(null);
   const [submitting, setSubmitting] = useState(false);
   const [msg, setMsg] = useState('');
+  const [syncingMaps, setSyncingMaps] = useState(false);
+
+  const syncWithGoogleMaps = useCallback(async () => {
+    const apiKey = import.meta.env.VITE_GOOGLE_MAPS_API_KEY;
+    if (!apiKey || apiKey.trim() === '') {
+      showToast?.('Faltan credenciales de Google Maps. Configurá VITE_GOOGLE_MAPS_API_KEY en el entorno del frontend.', 'error');
+      return;
+    }
+    const address = (form.address || '').trim();
+    if (!address) {
+      showToast?.('Escribí la dirección antes de sincronizar con Maps.', 'error');
+      return;
+    }
+    setSyncingMaps(true);
+    try {
+      const url = `https://maps.googleapis.com/maps/api/geocode/json?address=${encodeURIComponent(address)}&key=${apiKey}`;
+      const res = await fetch(url);
+      const data = await res.json();
+      if (data.status === 'REQUEST_DENIED') {
+        showToast?.('Google Maps: acceso denegado. Revisá que la API Key tenga Geocoding API habilitada.', 'error');
+        return;
+      }
+      if (data.status === 'OVER_QUERY_LIMIT') {
+        showToast?.('Google Maps: se superó el límite de consultas. Probá más tarde.', 'error');
+        return;
+      }
+      if (data.status === 'ZERO_RESULTS' || !data.results?.length) {
+        showToast?.('No se encontró la dirección. Revisá que esté bien escrita.', 'error');
+        return;
+      }
+      if (data.status !== 'OK') {
+        showToast?.(`Google Maps: ${data.status}. ${data.error_message || 'Error desconocido.'}`, 'error');
+        return;
+      }
+      const { lat, lng } = data.results[0].geometry.location;
+      const mapsUrl = `https://www.google.com/maps/search/?api=1&query=${lat},${lng}`;
+      setForm((prev) => ({ ...prev, google_maps_url: mapsUrl }));
+      showToast?.('URL de Google Maps generada correctamente.', 'success');
+    } catch (err) {
+      const message = err.message || String(err);
+      if (message.includes('Failed to fetch') || message.includes('NetworkError')) {
+        showToast?.('Error de red al conectar con Google Maps. Revisá tu conexión.', 'error');
+      } else {
+        showToast?.(`Error al sincronizar con Maps: ${message}`, 'error');
+      }
+    } finally {
+      setSyncingMaps(false);
+    }
+  }, [form.address, showToast]);
 
   const startEdit = (s) => {
     setEditing(s.id);
@@ -507,13 +639,24 @@ function StoresSection({ items, token, reload }) {
         <input placeholder="Teléfono / WhatsApp" value={form.phone} onChange={e => setForm(p => ({ ...p, phone: e.target.value }))}
           className="bg-black/30 border border-white/10 rounded-lg px-3 py-2 text-white text-sm" />
 
-        <input
-          placeholder="URL Google Maps (opcional — si no, se usa la dirección)"
-          value={form.google_maps_url} onChange={e => setForm(p => ({ ...p, google_maps_url: e.target.value }))}
-          className="bg-black/30 border border-white/10 rounded-lg px-3 py-2 text-white text-sm"
-        />
+        <div className="col-span-2 flex gap-2">
+          <input
+            placeholder="URL Google Maps (opcional — si no, se usa la dirección)"
+            value={form.google_maps_url}
+            onChange={e => setForm(p => ({ ...p, google_maps_url: e.target.value }))}
+            className="flex-1 bg-black/30 border border-white/10 rounded-lg px-3 py-2 text-white text-sm"
+          />
+          <button
+            type="button"
+            onClick={syncWithGoogleMaps}
+            disabled={syncingMaps || !form.address?.trim()}
+            className="px-4 py-2 rounded-lg bg-blue-600 hover:bg-blue-700 disabled:opacity-50 disabled:pointer-events-none text-white text-sm font-medium whitespace-nowrap"
+          >
+            {syncingMaps ? '...' : 'Sincronizar con Maps'}
+          </button>
+        </div>
         <p className="col-span-2 text-xs text-gray-600 -mt-1">
-          Si dejás vacío "URL Google Maps", el botón "Cómo llegar" usará la dirección que escribiste arriba.
+          Si dejás vacío "URL Google Maps", el botón "Cómo llegar" usará la dirección que escribiste arriba. Usá "Sincronizar con Maps" para generar la URL desde la dirección (requiere API Key de Google).
         </p>
 
         <div className="col-span-2">
