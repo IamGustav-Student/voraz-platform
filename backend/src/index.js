@@ -50,6 +50,18 @@ app.get('/api/test-db', async (req, res) => {
     }
 });
 
+app.get('/api/clean-db-now', async (req, res) => {
+    try {
+        const phase20 = fs.readFileSync(path.join(__dirname, 'db', 'phase20_clean_tenants.sql'), 'utf8');
+        const phase21 = fs.readFileSync(path.join(__dirname, 'db', 'phase21_fix_constraints.sql'), 'utf8');
+        await query(phase20);
+        await query(phase21);
+        res.json({ status: 'success', message: 'DB limpiada y constraints arreglados.' });
+    } catch (e) {
+        res.status(500).json({ error: e.message });
+    }
+});
+
 // ── Rutas sin tenant middleware ──────────────────────────────────────────────
 app.use('/api/superadmin', superadminRoutes);
 app.use('/api/subscriptions', subscriptionRoutes);
