@@ -1,7 +1,7 @@
 import { query } from '../config/db.js';
 
 // ── Configuración ──────────────────────────────────────────────────────────────
-const FALLBACK_TENANT = { id: 'voraz', plan_type: 'Expert', status: 'active', brand_name: 'Voraz' };
+const FALLBACK_TENANT = { id: 1, store_id: 1, plan_type: 'Expert', status: 'active', brand_name: 'GastroRed' };
 const CACHE_TTL_MS = 60 * 1000; // 1 minuto: reducir consultas a DB sin dejar de reaccionar a cambios
 const tenantCache = new Map(); // host -> { tenant, expiresAt }
 

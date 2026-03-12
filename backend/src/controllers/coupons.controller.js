@@ -1,10 +1,11 @@
 import { query } from '../config/db.js';
+import { getStoreId } from '../utils/tenant.js';
 
 const fmt = (n) => parseInt(n).toLocaleString('es-AR');
 
 export const validateCoupon = async (req, res) => {
     const { code, order_total } = req.body;
-    const storeId = req.store?.id || 1;
+    const storeId = await getStoreId(req);
     if (!code) return res.status(400).json({ status: 'error', message: 'Código requerido.' });
     try {
         const result = await query(
@@ -28,7 +29,7 @@ export const validateCoupon = async (req, res) => {
 
 export const listCoupons = async (req, res) => {
     try {
-        const storeId = req.store?.id || 1;
+        const storeId = await getStoreId(req);
         const result = await query('SELECT id, code, description, discount_type, discount_value, min_order, max_uses, used_count, expires_at, active FROM coupons WHERE store_id = $1 ORDER BY created_at DESC', [storeId]);
         res.json({ status: 'success', data: result.rows });
     } catch (error) {
@@ -37,7 +38,7 @@ export const listCoupons = async (req, res) => {
 };
 
 export const createCoupon = async (req, res) => {
-    const storeId = req.store?.id || 1;
+    const storeId = await getStoreId(req);
     const { code, description, discount_type, discount_value, min_order, max_uses, expires_at } = req.body;
     if (!code || !discount_type || !discount_value) {
         return res.status(400).json({ status: 'error', message: 'code, discount_type y discount_value son requeridos.' });

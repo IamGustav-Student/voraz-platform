@@ -5,9 +5,9 @@
 
 const API_URL = (import.meta.env.VITE_API_URL || 'http://localhost:3000/api').trim();
 
-// Valores por defecto (Voraz) — se sobreescriben al cargar la config de la API
+// Valores por defecto de GastroRed — se sobreescriben al cargar la config de la API
 let _tenant = {
-  id: import.meta.env.VITE_TENANT_ID || 'voraz',
+  id: import.meta.env.VITE_TENANT_ID || 'gastrored',
   brandName: import.meta.env.VITE_BRAND_NAME || 'GastroRed',
   slogan: import.meta.env.VITE_SLOGAN || '',
   logo: import.meta.env.VITE_LOGO_URL || null,

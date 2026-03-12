@@ -393,10 +393,10 @@ export const saveMercadopagoConfig = async (req, res) => {
 // ── BRANDING ───────────────────────────────────────────────────────────────
 export const getBranding = async (req, res) => {
   try {
-    const tenantId = req.tenant?.id || req.store?.id || getStoreId(req);
+    const tenantId = await getStoreId(req);
     const result = await query(
       `SELECT primary_color, secondary_color, font_family, logo_url, custom_branding_enabled
-       FROM tenant_settings WHERE tenant_id = $1 OR tenant_id_fk = $1 LIMIT 1`,
+       FROM tenant_settings WHERE tenant_id = $1 OR tenant_id_fk::text = $1::text LIMIT 1`,
       [String(tenantId)]
     );
     const branding = result.rows[0] || {};
@@ -415,7 +415,7 @@ export const getBranding = async (req, res) => {
 
 export const updateBranding = async (req, res) => {
   try {
-    const tenantId = req.tenant?.id || req.store?.id || getStoreId(req);
+    const tenantId = await getStoreId(req);
     const { primary_color, secondary_color, font_family, logo_url } = req.body;
     await query(
       `INSERT INTO tenant_settings (tenant_id, tenant_id_fk, primary_color, secondary_color, font_family, logo_url, updated_at)

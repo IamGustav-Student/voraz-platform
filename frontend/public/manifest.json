@@ -1,7 +1,7 @@
 {
-  "short_name": "Voraz",
-  "name": "Voraz - Food Platform",
-  "description": "Tu hamburguesa favorita, a un click de distancia.",
+  "short_name": "GastroRed",
+  "name": "GastroRed - Plataforma Gastronómica",
+  "description": "Tu carta digital, pedidos y más.",
   "icons": [
     {
       "src": "/images/logo_voraz.jpg",
