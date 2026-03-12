@@ -99,7 +99,7 @@ export default function SuperAdminPanel({ onBack }) {
     try {
       await sfetch(`/tenants/${id}/branding-toggle`, token, {
         method: 'PATCH',
-        body: JSON.stringify({ custom_branding_enabled: !current }),
+        body: JSON.stringify({ enabled: !current }),
       });
       setMsg(!current ? '🎨 Branding personalizado activado' : '🔒 Branding personalizado desactivado');
       load();
