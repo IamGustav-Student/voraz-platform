@@ -66,12 +66,14 @@ export const getGlobalStats = async (req, res) => {
 export const listAllTenants = async (req, res) => {
   try {
     const result = await query(
-      `SELECT id, name, subdomain, custom_domain, admin_email,
-              plan_type, subscription_period, subscription_expires_at,
-              status, brand_name, brand_color_primary, brand_logo_url,
-              slogan, created_at
-       FROM tenants
-       ORDER BY created_at DESC`
+      `SELECT t.id, t.name, t.subdomain, t.custom_domain, t.admin_email,
+              t.plan_type, t.subscription_period, t.subscription_expires_at,
+              t.status, t.brand_name, t.brand_color_primary, t.brand_logo_url,
+              t.slogan, t.created_at,
+              COALESCE(ts.custom_branding_enabled, false) AS custom_branding_enabled
+       FROM tenants t
+       LEFT JOIN tenant_settings ts ON ts.tenant_id = t.id OR ts.tenant_id_fk::text = t.id::text
+       ORDER BY t.created_at DESC`
     );
     res.json({ status: 'success', data: result.rows });
   } catch (e) { res.status(500).json({ status: 'error', message: e.message }); }

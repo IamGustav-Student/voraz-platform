@@ -67,13 +67,13 @@ function FeatureCard({ icon, title, desc, delay = 0 }) {
             className="group relative bg-gradient-to-br from-white/5 to-white/[0.02] border border-white/10 rounded-2xl p-6 hover:border-teal-500/40 transition-all duration-500 hover:translate-y-[-4px]"
             style={{ animationDelay: `${delay}ms` }}
         >
-            <div className="absolute inset-0 rounded-2xl bg-gradient-to-br from-teal-500/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+            <div className="absolute inset-0 transition-opacity duration-500 opacity-0 rounded-2xl bg-gradient-to-br from-teal-500/5 to-transparent group-hover:opacity-100" />
             <div className="relative">
-                <div className="w-12 h-12 rounded-xl bg-teal-500/10 border border-teal-500/20 flex items-center justify-center text-2xl mb-4 group-hover:scale-110 transition-transform duration-300">
+                <div className="flex items-center justify-center w-12 h-12 mb-4 text-2xl transition-transform duration-300 border rounded-xl bg-teal-500/10 border-teal-500/20 group-hover:scale-110">
                     {icon}
                 </div>
-                <h3 className="text-white font-bold text-lg mb-2">{title}</h3>
-                <p className="text-gray-400 text-sm leading-relaxed">{desc}</p>
+                <h3 className="mb-2 text-lg font-bold text-white">{title}</h3>
+                <p className="text-sm leading-relaxed text-gray-400">{desc}</p>
             </div>
         </div>
     );
@@ -82,14 +82,14 @@ function FeatureCard({ icon, title, desc, delay = 0 }) {
 // ── Step card ─────────────────────────────────────────────────────────────────
 function StepCard({ number, title, desc, icon }) {
     return (
-        <div className="flex gap-5 items-start group">
-            <div className="flex-shrink-0 w-14 h-14 rounded-2xl bg-gradient-to-br from-teal-500 to-teal-700 flex items-center justify-center text-2xl shadow-lg shadow-teal-900/40 group-hover:scale-105 transition-transform">
+        <div className="flex items-start gap-5 group">
+            <div className="flex items-center justify-center flex-shrink-0 text-2xl transition-transform shadow-lg w-14 h-14 rounded-2xl bg-gradient-to-br from-teal-500 to-teal-700 shadow-teal-900/40 group-hover:scale-105">
                 {icon}
             </div>
             <div>
-                <div className="text-xs text-teal-400 font-bold uppercase tracking-widest mb-1">Paso {number}</div>
-                <h4 className="text-white font-bold text-lg leading-tight mb-1">{title}</h4>
-                <p className="text-gray-400 text-sm leading-relaxed">{desc}</p>
+                <div className="mb-1 text-xs font-bold tracking-widest text-teal-400 uppercase">Paso {number}</div>
+                <h4 className="mb-1 text-lg font-bold leading-tight text-white">{title}</h4>
+                <p className="text-sm leading-relaxed text-gray-400">{desc}</p>
             </div>
         </div>
     );
@@ -113,19 +113,19 @@ function PlanCard({ name, price, period, badge, features, cta, highlighted = fal
                 </div>
             )}
             <div className="mb-6">
-                <h3 className="text-white font-black text-2xl mb-1">{name}</h3>
+                <h3 className="mb-1 text-2xl font-black text-white">{name}</h3>
                 <div className="flex items-end gap-2 mb-1">
                     {price === 0 ? (
                         <span className="text-4xl font-black text-teal-400">GRATIS</span>
                     ) : (
                         <>
                             <span className="text-4xl font-black text-white">${price.toLocaleString('es-AR')}</span>
-                            <span className="text-gray-400 text-sm mb-1">/{period}</span>
+                            <span className="mb-1 text-sm text-gray-400">/{period}</span>
                         </>
                     )}
                 </div>
             </div>
-            <ul className="space-y-3 flex-1 mb-8">
+            <ul className="flex-1 mb-8 space-y-3">
                 {features.map((f, i) => (
                     <li key={i} className={`flex items-start gap-3 text-sm ${f.disabled ? 'opacity-40' : ''}`}>
                         <span className={`mt-0.5 flex-shrink-0 w-5 h-5 rounded-full flex items-center justify-center text-xs ${f.disabled ? 'bg-gray-700 text-gray-500' : 'bg-teal-500/20 text-teal-400'
@@ -153,8 +153,8 @@ function PlanCard({ name, price, period, badge, features, cta, highlighted = fal
 function Stat({ value, label }) {
     return (
         <div className="text-center">
-            <div className="text-4xl md:text-5xl font-black text-transparent bg-clip-text bg-gradient-to-r from-teal-400 to-emerald-400 mb-1">{value}</div>
-            <div className="text-gray-400 text-sm">{label}</div>
+            <div className="mb-1 text-4xl font-black text-transparent md:text-5xl bg-clip-text bg-gradient-to-r from-teal-400 to-emerald-400">{value}</div>
+            <div className="text-sm text-gray-400">{label}</div>
         </div>
     );
 }
@@ -217,29 +217,29 @@ function CheckoutModal({ plan, onClose }) {
         return (
             <div className="fixed inset-0 z-[100] bg-black/80 backdrop-blur-sm flex items-center justify-center p-4" onClick={onClose}>
                 <div className="bg-[#0d1117] border border-teal-500/30 rounded-3xl p-8 max-w-md w-full text-center" onClick={e => e.stopPropagation()}>
-                    <div className="text-6xl mb-4">🎉</div>
-                    <h3 className="text-2xl font-black text-white mb-2">¡Tu prueba comenzó!</h3>
-                    <p className="text-gray-400 text-sm mb-6">{success.message}</p>
-                    <div className="bg-teal-900/30 border border-teal-500/30 rounded-xl p-4 mb-6 text-left">
-                        <p className="text-xs text-gray-400 mb-1">Tu carta está en:</p>
+                    <div className="mb-4 text-6xl">🎉</div>
+                    <h3 className="mb-2 text-2xl font-black text-white">¡Tu prueba comenzó!</h3>
+                    <p className="mb-6 text-sm text-gray-400">{success.message}</p>
+                    <div className="p-4 mb-6 text-left border bg-teal-900/30 border-teal-500/30 rounded-xl">
+                        <p className="mb-1 text-xs text-gray-400">Tu carta está en:</p>
                         <a href={`https://${success.subdomain}.${GASTRORED_DOMAIN}`} target="_blank" rel="noreferrer"
-                            className="text-teal-400 font-mono font-bold hover:underline text-sm">
+                            className="font-mono text-sm font-bold text-teal-400 hover:underline">
                             {success.subdomain}.{GASTRORED_DOMAIN}
                         </a>
-                        <p className="text-xs text-gray-500 mt-2">
+                        <p className="mt-2 text-xs text-gray-500">
                             Válido hasta: <strong className="text-white">{new Date(success.subscription_expires_at).toLocaleDateString('es-AR')}</strong>
                         </p>
-                        <div className="mt-3 pt-3 border-t border-teal-500/20">
+                        <div className="pt-3 mt-3 border-t border-teal-500/20">
                             <p className="text-xs text-gray-400">🔑 Acceso al panel admin:</p>
-                            <p className="text-xs text-white font-mono">{form.admin_email}</p>
+                            <p className="font-mono text-xs text-white">{form.admin_email}</p>
                         </div>
                     </div>
                     <div className="space-y-2">
                         <a href={`https://${success.subdomain}.${GASTRORED_DOMAIN}/admin`} target="_blank" rel="noreferrer"
-                            className="block w-full bg-teal-500 hover:bg-teal-400 text-white py-3 rounded-xl font-black text-sm">
+                            className="block w-full py-3 text-sm font-black text-white bg-teal-500 hover:bg-teal-400 rounded-xl">
                             Ir al panel de admin →
                         </a>
-                        <button onClick={onClose} className="block w-full text-gray-500 hover:text-white py-2 text-sm">Cerrar</button>
+                        <button onClick={onClose} className="block w-full py-2 text-sm text-gray-500 hover:text-white">Cerrar</button>
                     </div>
                 </div>
             </div>
@@ -260,7 +260,7 @@ function CheckoutModal({ plan, onClose }) {
                             </p>
                         )}
                     </div>
-                    <button onClick={onClose} className="w-9 h-9 rounded-xl bg-white/5 hover:bg-white/10 flex items-center justify-center text-gray-400 hover:text-white transition">
+                    <button onClick={onClose} className="flex items-center justify-center text-gray-400 transition w-9 h-9 rounded-xl bg-white/5 hover:bg-white/10 hover:text-white">
                         ✕
                     </button>
                 </div>
@@ -284,12 +284,12 @@ function CheckoutModal({ plan, onClose }) {
 
                     <input placeholder="Nombre del restaurante *" value={form.name}
                         onChange={e => set('name', e.target.value)} required
-                        className="w-full bg-black/30 border border-white/10 rounded-xl px-4 py-3 text-white text-sm focus:outline-none focus:border-teal-500" />
+                        className="w-full px-4 py-3 text-sm text-white border bg-black/30 border-white/10 rounded-xl focus:outline-none focus:border-teal-500" />
 
                     <div>
                         <input placeholder="Subdomain * (ej: miburguer)" value={form.subdomain}
                             onChange={e => set('subdomain', e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, ''))} required
-                            className="w-full bg-black/30 border border-white/10 rounded-xl px-4 py-3 text-white text-sm focus:outline-none focus:border-teal-500" />
+                            className="w-full px-4 py-3 text-sm text-white border bg-black/30 border-white/10 rounded-xl focus:outline-none focus:border-teal-500" />
                         {cleanSub && (
                             <p className="mt-1.5 text-xs text-teal-400 font-mono">
                                 Tu carta: <strong>{cleanSub}.{GASTRORED_DOMAIN}</strong>
@@ -299,11 +299,11 @@ function CheckoutModal({ plan, onClose }) {
 
                     <input placeholder="Email del dueño *" type="email" value={form.admin_email}
                         onChange={e => set('admin_email', e.target.value)} required
-                        className="w-full bg-black/30 border border-white/10 rounded-xl px-4 py-3 text-white text-sm focus:outline-none focus:border-teal-500" />
+                        className="w-full px-4 py-3 text-sm text-white border bg-black/30 border-white/10 rounded-xl focus:outline-none focus:border-teal-500" />
 
                     {/* Credenciales de acceso al panel */}
-                    <div className="bg-white/5 border border-white/10 rounded-xl p-4 space-y-3">
-                        <p className="text-teal-400 text-xs font-bold">🔑 Credenciales para el panel de administración</p>
+                    <div className="p-4 space-y-3 border bg-white/5 border-white/10 rounded-xl">
+                        <p className="text-xs font-bold text-teal-400">🔑 Credenciales para el panel de administración</p>
                         <input placeholder="Tu nombre *" value={form.admin_name}
                             onChange={e => set('admin_name', e.target.value)} required
                             className="w-full bg-black/30 border border-white/10 rounded-xl px-4 py-2.5 text-white text-sm focus:outline-none focus:border-teal-500" />
@@ -315,13 +315,13 @@ function CheckoutModal({ plan, onClose }) {
                     </div>
 
                     {error && (
-                        <div className="bg-red-900/30 border border-red-500/30 rounded-xl px-4 py-3 text-red-400 text-sm">
+                        <div className="px-4 py-3 text-sm text-red-400 border bg-red-900/30 border-red-500/30 rounded-xl">
                             {error}
                         </div>
                     )}
 
                     <button type="submit" disabled={loading}
-                        className="w-full bg-teal-500 hover:bg-teal-400 disabled:opacity-50 text-white py-4 rounded-xl font-black uppercase tracking-wide transition">
+                        className="w-full py-4 font-black tracking-wide text-white uppercase transition bg-teal-500 hover:bg-teal-400 disabled:opacity-50 rounded-xl">
                         {loading
                             ? 'Procesando...'
                             : isTrial
@@ -329,7 +329,7 @@ function CheckoutModal({ plan, onClose }) {
                                 : `Ir a pagar $${(plan.prices?.[form.subscription_period] || 0).toLocaleString('es-AR')} →`}
                     </button>
 
-                    <p className="text-center text-xs text-gray-600">
+                    <p className="text-xs text-center text-gray-600">
                         {isTrial
                             ? 'Sin tarjeta de crédito. Cancelá cuando quieras.'
                             : 'Redirigimos a MercadoPago de forma segura.'}
@@ -391,9 +391,9 @@ function PostPaymentScreen({ storeId, subResult, onContinue }) {
 
     if (status === 'loading') return (
         <div className="fixed inset-0 z-[200] bg-[#080c12] flex flex-col items-center justify-center text-white gap-4">
-            <div className="w-12 h-12 border-4 border-teal-500 border-t-transparent rounded-full animate-spin" />
+            <div className="w-12 h-12 border-4 border-teal-500 rounded-full border-t-transparent animate-spin" />
             <p className="text-lg font-bold">Verificando tu pago…</p>
-            <p className="text-gray-500 text-sm">Esto tarda unos segundos</p>
+            <p className="text-sm text-gray-500">Esto tarda unos segundos</p>
         </div>
     );
 
@@ -401,11 +401,11 @@ function PostPaymentScreen({ storeId, subResult, onContinue }) {
         <div className="fixed inset-0 z-[200] bg-[#080c12] flex flex-col items-center justify-center text-white gap-6 px-4">
             <div className="text-7xl">🎉</div>
             <h2 className="text-3xl font-black text-center">¡Tu comercio está activo!</h2>
-            <div className="bg-teal-900/30 border border-teal-500/30 rounded-2xl p-6 text-center max-w-md">
-                <p className="text-sm text-gray-400 mb-2">Accedé a tu carta en:</p>
+            <div className="max-w-md p-6 text-center border bg-teal-900/30 border-teal-500/30 rounded-2xl">
+                <p className="mb-2 text-sm text-gray-400">Accedé a tu carta en:</p>
                 <a href={`https://${store.subdomain || ''}.${GASTRORED_DOMAIN}`}
                     target="_blank" rel="noreferrer"
-                    className="text-teal-400 font-mono font-bold text-lg hover:underline block mb-4">
+                    className="block mb-4 font-mono text-lg font-bold text-teal-400 hover:underline">
                     {store.subdomain}.{GASTRORED_DOMAIN}
                 </a>
                 <p className="text-xs text-gray-500">
@@ -413,13 +413,13 @@ function PostPaymentScreen({ storeId, subResult, onContinue }) {
                     {store.subscription_expires_at && ` · Válido hasta: ${new Date(store.subscription_expires_at).toLocaleDateString('es-AR')}`}
                 </p>
             </div>
-            <div className="flex flex-col gap-3 w-full max-w-sm">
+            <div className="flex flex-col w-full max-w-sm gap-3">
                 <a href={`https://${store.subdomain}.${GASTRORED_DOMAIN}/admin`}
                     target="_blank" rel="noreferrer"
-                    className="w-full bg-teal-500 hover:bg-teal-400 text-white py-4 rounded-xl font-black text-center text-sm">
+                    className="w-full py-4 text-sm font-black text-center text-white bg-teal-500 hover:bg-teal-400 rounded-xl">
                     Ir al panel de admin →
                 </a>
-                <button onClick={onContinue} className="text-gray-500 hover:text-white text-sm py-2">
+                <button onClick={onContinue} className="py-2 text-sm text-gray-500 hover:text-white">
                     Volver a la landing
                 </button>
             </div>
@@ -433,18 +433,18 @@ function PostPaymentScreen({ storeId, subResult, onContinue }) {
             <h2 className="text-2xl font-black text-center">
                 {status === 'failed' ? 'Pago no confirmado' : 'Activación pendiente'}
             </h2>
-            <p className="text-gray-400 text-center max-w-md text-sm">
+            <p className="max-w-md text-sm text-center text-gray-400">
                 {status === 'failed'
                     ? 'No se pudo confirmar el pago. Si el cargo ya fue realizado, contactanos y lo activamos manualmente.'
                     : 'Tu pago está siendo procesado. En unos minutos recibirás un email con el acceso a tu comercio.'}
             </p>
-            <p className="text-xs text-gray-600 font-mono">store_id: {storeId}</p>
-            <div className="flex flex-col gap-3 w-full max-w-sm">
+            <p className="font-mono text-xs text-gray-600">store_id: {storeId}</p>
+            <div className="flex flex-col w-full max-w-sm gap-3">
                 <a href={`mailto:hola@${GASTRORED_DOMAIN}?subject=Activación%20store%20${storeId}`}
-                    className="w-full bg-white/10 hover:bg-white/20 text-white py-3 rounded-xl font-bold text-center text-sm">
+                    className="w-full py-3 text-sm font-bold text-center text-white bg-white/10 hover:bg-white/20 rounded-xl">
                     Contactar soporte 📩
                 </a>
-                <button onClick={onContinue} className="text-gray-500 hover:text-white text-sm py-2">
+                <button onClick={onContinue} className="py-2 text-sm text-gray-500 hover:text-white">
                     Volver a la landing
                 </button>
             </div>
@@ -593,25 +593,25 @@ export default function GastroRedLanding() {
             {/* ── NAVBAR ─────────────────────────────────────────────────────────── */}
             <nav className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${scrolled ? 'bg-[#080c12]/90 backdrop-blur-xl border-b border-white/5 shadow-2xl' : 'bg-transparent'
                 }`}>
-                <div className="max-w-7xl mx-auto px-4 md:px-8 h-16 md:h-20 flex items-center justify-between">
+                <div className="flex items-center justify-between h-16 px-4 mx-auto max-w-7xl md:px-8 md:h-20">
                     <GastroRedLogo size={36} />
-                    <div className="hidden md:flex items-center gap-8">
+                    <div className="items-center hidden gap-8 md:flex">
                         {navLinks.map(l => (
-                            <a key={l.href} href={l.href} className="text-gray-400 hover:text-white text-sm font-medium transition-colors duration-200 hover:text-teal-400">
+                            <a key={l.href} href={l.href} className="text-sm font-medium text-gray-400 transition-colors duration-200 hover:text-white hover:text-teal-400">
                                 {l.label}
                             </a>
                         ))}
                     </div>
-                    <div className="hidden md:flex items-center gap-3">
-                        <a href="#contacto" className="text-gray-300 hover:text-white text-sm font-medium px-4 py-2 rounded-xl hover:bg-white/5 transition">
+                    <div className="items-center hidden gap-3 md:flex">
+                        <a href="#contacto" className="px-4 py-2 text-sm font-medium text-gray-300 transition hover:text-white rounded-xl hover:bg-white/5">
                             Contacto
                         </a>
-                        <a href="#planes" className="bg-teal-500 hover:bg-teal-400 text-white px-5 py-2 rounded-xl font-bold text-sm transition-all shadow-lg shadow-teal-900/30">
+                        <a href="#planes" className="px-5 py-2 text-sm font-bold text-white transition-all bg-teal-500 shadow-lg hover:bg-teal-400 rounded-xl shadow-teal-900/30">
                             Ver planes →
                         </a>
                     </div>
                     {/* Mobile menu button */}
-                    <button onClick={() => setMobileMenuOpen(p => !p)} className="md:hidden p-2 rounded-xl bg-white/5">
+                    <button onClick={() => setMobileMenuOpen(p => !p)} className="p-2 md:hidden rounded-xl bg-white/5">
                         <div className="w-5 h-0.5 bg-white mb-1.5"></div>
                         <div className="w-5 h-0.5 bg-white mb-1.5"></div>
                         <div className="w-5 h-0.5 bg-white"></div>
@@ -622,11 +622,11 @@ export default function GastroRedLanding() {
                     <div className="md:hidden bg-[#0d1117] border-b border-white/10 px-4 py-4 space-y-3">
                         {navLinks.map(l => (
                             <a key={l.href} href={l.href} onClick={() => setMobileMenuOpen(false)}
-                                className="block text-gray-300 hover:text-teal-400 font-medium py-2 border-b border-white/5">
+                                className="block py-2 font-medium text-gray-300 border-b hover:text-teal-400 border-white/5">
                                 {l.label}
                             </a>
                         ))}
-                        <a href="#planes" className="block text-center bg-teal-500 text-white py-3 rounded-xl font-bold mt-2">
+                        <a href="#planes" className="block py-3 mt-2 font-bold text-center text-white bg-teal-500 rounded-xl">
                             Ver planes →
                         </a>
                     </div>
@@ -634,7 +634,7 @@ export default function GastroRedLanding() {
             </nav>
 
             {/* ── HERO ───────────────────────────────────────────────────────────── */}
-            <section id="inicio" className="relative min-h-screen flex items-center overflow-hidden">
+            <section id="inicio" className="relative flex items-center min-h-screen overflow-hidden">
                 {/* Fondo animado */}
                 <div className="absolute inset-0">
                     <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-teal-500/10 rounded-full blur-[120px] animate-pulse" style={{ animationDuration: '4s' }} />
@@ -643,15 +643,15 @@ export default function GastroRedLanding() {
                     <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[900px] h-[900px] border border-teal-500/5 rounded-full" />
                 </div>
 
-                <div className="relative max-w-7xl mx-auto px-4 md:px-8 pt-28 pb-20 w-full">
+                <div className="relative w-full px-4 pb-20 mx-auto max-w-7xl md:px-8 pt-28">
                     <div className="max-w-3xl mx-auto text-center">
 
-                        <div className="inline-flex items-center gap-2 bg-teal-500/10 border border-teal-500/20 rounded-full px-4 py-2 text-sm text-teal-400 mb-8 font-medium">
+                        <div className="inline-flex items-center gap-2 px-4 py-2 mb-8 text-sm font-medium text-teal-400 border rounded-full bg-teal-500/10 border-teal-500/20">
                             <span className="w-2 h-2 bg-teal-400 rounded-full animate-pulse"></span>
                             Plataforma SaaS para Gastronomía Argentina
                         </div>
 
-                        <h1 className="text-5xl md:text-7xl font-black leading-none mb-6">
+                        <h1 className="mb-6 text-5xl font-black leading-none md:text-7xl">
                             Tu restaurante,{' '}
                             <span className="text-transparent bg-clip-text bg-gradient-to-r from-teal-400 to-emerald-400">
                                 digitalizado
@@ -659,26 +659,26 @@ export default function GastroRedLanding() {
                             <br />en minutos.
                         </h1>
 
-                        <p className="text-xl text-gray-400 leading-relaxed max-w-2xl mx-auto mb-10">
+                        <p className="max-w-2xl mx-auto mb-10 text-xl leading-relaxed text-gray-400">
                             GastroRed es la plataforma que convierte tu negocio gastronómico en una experiencia digital completa.
                             Menú online, pedidos, pagos y fidelización —{' '}
                             <strong className="text-white">todo desde un solo lugar.</strong>
                         </p>
 
-                        <div className="flex flex-col sm:flex-row gap-4 justify-center">
+                        <div className="flex flex-col justify-center gap-4 sm:flex-row">
                             <a href="#planes"
-                                className="inline-flex items-center justify-center gap-2 bg-teal-500 hover:bg-teal-400 text-white px-8 py-4 rounded-xl font-black text-lg transition-all shadow-2xl shadow-teal-900/50 hover:shadow-teal-900/70 hover:-translate-y-1">
+                                className="inline-flex items-center justify-center gap-2 px-8 py-4 text-lg font-black text-white transition-all bg-teal-500 shadow-2xl hover:bg-teal-400 rounded-xl shadow-teal-900/50 hover:shadow-teal-900/70 hover:-translate-y-1">
                                 Probá gratis 7 días
                                 <span>→</span>
                             </a>
                             <a href="#como-funciona"
-                                className="inline-flex items-center justify-center gap-2 bg-white/5 hover:bg-white/10 border border-white/10 text-white px-8 py-4 rounded-xl font-bold text-lg transition-all">
+                                className="inline-flex items-center justify-center gap-2 px-8 py-4 text-lg font-bold text-white transition-all border bg-white/5 hover:bg-white/10 border-white/10 rounded-xl">
                                 Cómo funciona
                             </a>
                         </div>
 
                         {/* Stats rápidos */}
-                        <div className="mt-16 flex flex-wrap justify-center gap-8 md:gap-16">
+                        <div className="flex flex-wrap justify-center gap-8 mt-16 md:gap-16">
                             <Stat value="5 min" label="Para estar online" />
                             <Stat value="0%" label="Comisión por pedido" />
                             <Stat value="100%" label="Tu marca, tu negocio" />
@@ -687,44 +687,44 @@ export default function GastroRedLanding() {
                 </div>
 
                 {/* Scroll indicator */}
-                <div className="absolute bottom-8 left-1/2 -translate-x-1/2 flex flex-col items-center gap-2 animate-bounce">
-                    <div className="w-6 h-10 border-2 border-white/20 rounded-full flex items-start justify-center pt-2">
-                        <div className="w-1 h-2 bg-white/40 rounded-full"></div>
+                <div className="absolute flex flex-col items-center gap-2 -translate-x-1/2 bottom-8 left-1/2 animate-bounce">
+                    <div className="flex items-start justify-center w-6 h-10 pt-2 border-2 rounded-full border-white/20">
+                        <div className="w-1 h-2 rounded-full bg-white/40"></div>
                     </div>
                 </div>
             </section>
 
             {/* ── EL PROBLEMA ──────────────────────────────────────────────────────── */}
-            <section id="problema" className="py-24 relative">
+            <section id="problema" className="relative py-24">
                 <div className="absolute inset-0 bg-gradient-to-b from-transparent via-teal-950/10 to-transparent" />
-                <div className="max-w-7xl mx-auto px-4 md:px-8 relative">
-                    <div className="text-center mb-16">
-                        <div className="text-teal-400 text-sm font-bold uppercase tracking-widest mb-4">El problema</div>
-                        <h2 className="text-4xl md:text-5xl font-black mb-6">
+                <div className="relative px-4 mx-auto max-w-7xl md:px-8">
+                    <div className="mb-16 text-center">
+                        <div className="mb-4 text-sm font-bold tracking-widest text-teal-400 uppercase">El problema</div>
+                        <h2 className="mb-6 text-4xl font-black md:text-5xl">
                             ¿Cuánto tiempo perdés{' '}
                             <span className="text-transparent bg-clip-text bg-gradient-to-r from-red-400 to-rose-600">
                                 sin digitalización?
                             </span>
                         </h2>
-                        <p className="text-gray-400 text-lg max-w-2xl mx-auto">
+                        <p className="max-w-2xl mx-auto text-lg text-gray-400">
                             La mayoría de los restaurantes argentinos siguen dependiendo de WhatsApp, llamados y hojas de papel para gestionar su negocio.
                         </p>
                     </div>
-                    <div className="grid md:grid-cols-3 gap-6 mb-12">
+                    <div className="grid gap-6 mb-12 md:grid-cols-3">
                         {[
                             { icon: '😤', title: 'Pedidos caóticos', desc: 'WhatsApp saturado, pedidos que se pierden, clientes que no saben el menú actualizado. Caos en hora pico.' },
                             { icon: '💸', title: 'Sin datos de ventas', desc: 'No sabés qué platos venden más, a qué hora tenés más demanda, ni cuánto ingresás por semana.' },
                             { icon: '😴', title: 'Trabajo manual infinito', desc: 'Actualizar precios manualmente, hacer carteles, responder consultas repetitivas. Horas que podrían automatizarse.' },
                         ].map(p => (
-                            <div key={p.title} className="bg-gradient-to-br from-red-900/20 to-rose-900/10 border border-red-500/20 rounded-2xl p-6">
-                                <div className="text-4xl mb-4">{p.icon}</div>
-                                <h3 className="text-white font-bold text-lg mb-2">{p.title}</h3>
-                                <p className="text-gray-400 text-sm leading-relaxed">{p.desc}</p>
+                            <div key={p.title} className="p-6 border bg-gradient-to-br from-red-900/20 to-rose-900/10 border-red-500/20 rounded-2xl">
+                                <div className="mb-4 text-4xl">{p.icon}</div>
+                                <h3 className="mb-2 text-lg font-bold text-white">{p.title}</h3>
+                                <p className="text-sm leading-relaxed text-gray-400">{p.desc}</p>
                             </div>
                         ))}
                     </div>
                     <div className="text-center">
-                        <div className="inline-flex items-center gap-3 bg-teal-500/10 border border-teal-500/30 rounded-2xl px-8 py-4 text-teal-300 font-bold text-lg">
+                        <div className="inline-flex items-center gap-3 px-8 py-4 text-lg font-bold text-teal-300 border bg-teal-500/10 border-teal-500/30 rounded-2xl">
                             <span className="text-2xl">✨</span>
                             GastroRed resuelve todo esto desde el día 1
                         </div>
@@ -734,36 +734,36 @@ export default function GastroRedLanding() {
 
             {/* ── FUNCIONALIDADES ─────────────────────────────────────────────────── */}
             <section id="funcionalidades" className="py-24">
-                <div className="max-w-7xl mx-auto px-4 md:px-8">
-                    <div className="text-center mb-16">
-                        <div className="text-teal-400 text-sm font-bold uppercase tracking-widest mb-4">Funcionalidades</div>
-                        <h2 className="text-4xl md:text-5xl font-black mb-4">
+                <div className="px-4 mx-auto max-w-7xl md:px-8">
+                    <div className="mb-16 text-center">
+                        <div className="mb-4 text-sm font-bold tracking-widest text-teal-400 uppercase">Funcionalidades</div>
+                        <h2 className="mb-4 text-4xl font-black md:text-5xl">
                             Todo lo que necesitás,{' '}
                             <span className="text-transparent bg-clip-text bg-gradient-to-r from-teal-400 to-emerald-400">nada más.</span>
                         </h2>
-                        <p className="text-gray-400 text-lg max-w-xl mx-auto">Sin bloat, sin configuraciones infinitas. Cada función fue pensada para el gastronómico argentino.</p>
+                        <p className="max-w-xl mx-auto text-lg text-gray-400">Sin bloat, sin configuraciones infinitas. Cada función fue pensada para el gastronómico argentino.</p>
                     </div>
-                    <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
+                    <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
                         {features.map((f, i) => <FeatureCard key={i} {...f} delay={i * 50} />)}
                     </div>
                 </div>
             </section>
 
             {/* ── CÓMO FUNCIONA ────────────────────────────────────────────────────── */}
-            <section id="como-funciona" className="py-24 relative">
+            <section id="como-funciona" className="relative py-24">
                 <div className="absolute inset-0 bg-gradient-to-b from-transparent via-teal-950/15 to-transparent" />
-                <div className="max-w-7xl mx-auto px-4 md:px-8 relative">
-                    <div className="grid lg:grid-cols-2 gap-16 items-center">
+                <div className="relative px-4 mx-auto max-w-7xl md:px-8">
+                    <div className="grid items-center gap-16 lg:grid-cols-2">
                         <div>
-                            <div className="text-teal-400 text-sm font-bold uppercase tracking-widest mb-4">Cómo funciona</div>
-                            <h2 className="text-4xl md:text-5xl font-black mb-6">
+                            <div className="mb-4 text-sm font-bold tracking-widest text-teal-400 uppercase">Cómo funciona</div>
+                            <h2 className="mb-6 text-4xl font-black md:text-5xl">
                                 De cero a{' '}
                                 <span className="text-transparent bg-clip-text bg-gradient-to-r from-teal-400 to-emerald-400">
                                     vender online
                                 </span>
                                 <br />en 4 pasos.
                             </h2>
-                            <p className="text-gray-400 text-lg mb-10">
+                            <p className="mb-10 text-lg text-gray-400">
                                 Sin instalar nada, sin conocimientos técnicos. GastroRed se encarga de toda la infraestructura para que vos te concentrés en cocinar.
                             </p>
                             <div className="space-y-8">
@@ -781,7 +781,7 @@ export default function GastroRedLanding() {
                                         <div className="w-3 h-3 rounded-full bg-yellow-500/70" />
                                         <div className="w-3 h-3 rounded-full bg-green-500/70" />
                                     </div>
-                                    <div className="flex-1 bg-white/5 rounded-lg px-3 py-1 text-xs text-gray-500 font-mono">
+                                    <div className="flex-1 px-3 py-1 font-mono text-xs text-gray-500 rounded-lg bg-white/5">
                                         mirestaurante.gastrored.com.ar/admin
                                     </div>
                                 </div>
@@ -789,10 +789,10 @@ export default function GastroRedLanding() {
                                 <div className="p-5">
                                     <div className="flex items-center justify-between mb-4">
                                         <div>
-                                            <div className="text-white font-bold">Panel Admin</div>
+                                            <div className="font-bold text-white">Panel Admin</div>
                                             <div className="text-xs text-gray-500">Mi Restaurante · Hoy</div>
                                         </div>
-                                        <div className="w-8 h-8 rounded-full bg-teal-500 flex items-center justify-center text-sm">🍔</div>
+                                        <div className="flex items-center justify-center w-8 h-8 text-sm bg-teal-500 rounded-full">🍔</div>
                                     </div>
                                     <div className="grid grid-cols-2 gap-3 mb-4">
                                         {[
@@ -801,23 +801,23 @@ export default function GastroRedLanding() {
                                             { label: 'Productos', value: '42', color: 'text-yellow-400' },
                                             { label: 'Clientes', value: '318', color: 'text-purple-400' },
                                         ].map(s => (
-                                            <div key={s.label} className="bg-white/5 rounded-xl p-3 border border-white/5">
+                                            <div key={s.label} className="p-3 border bg-white/5 rounded-xl border-white/5">
                                                 <div className={`text-xl font-black ${s.color}`}>{s.value}</div>
                                                 <div className="text-xs text-gray-500">{s.label}</div>
                                             </div>
                                         ))}
                                     </div>
                                     {/* Mini order list */}
-                                    <div className="bg-white/5 rounded-xl border border-white/5 divide-y divide-white/5">
+                                    <div className="border divide-y bg-white/5 rounded-xl border-white/5 divide-white/5">
                                         {[
                                             { order: 'Voraz Burger x2', status: 'Preparando', amt: '$48.400', color: 'text-yellow-400' },
                                             { order: 'Crispy Chicken x1', status: 'Listo', amt: '$14.800', color: 'text-green-400' },
                                             { order: 'Papas + Coca x3', status: 'Entregado', amt: '$21.000', color: 'text-gray-500' },
                                         ].map((o, i) => (
                                             <div key={i} className="flex items-center justify-between px-3 py-2.5">
-                                                <div className="text-xs text-gray-300 truncate flex-1">{o.order}</div>
+                                                <div className="flex-1 text-xs text-gray-300 truncate">{o.order}</div>
                                                 <div className={`text-[10px] font-bold px-2 py-0.5 rounded-full mx-2 ${o.color} bg-current/10`} style={{ backgroundColor: 'rgba(0,0,0,0.2)' }}>{o.status}</div>
-                                                <div className="text-xs font-bold text-white flex-shrink-0">{o.amt}</div>
+                                                <div className="flex-shrink-0 text-xs font-bold text-white">{o.amt}</div>
                                             </div>
                                         ))}
                                     </div>
@@ -830,40 +830,40 @@ export default function GastroRedLanding() {
 
             {/* ── PLANES ──────────────────────────────────────────────────────────── */}
             <section id="planes" className="py-24">
-                <div className="max-w-7xl mx-auto px-4 md:px-8">
-                    <div className="text-center mb-16">
-                        <div className="text-teal-400 text-sm font-bold uppercase tracking-widest mb-4">Planes y Precios</div>
-                        <h2 className="text-4xl md:text-5xl font-black mb-4">
+                <div className="px-4 mx-auto max-w-7xl md:px-8">
+                    <div className="mb-16 text-center">
+                        <div className="mb-4 text-sm font-bold tracking-widest text-teal-400 uppercase">Planes y Precios</div>
+                        <h2 className="mb-4 text-4xl font-black md:text-5xl">
                             Empezá gratis.{' '}
                             <span className="text-transparent bg-clip-text bg-gradient-to-r from-teal-400 to-emerald-400">
                                 Crecé con nosotros.
                             </span>
                         </h2>
-                        <p className="text-gray-400 text-lg max-w-xl mx-auto">
+                        <p className="max-w-xl mx-auto text-lg text-gray-400">
                             7 días sin costo, sin tarjeta de crédito. Cuando querés seguir, elegís el plan que se adapte a tu negocio.
                         </p>
                     </div>
-                    <div className="grid md:grid-cols-3 gap-6 mt-8">
+                    <div className="grid gap-6 mt-8 md:grid-cols-3">
                         {plans.map(p => <PlanCard key={p.name} {...p} onSelect={() => setSelectedPlan(p)} />)}
                     </div>
-                    <p className="text-center text-gray-600 text-sm mt-8">
+                    <p className="mt-8 text-sm text-center text-gray-600">
                         Precios en ARS. Facturación mensual. Podés cancelar cuando quieras.
                     </p>
                 </div>
             </section>
 
             {/* ── PARA EL DUEÑO ────────────────────────────────────────────────────── */}
-            <section className="py-24 relative">
+            <section className="relative py-24">
                 <div className="absolute inset-0 bg-gradient-to-b from-transparent via-teal-950/10 to-transparent" />
-                <div className="max-w-7xl mx-auto px-4 md:px-8 relative">
-                    <div className="text-center mb-16">
-                        <div className="text-teal-400 text-sm font-bold uppercase tracking-widest mb-4">Para el dueño del comercio</div>
-                        <h2 className="text-4xl md:text-5xl font-black mb-4">
+                <div className="relative px-4 mx-auto max-w-7xl md:px-8">
+                    <div className="mb-16 text-center">
+                        <div className="mb-4 text-sm font-bold tracking-widest text-teal-400 uppercase">Para el dueño del comercio</div>
+                        <h2 className="mb-4 text-4xl font-black md:text-5xl">
                             Vos mandás.{' '}
                             <span className="text-transparent bg-clip-text bg-gradient-to-r from-teal-400 to-emerald-400">Nosotros ponemos la tech.</span>
                         </h2>
                     </div>
-                    <div className="grid md:grid-cols-2 gap-8">
+                    <div className="grid gap-8 md:grid-cols-2">
                         {[
                             {
                                 icon: '📱', title: 'Gestionás desde el celular',
@@ -882,11 +882,11 @@ export default function GastroRedLanding() {
                                 desc: 'Subscripción mensual, cancelás cuando querés. No hay penalidades, no hay períodos mínimos. Transparencia total.'
                             },
                         ].map(f => (
-                            <div key={f.title} className="flex gap-5 bg-white/3 border border-white/8 rounded-2xl p-6 hover:border-teal-500/20 transition-all">
-                                <div className="text-4xl flex-shrink-0">{f.icon}</div>
+                            <div key={f.title} className="flex gap-5 p-6 transition-all border bg-white/3 border-white/8 rounded-2xl hover:border-teal-500/20">
+                                <div className="flex-shrink-0 text-4xl">{f.icon}</div>
                                 <div>
-                                    <h3 className="text-white font-bold text-lg mb-2">{f.title}</h3>
-                                    <p className="text-gray-400 text-sm leading-relaxed">{f.desc}</p>
+                                    <h3 className="mb-2 text-lg font-bold text-white">{f.title}</h3>
+                                    <p className="text-sm leading-relaxed text-gray-400">{f.desc}</p>
                                 </div>
                             </div>
                         ))}
@@ -896,23 +896,23 @@ export default function GastroRedLanding() {
 
             {/* ── CTA FINAL ────────────────────────────────────────────────────────── */}
             <section id="contacto" className="py-24">
-                <div className="max-w-4xl mx-auto px-4 md:px-8 text-center">
-                    <div className="relative bg-gradient-to-br from-teal-900/40 to-teal-800/20 border border-teal-500/30 rounded-3xl p-12 md:p-16 overflow-hidden">
-                        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-64 h-64 bg-teal-500/15 rounded-full blur-3xl" />
+                <div className="max-w-4xl px-4 mx-auto text-center md:px-8">
+                    <div className="relative p-12 overflow-hidden border bg-gradient-to-br from-teal-900/40 to-teal-800/20 border-teal-500/30 rounded-3xl md:p-16">
+                        <div className="absolute top-0 w-64 h-64 -translate-x-1/2 rounded-full left-1/2 bg-teal-500/15 blur-3xl" />
                         <div className="relative">
-                            <div className="text-5xl mb-6">🍽️</div>
-                            <h2 className="text-4xl md:text-5xl font-black mb-4">
+                            <div className="mb-6 text-5xl">🍽️</div>
+                            <h2 className="mb-4 text-4xl font-black md:text-5xl">
                                 ¿Listo para digitalizar{' '}
                                 <span className="text-teal-400">tu restaurante?</span>
                             </h2>
-                            <p className="text-gray-300 text-lg mb-8 max-w-xl mx-auto">
+                            <p className="max-w-xl mx-auto mb-8 text-lg text-gray-300">
                                 Arrancá con 7 días gratis. Sin técnicos, sin complicaciones, sin letra chica.
                                 En minutos tu carta está online.
                             </p>
-                            <div className="flex flex-col sm:flex-row gap-4 justify-center">
+                            <div className="flex flex-col justify-center gap-4 sm:flex-row">
                                 <a
                                     href="mailto:hola@gastrored.com.ar?subject=Quiero sumarme a GastroRed&body=Hola! Me interesa probar GastroRed para mi restaurante."
-                                    className="inline-flex items-center justify-center gap-2 bg-teal-500 hover:bg-teal-400 text-white px-8 py-4 rounded-xl font-black text-lg transition-all shadow-2xl shadow-teal-900/50 hover:-translate-y-1"
+                                    className="inline-flex items-center justify-center gap-2 px-8 py-4 text-lg font-black text-white transition-all bg-teal-500 shadow-2xl hover:bg-teal-400 rounded-xl shadow-teal-900/50 hover:-translate-y-1"
                                 >
                                     Escribinos por email 📩
                                 </a>
@@ -930,20 +930,20 @@ export default function GastroRedLanding() {
             </section>
 
             {/* ── FOOTER ───────────────────────────────────────────────────────────── */}
-            <footer className="border-t border-white/5 py-12">
-                <div className="max-w-7xl mx-auto px-4 md:px-8">
-                    <div className="flex flex-col md:flex-row items-center justify-between gap-6">
+            <footer className="py-12 border-t border-white/5">
+                <div className="px-4 mx-auto max-w-7xl md:px-8">
+                    <div className="flex flex-col items-center justify-between gap-6 md:flex-row">
                         <GastroRedLogo size={28} />
                         <div className="flex gap-6 text-sm text-gray-500">
-                            <a href="#funcionalidades" className="hover:text-teal-400 transition">Funcionalidades</a>
-                            <a href="#planes" className="hover:text-teal-400 transition">Planes</a>
-                            <a href="#contacto" className="hover:text-teal-400 transition">Contacto</a>
+                            <a href="#funcionalidades" className="transition hover:text-teal-400">Funcionalidades</a>
+                            <a href="#planes" className="transition hover:text-teal-400">Planes</a>
+                            <a href="#contacto" className="transition hover:text-teal-400">Contacto</a>
                         </div>
                         <div className="flex items-center gap-4">
-                            <p className="text-gray-600 text-sm">© 2026 GastroRed — Sincronización Total</p>
+                            <p className="text-sm text-gray-600">© 2026 GastroRed — By <ProgramadorGS>ProgramadorGS</ProgramadorGS></p>
                             <button
                                 onClick={() => setShowSuperAdmin(true)}
-                                className="text-xs text-gray-700 hover:text-teal-500 transition px-2 py-1 rounded border border-white/5 hover:border-teal-500/30"
+                                className="px-2 py-1 text-xs text-gray-700 transition border rounded hover:text-teal-500 border-white/5 hover:border-teal-500/30"
                                 title="Acceso Superadmin"
                             >
                                 🔒 Superadmin
