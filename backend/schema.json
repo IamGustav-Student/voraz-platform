@@ -1,0 +1,1 @@
+{"p":["id","name","description","price","image_url","category_id","is_active","created_at","badge","tenant_id","store_id"],"s":["id","name","address","hours","phone","lat","lng","delivery_link","waze_link","image_url","created_at","tenant_id"],"c":["id","name","slug","created_at","tenant_id","image_url","description","store_id"]}

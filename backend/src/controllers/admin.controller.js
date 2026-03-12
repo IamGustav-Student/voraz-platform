@@ -389,3 +389,45 @@ export const saveMercadopagoConfig = async (req, res) => {
     res.json({ status: 'success', message: 'Configuración guardada correctamente.' });
   } catch (e) { res.status(500).json({ status: 'error', message: e.message }); }
 };
+
+// ── BRANDING ───────────────────────────────────────────────────────────────
+export const getBranding = async (req, res) => {
+  try {
+    const tenantId = req.tenant?.id || req.store?.id || getStoreId(req);
+    const result = await query(
+      `SELECT primary_color, secondary_color, font_family, logo_url, custom_branding_enabled
+       FROM tenant_settings WHERE tenant_id = $1 OR tenant_id_fk = $1 LIMIT 1`,
+      [String(tenantId)]
+    );
+    const branding = result.rows[0] || {};
+    res.json({
+      status: 'success',
+      data: {
+        custom_branding_enabled: branding.custom_branding_enabled ?? false,
+        primary_color:   branding.primary_color   || null,
+        secondary_color: branding.secondary_color || null,
+        font_family:     branding.font_family     || null,
+        logo_url:        branding.logo_url        || null,
+      }
+    });
+  } catch (e) { res.status(500).json({ status: 'error', message: e.message }); }
+};
+
+export const updateBranding = async (req, res) => {
+  try {
+    const tenantId = req.tenant?.id || req.store?.id || getStoreId(req);
+    const { primary_color, secondary_color, font_family, logo_url } = req.body;
+    await query(
+      `INSERT INTO tenant_settings (tenant_id, tenant_id_fk, primary_color, secondary_color, font_family, logo_url, updated_at)
+       VALUES ($1, $1, $2, $3, $4, $5, NOW())
+       ON CONFLICT (tenant_id) DO UPDATE SET
+         primary_color   = COALESCE(NULLIF($2,''), tenant_settings.primary_color),
+         secondary_color = COALESCE(NULLIF($3,''), tenant_settings.secondary_color),
+         font_family     = COALESCE(NULLIF($4,''), tenant_settings.font_family),
+         logo_url        = COALESCE(NULLIF($5,''), tenant_settings.logo_url),
+         updated_at      = NOW()`,
+      [String(tenantId), primary_color || '', secondary_color || '', font_family || '', logo_url || '']
+    );
+    res.json({ status: 'success', message: 'Branding actualizado correctamente.' });
+  } catch (e) { res.status(500).json({ status: 'error', message: e.message }); }
+};

@@ -292,3 +292,34 @@ export const updateGastroRedConfig = async (req, res) => {
     res.json({ status: 'success', message: `Configuración actualizada: ${updates.join(', ')}` });
   } catch (e) { res.status(500).json({ status: 'error', message: e.message }); }
 };
+
+// ── Toggling Custom Branding ─────────────────────────────────────────────────
+export const toggleCustomBranding = async (req, res) => {
+  const { id } = req.params; // tenant id
+  const { enabled } = req.body;
+  if (typeof enabled !== 'boolean') {
+    return res.status(400).json({ status: 'error', message: 'Se requiere el estado booleano enabled.' });
+  }
+  
+  try {
+    const result = await query(
+      `UPDATE tenant_settings 
+       SET custom_branding_enabled = $1 
+       WHERE tenant_id = $2 OR tenant_id_fk = $2 
+       RETURNING custom_branding_enabled`,
+      [enabled, id]
+    );
+
+    if (!result.rows.length) {
+      // In case tenant_settings record doesn't exist yet, insert it minimal.
+      const resInsert = await query(
+        `INSERT INTO tenant_settings (tenant_id, tenant_id_fk, custom_branding_enabled)
+         VALUES ($1, $1, $2) RETURNING custom_branding_enabled`,
+         [id, enabled]
+      );
+      return res.json({ status: 'success', data: resInsert.rows[0] });
+    }
+    
+    res.json({ status: 'success', data: result.rows[0] });
+  } catch (e) { res.status(500).json({ status: 'error', message: e.message }); }
+};

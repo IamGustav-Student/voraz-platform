@@ -11,6 +11,7 @@ import AuthModal from './components/AuthModal';
 import VorazClub from './components/VorazClub';
 import AdminPanel from './components/AdminPanel';
 import GastroRedLanding from './components/GastroRedLanding';
+import { useBranding } from './hooks/useBranding';
 
 // Dominios que deben mostrar la landing de GastroRed en lugar de un tenant
 const GASTRORED_ROOT_DOMAINS = [
@@ -28,6 +29,7 @@ const isGastroRedRootDomain = () => {
 function App() {
   const { itemCount, dispatch } = useCart();
   const { user } = useAuth();
+  useBranding(); // Inyecta CSS vars dinámicas desde la BD al montar
 
   // ── Detección de landing GastroRed ───────────────────────────────────────
   const [showLanding, setShowLanding] = useState(isGastroRedRootDomain());

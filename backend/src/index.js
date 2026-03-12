@@ -148,7 +148,8 @@ app.get('/api/settings', tenantMiddleware, async (req, res) => {
     try {
         const result = await query(
             `SELECT t.id, ts.cash_on_delivery, t.brand_name, t.brand_color_primary, t.brand_color_secondary,
-                    t.brand_logo_url, t.slogan, t.plan_type, t.subdomain
+                    t.brand_logo_url, t.slogan, t.plan_type, t.subdomain,
+                    ts.primary_color, ts.secondary_color, ts.font_family, ts.logo_url, ts.custom_branding_enabled
              FROM tenants t
              LEFT JOIN tenant_settings ts ON ts.tenant_id_fk = t.id
              WHERE t.id = $1`,
@@ -167,6 +168,11 @@ app.get('/api/settings', tenantMiddleware, async (req, res) => {
                 slogan: cfg.slogan || null,
                 plan_type: cfg.plan_type || 'Full Digital',
                 subdomain: cfg.subdomain || null,
+                primary_color: cfg.primary_color || null,
+                secondary_color: cfg.secondary_color || null,
+                font_family: cfg.font_family || null,
+                logo_url: cfg.logo_url || null,
+                custom_branding_enabled: !!cfg.custom_branding_enabled,
             }
         });
     } catch {

@@ -95,6 +95,17 @@ export default function SuperAdminPanel({ onBack }) {
     catch (e) { setMsg('Error: ' + e.message); }
   };
 
+  const toggleBranding = async (id, current) => {
+    try {
+      await sfetch(`/tenants/${id}/branding-toggle`, token, {
+        method: 'PATCH',
+        body: JSON.stringify({ custom_branding_enabled: !current }),
+      });
+      setMsg(!current ? '🎨 Branding personalizado activado' : '🔒 Branding personalizado desactivado');
+      load();
+    } catch (e) { setMsg('Error: ' + e.message); }
+  };
+
   const handleCreate = async (e) => {
     e.preventDefault(); setMsg(''); setCreating(true); setLastCreated(null);
     try {
@@ -345,6 +356,18 @@ export default function SuperAdminPanel({ onBack }) {
                   {s.plan_type !== 'Full Digital' && (
                     <button onClick={() => setPlan(s.id, 'Full Digital')} className="text-xs px-3 py-1.5 bg-blue-700 hover:bg-blue-800 rounded-lg font-bold">⬇️ → Full Digital</button>
                   )}
+                  {/* Toggle branding personalizado */}
+                  <button
+                    onClick={() => toggleBranding(s.id, s.custom_branding_enabled)}
+                    className={`text-xs px-3 py-1.5 rounded-lg font-bold border transition ${
+                      s.custom_branding_enabled
+                        ? 'bg-purple-900/30 border-purple-500/40 text-purple-300 hover:bg-purple-900/50'
+                        : 'bg-white/5 border-white/10 text-gray-500 hover:text-gray-300'
+                    }`}
+                    title={s.custom_branding_enabled ? 'Deshabilitar branding personalizado' : 'Habilitar branding personalizado'}
+                  >
+                    {s.custom_branding_enabled ? '🎨 Branding ON' : '🎨 Branding OFF'}
+                  </button>
                   {s.subscription_expires_at && (
                     <span className={`text-xs px-2 py-1.5 rounded-lg ${new Date(s.subscription_expires_at) < new Date() ? 'bg-red-900/30 text-red-400' : 'bg-white/5 text-gray-400'}`}>
                       {new Date(s.subscription_expires_at) < new Date()

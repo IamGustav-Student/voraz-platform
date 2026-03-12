@@ -36,21 +36,46 @@ let _tenant = {
 export function applyBrandTheme(settings) {
   if (!settings) return;
   const root = document.documentElement;
-  const primary = settings.brand_color_primary || _tenant.theme.primary;
-  const secondary = settings.brand_color_secondary || _tenant.theme.secondary;
 
+  // Custom branding logic
+  let primary = _tenant.theme.primary;
+  let secondary = _tenant.theme.secondary;
+  let logo = _tenant.logo;
+  let fontFam = null;
+
+  if (settings.custom_branding_enabled) {
+    primary = settings.primary_color || settings.brand_color_primary || primary;
+    secondary = settings.secondary_color || settings.brand_color_secondary || secondary;
+    logo = settings.logo_url || settings.brand_logo_url || logo;
+    fontFam = settings.font_family || null;
+  } else {
+    // If disabled, we fallback to default OR if gastrored still wants to use the primary colors defined in tenants
+    // The prompt says "Asegurá que si no hay colores definidos, se usen los colores por defecto de GastroRed."
+    // and "Si custom_branding_enabled es false... mostrar mensaje."
+    primary = '#E30613';    // Default GastroRed
+    secondary = '#F2C94C';  // Default GastroRed
+    logo = null;
+  }
+
+  root.style.setProperty('--primary-color', primary);
+  root.style.setProperty('--secondary-color', secondary);
   root.style.setProperty('--color-brand-primary', primary);
   root.style.setProperty('--color-brand-secondary', secondary);
-  root.style.setProperty('--color-brand-primary-hover',
-    adjustColor(primary, -20));
+  root.style.setProperty('--color-brand-primary-hover', adjustColor(primary, -20));
+
+  if (fontFam) {
+    root.style.setProperty('--font-family', fontFam);
+    root.style.fontFamily = fontFam;
+  }
 
   // Actualizar el objeto _tenant para que TENANT refleje los datos reales
   _tenant.brandName = settings.brand_name || _tenant.brandName;
   _tenant.slogan = settings.slogan || _tenant.slogan;
-  _tenant.logo = settings.brand_logo_url || _tenant.logo;
+  _tenant.logo = logo;
   _tenant.theme.primary = primary;
   _tenant.theme.secondary = secondary;
   _tenant.theme.primaryHover = adjustColor(primary, -20);
+  _tenant.customBrandingEnabled = !!settings.custom_branding_enabled;
 
   // Actualizar favicon si existe
   if (settings.brand_favicon_url) {

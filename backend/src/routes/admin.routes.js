@@ -1,5 +1,6 @@
 import { Router } from 'express';
 import { adminMiddleware } from '../middleware/auth.middleware.js';
+import { requireCustomBranding } from '../middleware/tenant.middleware.js';
 import {
   getDashboardStats,
   getAdminProducts, createProduct, updateProduct, deleteProduct,
@@ -11,6 +12,7 @@ import {
   uploadImage,
   getAdminOrders, updateOrderStatus,
   getMercadopagoConfig, saveMercadopagoConfig,
+  getBranding, updateBranding,
 } from '../controllers/admin.controller.js';
 
 const router = Router();
@@ -52,5 +54,9 @@ router.patch('/orders/:id/status', updateOrderStatus);
 
 router.get('/mercadopago', getMercadopagoConfig);
 router.post('/mercadopago', saveMercadopagoConfig);
+
+// Branding — lectura libre para admin, escritura requiere custom_branding_enabled=true
+router.get('/branding', getBranding);
+router.patch('/branding', requireCustomBranding, updateBranding);
 
 export default router;

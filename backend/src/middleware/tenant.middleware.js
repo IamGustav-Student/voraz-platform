@@ -177,3 +177,27 @@ export const tenantMiddleware = async (req, res, next) => {
     next();
   }
 };
+
+export const requireCustomBranding = async (req, res, next) => {
+  if (!req.tenant || !req.tenant.id) {
+    return res.status(401).json({ status: 'error', message: 'No hay contexto de comercio activo.' });
+  }
+  try {
+    const result = await query(
+      "SELECT custom_branding_enabled FROM tenant_settings WHERE tenant_id = $1 OR tenant_id_fk = $1 LIMIT 1",
+      [req.tenant.id]
+    );
+    
+    if (result.rows.length > 0 && result.rows[0].custom_branding_enabled) {
+      return next();
+    }
+    
+    return res.status(403).json({
+      status: 'error',
+      message: 'Tu plan actual no incluye branding personalizado. Contactá al Súper Admin',
+    });
+  } catch (err) {
+    console.error('requireCustomBranding error:', err);
+    return res.status(500).json({ status: 'error', message: 'Error validando privilegios de branding.' });
+  }
+};

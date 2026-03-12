@@ -11,6 +11,7 @@ import {
   getPlanPrices,
   getGastroRedConfig,
   updateGastroRedConfig,
+  toggleCustomBranding,
 } from '../controllers/superadmin.controller.js';
 
 const router = Router();
@@ -25,6 +26,7 @@ router.get('/stores', listAllStores);
 router.post('/stores', createTenant);
 router.patch('/stores/:id/status', updateStoreStatus);
 router.patch('/stores/:id/plan', updateStorePlan);
+router.patch('/tenants/:id/branding-toggle', toggleCustomBranding);
 router.get('/plans', getPlanPrices);
 
 // Configuración de la plataforma

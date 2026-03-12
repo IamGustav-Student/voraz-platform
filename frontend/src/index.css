@@ -4,12 +4,15 @@
 
 /* ── Variables de marca (se sobreescriben por tenant vía JS) ── */
 :root {
-  --brand-primary:     #D92525;
-  --brand-primary-hover: #b71c1c;
-  --brand-secondary:   #F2C94C;
-  --brand-bg:          #121212;
-  --brand-surface:     #1E1E1E;
-  --brand-text:        #F5F5F5;
+  --primary-color: #D92525;
+  --secondary-color: #F2C94C;
+
+  --brand-primary: var(--primary-color);
+  --brand-primary-hover: var(--primary-color);
+  --brand-secondary: var(--secondary-color);
+  --brand-bg: #121212;
+  --brand-surface: #1E1E1E;
+  --brand-text: #F5F5F5;
 }
 
 body {
