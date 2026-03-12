@@ -49,18 +49,16 @@ const validateMPSignature = (secret, dataId, requestId, ts, signatureV1) => {
 
 /**
  * Descuenta stock de productos según los ítems del pedido al aprobar el pago.
- * Solo aplica a productos con stock_quantity no NULL y con stock suficiente (suma por product_id).
  */
 const decrementStockForOrder = async (orderId) => {
     await query(
         `UPDATE products p
-         SET stock_quantity = p.stock_quantity - agg.total_qty
+         SET stock = p.stock - agg.total_qty
          FROM (
              SELECT product_id, SUM(quantity)::int AS total_qty
              FROM order_items WHERE order_id = $1 GROUP BY product_id
          ) agg
-         WHERE p.id = agg.product_id
-           AND p.stock_quantity IS NOT NULL AND p.stock_quantity >= agg.total_qty`,
+         WHERE p.id = agg.product_id AND p.stock >= agg.total_qty`,
         [orderId]
     );
 };
@@ -231,7 +229,7 @@ export const webhook = async (req, res) => {
             );
             const order = result.rows[0];
 
-            await decrementStockForOrder(orderId);
+            // El stock ya se descontó al crear el pedido (orders.controller.js).
 
             if (order?.user_id && order?.points_earned > 0) {
                 const already = await query(

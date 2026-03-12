@@ -196,32 +196,42 @@ function App() {
                 <div className="h-px bg-white/10 flex-grow"></div>
               </div>
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
-                {menuDisplay[category].map((product) => (
-                  <motion.article
-                    layoutId={`product-${product.id}`}
-                    whileHover={{ y: -5 }}
-                    whileTap={{ scale: 0.98 }}
-                    key={product.id}
-                    onClick={() => setSelectedProduct(product)}
-                    className="bg-voraz-gray rounded-xl overflow-hidden shadow-xl group cursor-pointer relative flex md:block h-28 md:h-auto border border-white/5"
-                  >
-                    {product.badge && <div className={`absolute top-0 left-0 md:top-3 md:left-3 z-10 px-2 py-0.5 rounded-br-lg md:rounded text-[9px] font-black uppercase ${getBadgeColor(product.badge)}`}>{product.badge}</div>}
-                    <div className="w-28 md:w-full h-full md:h-48 relative flex-shrink-0">
-                      <img src={product.image_url} className="w-full h-full object-cover" />
-                    </div>
-                    <div className="p-3 md:p-4 flex flex-col justify-between flex-grow">
-                      <div>
-                        <h4 className="text-base md:text-lg font-bold text-white leading-tight mb-1 line-clamp-1">{product.name}</h4>
-                        <p className="text-gray-400 text-[10px] md:text-xs line-clamp-2">{product.description}</p>
+                {menuDisplay[category].map((product) => {
+                  const outOfStock = product.stock != null && Number(product.stock) === 0;
+                  return (
+                    <motion.article
+                      layoutId={`product-${product.id}`}
+                      whileHover={outOfStock ? undefined : { y: -5 }}
+                      whileTap={outOfStock ? undefined : { scale: 0.98 }}
+                      key={product.id}
+                      onClick={() => !outOfStock && setSelectedProduct(product)}
+                      className={`bg-voraz-gray rounded-xl overflow-hidden shadow-xl group relative flex md:block h-28 md:h-auto border border-white/5 ${outOfStock ? 'opacity-75 cursor-not-allowed' : 'cursor-pointer'}`}
+                    >
+                      {product.badge && <div className={`absolute top-0 left-0 md:top-3 md:left-3 z-10 px-2 py-0.5 rounded-br-lg md:rounded text-[9px] font-black uppercase ${getBadgeColor(product.badge)}`}>{product.badge}</div>}
+                      {outOfStock && <div className="absolute top-0 right-0 md:top-3 md:right-3 z-10 px-2 py-0.5 rounded-bl-lg md:rounded text-[9px] font-black uppercase bg-red-600 text-white">Agotado</div>}
+                      <div className="w-28 md:w-full h-full md:h-48 relative flex-shrink-0">
+                        <img src={product.image_url} className="w-full h-full object-cover" alt="" />
                       </div>
-                      <div className="flex justify-between items-end mt-1 md:mt-4">
-                        <div className="text-voraz-yellow font-black text-sm md:text-base">${fmt(product.price)}</div>
-                        <div className="md:hidden bg-voraz-red text-white p-1 rounded-full"><svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 4v16m8-8H4"></path></svg></div>
-                        <button className="hidden md:block bg-white/10 hover:bg-voraz-red text-white py-1 px-3 rounded text-xs uppercase font-bold transition">Ver</button>
+                      <div className="p-3 md:p-4 flex flex-col justify-between flex-grow">
+                        <div>
+                          <h4 className="text-base md:text-lg font-bold text-white leading-tight mb-1 line-clamp-1">{product.name}</h4>
+                          <p className="text-gray-400 text-[10px] md:text-xs line-clamp-2">{product.description}</p>
+                        </div>
+                        <div className="flex justify-between items-end mt-1 md:mt-4">
+                          <div className="text-voraz-yellow font-black text-sm md:text-base">${fmt(product.price)}</div>
+                          {outOfStock ? (
+                            <span className="hidden md:inline text-red-400 text-xs uppercase font-bold">Agotado</span>
+                          ) : (
+                            <>
+                              <div className="md:hidden bg-voraz-red text-white p-1 rounded-full"><svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 4v16m8-8H4"></path></svg></div>
+                              <button type="button" className="hidden md:block bg-white/10 hover:bg-voraz-red text-white py-1 px-3 rounded text-xs uppercase font-bold transition">Ver</button>
+                            </>
+                          )}
+                        </div>
                       </div>
-                    </div>
-                  </motion.article>
-                ))}
+                    </motion.article>
+                  );
+                })}
               </div>
             </section>
           )) : <div className="text-center py-20 text-gray-500">Sin productos.</div>}
@@ -604,14 +614,21 @@ function App() {
                     <span className="text-gray-400 text-sm">Total</span>
                     <div className="text-2xl font-black text-white">${fmt(selectedProduct.price)}</div>
                   </div>
-                  <motion.button
-                    whileTap={{ scale: 0.95 }}
-                    onClick={() => handleAddToCart(selectedProduct)}
-                    className="w-full bg-voraz-red text-white py-4 md:py-3 rounded-xl font-bold uppercase tracking-wide shadow-lg flex justify-between md:justify-center px-6 hover:bg-red-700 transition"
-                  >
-                    <span>Agregar al pedido</span>
-                    <span className="md:hidden">${fmt(selectedProduct.price)}</span>
-                  </motion.button>
+                  {(selectedProduct.stock != null && Number(selectedProduct.stock) === 0) ? (
+                    <div className="w-full bg-red-900/50 text-red-300 py-4 md:py-3 rounded-xl font-bold uppercase tracking-wide flex justify-center items-center gap-2">
+                      <span>Agotado</span>
+                    </div>
+                  ) : (
+                    <motion.button
+                      type="button"
+                      whileTap={{ scale: 0.95 }}
+                      onClick={() => handleAddToCart(selectedProduct)}
+                      className="w-full bg-voraz-red text-white py-4 md:py-3 rounded-xl font-bold uppercase tracking-wide shadow-lg flex justify-between md:justify-center px-6 hover:bg-red-700 transition"
+                    >
+                      <span>Agregar al pedido</span>
+                      <span className="md:hidden">${fmt(selectedProduct.price)}</span>
+                    </motion.button>
+                  )}
                 </div>
               </div>
             </motion.div>

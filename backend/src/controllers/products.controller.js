@@ -16,7 +16,7 @@ export const getMenu = async (req, res) => {
     const storeId = await getStoreId(req);
     const sql = `
       SELECT
-        p.id, p.name, p.description, p.price, p.image_url, p.badge,
+        p.id, p.name, p.description, p.price, p.image_url, p.badge, p.stock,
         c.name as category
       FROM products p
       JOIN categories c ON p.category_id = c.id

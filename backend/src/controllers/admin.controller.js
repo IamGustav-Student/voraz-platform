@@ -19,11 +19,12 @@ export const getAdminProducts = async (req, res) => {
 export const createProduct = async (req, res) => {
   try {
     const storeId = await getStoreId(req);
-    const { name, description, price, category_id, image_url, badge } = req.body;
+    const { name, description, price, category_id, image_url, badge, stock } = req.body;
+    const stockVal = Math.max(0, parseInt(stock, 10) || 0);
     const result = await query(
-      `INSERT INTO products (name, description, price, category_id, image_url, badge, store_id)
-       VALUES ($1,$2,$3,$4,$5,$6,$7) RETURNING *`,
-      [name, description, price, category_id, image_url, badge || null, storeId]
+      `INSERT INTO products (name, description, price, category_id, image_url, badge, store_id, stock)
+       VALUES ($1,$2,$3,$4,$5,$6,$7,$8) RETURNING *`,
+      [name, description, price, category_id, image_url, badge || null, storeId, stockVal]
     );
     res.status(201).json({ status: 'success', data: result.rows[0] });
   } catch (e) { res.status(500).json({ status: 'error', message: e.message }); }
@@ -33,12 +34,13 @@ export const updateProduct = async (req, res) => {
   try {
     const storeId = await getStoreId(req);
     const { id } = req.params;
-    const { name, description, price, category_id, image_url, badge, is_active } = req.body;
+    const { name, description, price, category_id, image_url, badge, is_active, stock } = req.body;
+    const stockVal = typeof stock === 'number' ? Math.max(0, stock) : Math.max(0, parseInt(stock, 10) || 0);
     const result = await query(
       `UPDATE products SET name=$1, description=$2, price=$3, category_id=$4,
-       image_url=$5, badge=$6, is_active=$7
-       WHERE id=$8 AND store_id=$9 RETURNING *`,
-      [name, description, price, category_id, image_url, badge || null, is_active ?? true, id, storeId]
+       image_url=$5, badge=$6, is_active=$7, stock=$8
+       WHERE id=$9 AND store_id=$10 RETURNING *`,
+      [name, description, price, category_id, image_url, badge || null, is_active ?? true, stockVal, id, storeId]
     );
     if (!result.rows.length) return res.status(404).json({ status: 'error', message: 'Producto no encontrado' });
     res.json({ status: 'success', data: result.rows[0] });

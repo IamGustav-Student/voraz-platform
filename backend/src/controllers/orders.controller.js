@@ -73,11 +73,12 @@ export const createOrder = async (req, res) => {
                 await client.query('ROLLBACK');
                 return res.status(403).json({ status: 'error', message: 'Producto no pertenece al comercio.' });
             }
-            if (product.stock >= 0 && product.stock < totalQty) {
+            const productName = items.find((i) => Number(i.product_id) === Number(pid))?.product_name || `ID ${pid}`;
+            if (product.stock < totalQty) {
                 await client.query('ROLLBACK');
                 return res.status(400).json({
                     status: 'error',
-                    message: 'Stock insuficiente para uno o más productos.',
+                    message: `Stock insuficiente para "${productName}". Disponible: ${product.stock}, solicitado: ${totalQty}.`,
                 });
             }
         }
@@ -104,7 +105,16 @@ export const createOrder = async (req, res) => {
             );
         }
 
-        // El descuento de stock se realiza al aprobar el pago (webhook Mercado Pago), no al crear el pedido.
+        await client.query(
+            `UPDATE products p
+             SET stock = p.stock - agg.total_qty
+             FROM (
+                 SELECT product_id, SUM(quantity)::int AS total_qty
+                 FROM order_items WHERE order_id = $1 GROUP BY product_id
+             ) agg
+             WHERE p.id = agg.product_id`,
+            [order.id]
+        );
 
         if (coupon_id) {
             await client.query('UPDATE coupons SET used_count = used_count + 1 WHERE id = $1', [coupon_id]);

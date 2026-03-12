@@ -413,7 +413,7 @@ function CategoriesSection({ items, token, reload }) {
 
 // ── Productos ─────────────────────────────────────────────────────────────────
 function ProductsSection({ items, categories, token, reload }) {
-  const emptyForm = { name: '', description: '', price: '', category_id: '', image_url: '', badge: '' };
+  const emptyForm = { name: '', description: '', price: '', category_id: '', image_url: '', badge: '', stock: '' };
   const [form, setForm] = useState(emptyForm);
   const [editing, setEditing] = useState(null);
   const [submitting, setSubmitting] = useState(false);
@@ -424,6 +424,7 @@ function ProductsSection({ items, categories, token, reload }) {
     setForm({
       name: p.name, description: p.description || '', price: p.price,
       category_id: p.category_id, image_url: p.image_url || '', badge: p.badge || '',
+      stock: p.stock != null ? String(p.stock) : '0',
     });
     setMsg('');
     window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -431,10 +432,15 @@ function ProductsSection({ items, categories, token, reload }) {
 
   const cancelEdit = () => { setEditing(null); setForm(emptyForm); setMsg(''); };
 
+  const parseStock = (v) => {
+    const n = parseInt(String(v).replace(/\D/g, '') || '0', 10);
+    return Number.isNaN(n) ? 0 : Math.max(0, n);
+  };
+
   const submit = async (e) => {
     e.preventDefault(); setSubmitting(true); setMsg('');
     try {
-      const payload = { ...form, price: parseFloat(form.price) };
+      const payload = { ...form, price: parseFloat(form.price), stock: parseStock(form.stock) };
       if (editing) {
         await adminFetch(`/products/${editing}`, token, { method: 'PUT', body: JSON.stringify({ ...payload, is_active: true }) });
         setMsg('Producto actualizado');
@@ -487,6 +493,22 @@ function ProductsSection({ items, categories, token, reload }) {
           <option value="PROMO">PROMO</option>
         </select>
 
+        <input
+          type="number"
+          min={0}
+          step={1}
+          inputMode="numeric"
+          pattern="[0-9]*"
+          placeholder="Stock inicial *"
+          value={form.stock}
+          onChange={e => {
+            const v = e.target.value;
+            if (v === '' || /^\d+$/.test(v)) setForm(p => ({ ...p, stock: v }));
+          }}
+          className="bg-black/30 border border-white/10 rounded-lg px-3 py-2 text-white text-sm"
+          required
+        />
+
         <ImageInput value={form.image_url} onChange={v => setForm(p => ({ ...p, image_url: v }))} label="Imagen producto" token={token} folder="products" />
 
         <div className="col-span-2 flex gap-2">
@@ -504,24 +526,31 @@ function ProductsSection({ items, categories, token, reload }) {
       </form>
 
       <div className="space-y-2">
-        {items.map(p => (
-          <div key={p.id} className={`flex items-center gap-3 rounded-lg px-4 py-3 border transition-opacity ${
-            p.is_active ? 'bg-white/5 border-white/5' : 'bg-white/2 border-white/5 opacity-50'
-          }`}>
-            {p.image_url && <img src={p.image_url} alt="" className="w-10 h-10 object-cover rounded flex-shrink-0" />}
-            <div className="flex-1 min-w-0">
-              <p className="font-medium truncate">{p.name}</p>
-              <p className="text-sm text-gray-400">{p.category_name} · ${p.price}</p>
+        {items.map(p => {
+          const stockNum = p.stock != null ? Number(p.stock) : 0;
+          const stockClass = stockNum === 0 ? 'text-red-400 bg-red-900/50' : stockNum < 5 ? 'text-orange-400 bg-orange-900/50' : 'text-gray-400 bg-white/5';
+          return (
+            <div key={p.id} className={`flex items-center gap-3 rounded-lg px-4 py-3 border transition-opacity ${
+              p.is_active ? 'bg-white/5 border-white/5' : 'bg-white/2 border-white/5 opacity-50'
+            }`}>
+              {p.image_url && <img src={p.image_url} alt="" className="w-10 h-10 object-cover rounded flex-shrink-0" />}
+              <div className="flex-1 min-w-0">
+                <p className="font-medium truncate">{p.name}</p>
+                <p className="text-sm text-gray-400">{p.category_name} · ${p.price}</p>
+              </div>
+              <span className={`text-xs px-2 py-1 rounded-full flex-shrink-0 font-medium ${stockClass}`} title="Stock">
+                Stock: {stockNum}
+              </span>
+              <span className={`text-xs px-2 py-1 rounded-full flex-shrink-0 ${p.is_active ? 'bg-green-900/50 text-green-400' : 'bg-gray-700 text-gray-400'}`}>
+                {p.is_active ? 'Activo' : 'Inactivo'}
+              </span>
+              <button onClick={() => startEdit(p)} className="text-xs text-blue-400 hover:text-blue-300 flex-shrink-0">Editar</button>
+              <button onClick={() => toggleActive(p)} className={`text-xs flex-shrink-0 ${p.is_active ? 'text-gray-500 hover:text-red-400' : 'text-green-500 hover:text-green-300'}`}>
+                {p.is_active ? 'Desactivar' : 'Activar'}
+              </button>
             </div>
-            <span className={`text-xs px-2 py-1 rounded-full flex-shrink-0 ${p.is_active ? 'bg-green-900/50 text-green-400' : 'bg-gray-700 text-gray-400'}`}>
-              {p.is_active ? 'Activo' : 'Inactivo'}
-            </span>
-            <button onClick={() => startEdit(p)} className="text-xs text-blue-400 hover:text-blue-300 flex-shrink-0">Editar</button>
-            <button onClick={() => toggleActive(p)} className={`text-xs flex-shrink-0 ${p.is_active ? 'text-gray-500 hover:text-red-400' : 'text-green-500 hover:text-green-300'}`}>
-              {p.is_active ? 'Desactivar' : 'Activar'}
-            </button>
-          </div>
-        ))}
+          );
+        })}
       </div>
     </div>
   );
