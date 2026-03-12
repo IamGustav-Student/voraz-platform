@@ -3,8 +3,8 @@ import { useEffect, useState } from 'react';
 const API_URL = (import.meta.env.VITE_API_URL || 'http://localhost:3000/api').trim();
 
 const DEFAULTS = {
-  primary_color:   '#E30613',
-  secondary_color: '#1A1A1A',
+  primary_color:   '#ef4444',
+  secondary_color: '#1f2937',
   font_family:     'Inter, system-ui, sans-serif',
 };
 
@@ -12,7 +12,10 @@ const applyToRoot = (branding) => {
   const root = document.documentElement;
   root.style.setProperty('--primary-color',   branding.primary_color   || DEFAULTS.primary_color);
   root.style.setProperty('--secondary-color', branding.secondary_color || DEFAULTS.secondary_color);
-  root.style.setProperty('--font-family',     branding.font_family     || DEFAULTS.font_family);
+  if (branding.font_family) {
+    root.style.setProperty('--font-family', branding.font_family);
+    root.style.setProperty('font-family', branding.font_family);
+  }
 };
 
 export const useBranding = () => {
@@ -37,9 +40,16 @@ export const useBranding = () => {
       .then(data => {
         if (!data?.data) return;
         const b = data.data;
+
         if (b.custom_branding_enabled) {
           applyToRoot(b);
+
+          // Actualizar título de la pestaña con el nombre del tenant si está disponible
+          if (b.brand_name) {
+            document.title = b.brand_name;
+          }
         }
+
         setBranding({ ...DEFAULTS, ...b, loaded: true });
       })
       .catch(() => {

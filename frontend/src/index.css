@@ -4,8 +4,8 @@
 
 /* ── Variables de marca (se sobreescriben por tenant vía JS) ── */
 :root {
-  --primary-color: #D92525;
-  --secondary-color: #F2C94C;
+  --primary-color: #ef4444;
+  --secondary-color: #1f2937;
 
   --brand-primary: var(--primary-color);
   --brand-primary-hover: var(--primary-color);

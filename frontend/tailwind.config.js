@@ -16,6 +16,8 @@ export default {
           white:  '#F5F5F5',
         },
         // Colores dinámicos White Label (usan CSS variables)
+        primary:   'var(--primary-color)',
+        secondary: 'var(--secondary-color)',
         brand: {
           primary:   'var(--brand-primary)',
           'primary-hover': 'var(--brand-primary-hover)',

@@ -164,7 +164,7 @@ const CartDrawer = ({ isOpen, onClose, stores, onOrderCreated, onOpenAuth }) => 
                                     {step === STEPS.PROCESSING && 'Procesando...'}
                                 </h2>
                                 {step === STEPS.CART && itemCount > 0 && (
-                                    <span className="bg-voraz-red text-white text-xs font-bold px-2 py-0.5 rounded-full">{itemCount}</span>
+                                    <span className="bg-primary text-white text-xs font-bold px-2 py-0.5 rounded-full">{itemCount}</span>
                                 )}
                             </div>
                             <button onClick={handleClose} className="text-gray-400 hover:text-white p-1 rounded-full hover:bg-white/10 transition">
@@ -195,9 +195,9 @@ const CartDrawer = ({ isOpen, onClose, stores, onOrderCreated, onOpenAuth }) => 
                                                             <p className="text-voraz-yellow font-black text-sm">${fmt(item.product_price)}</p>
                                                         </div>
                                                         <div className="flex items-center space-x-2 ml-3 flex-shrink-0">
-                                                            <button onClick={() => handleQty(item.product_id, item.quantity - 1)} className="w-7 h-7 rounded-full bg-white/10 hover:bg-voraz-red text-white font-bold text-sm flex items-center justify-center transition">-</button>
+                                                            <button onClick={() => handleQty(item.product_id, item.quantity - 1)} className="w-7 h-7 rounded-full bg-white/10 hover:bg-primary text-white font-bold text-sm flex items-center justify-center transition">-</button>
                                                             <span className="text-white font-bold w-5 text-center text-sm">{item.quantity}</span>
-                                                            <button onClick={() => handleQty(item.product_id, item.quantity + 1)} className="w-7 h-7 rounded-full bg-white/10 hover:bg-voraz-red text-white font-bold text-sm flex items-center justify-center transition">+</button>
+                                                            <button onClick={() => handleQty(item.product_id, item.quantity + 1)} className="w-7 h-7 rounded-full bg-white/10 hover:bg-primary text-white font-bold text-sm flex items-center justify-center transition">+</button>
                                                         </div>
                                                     </div>
                                                 ))}
@@ -311,7 +311,7 @@ const CartDrawer = ({ isOpen, onClose, stores, onOrderCreated, onOpenAuth }) => 
                                         <div className="grid grid-cols-2 gap-3">
                                             {['delivery', 'pickup'].map(type => (
                                                 <button key={type} onClick={() => setOrderType(type)}
-                                                    className={`py-3 rounded-xl font-bold text-sm uppercase border transition ${orderType === type ? 'bg-voraz-red border-voraz-red text-white' : 'bg-white/5 border-white/10 text-gray-400 hover:text-white'}`}>
+                                                    className={`py-3 rounded-xl font-bold text-sm uppercase border transition ${orderType === type ? 'bg-primary border-primary text-white' : 'bg-white/5 border-white/10 text-gray-400 hover:text-white'}`}>
                                                     {type === 'delivery' ? '🛵 Delivery' : '🏪 Retiro'}
                                                 </button>
                                             ))}
@@ -354,23 +354,23 @@ const CartDrawer = ({ isOpen, onClose, stores, onOrderCreated, onOpenAuth }) => 
                                     <div className="space-y-3">
                                         <label className="text-xs font-bold text-gray-400 uppercase tracking-wider block">Tus datos</label>
                                         <input type="text" placeholder="Tu nombre" value={form.name} onChange={e => setForm(f => ({ ...f, name: e.target.value }))}
-                                            className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white text-sm placeholder-gray-600 focus:outline-none focus:border-voraz-red" />
+                                            className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white text-sm placeholder-gray-600 focus:outline-none focus:border-primary" />
                                         <input type="tel" placeholder="Teléfono / WhatsApp" value={form.phone} onChange={e => setForm(f => ({ ...f, phone: e.target.value }))}
-                                            className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white text-sm placeholder-gray-600 focus:outline-none focus:border-voraz-red" />
+                                            className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white text-sm placeholder-gray-600 focus:outline-none focus:border-primary" />
                                     </div>
 
                                     {orderType === 'delivery' && (
                                         <div>
                                             <label className="text-xs font-bold text-gray-400 uppercase tracking-wider block mb-2">Dirección de entrega</label>
                                             <input type="text" placeholder="Calle, número, piso..." value={form.address} onChange={e => setForm(f => ({ ...f, address: e.target.value }))}
-                                                className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white text-sm placeholder-gray-600 focus:outline-none focus:border-voraz-red" />
+                                                className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white text-sm placeholder-gray-600 focus:outline-none focus:border-primary" />
                                         </div>
                                     )}
                                     {orderType === 'pickup' && (
                                         <div>
                                             <label className="text-xs font-bold text-gray-400 uppercase tracking-wider block mb-2">Sucursal de retiro</label>
                                             <select value={form.store_id} onChange={e => setForm(f => ({ ...f, store_id: e.target.value }))}
-                                                className="w-full bg-[#1a1a1a] border border-white/10 rounded-xl px-4 py-3 text-white text-sm focus:outline-none focus:border-voraz-red">
+                                                className="w-full bg-[#1a1a1a] border border-white/10 rounded-xl px-4 py-3 text-white text-sm focus:outline-none focus:border-primary">
                                                 <option value="">Elegí un local...</option>
                                                 {stores.map(s => <option key={s.id} value={s.id}>{s.name} — {s.address}</option>)}
                                             </select>
@@ -380,7 +380,7 @@ const CartDrawer = ({ isOpen, onClose, stores, onOrderCreated, onOpenAuth }) => 
                                     <div>
                                         <label className="text-xs font-bold text-gray-400 uppercase tracking-wider block mb-2">Notas (opcional)</label>
                                         <textarea placeholder="Sin cebolla, extra cheddar..." value={form.notes} onChange={e => setForm(f => ({ ...f, notes: e.target.value }))} rows={2}
-                                            className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white text-sm placeholder-gray-600 focus:outline-none focus:border-voraz-red resize-none" />
+                                            className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white text-sm placeholder-gray-600 focus:outline-none focus:border-primary resize-none" />
                                     </div>
 
                                     {error && <p className="text-red-400 text-sm font-bold bg-red-500/10 px-4 py-2 rounded-lg">{error}</p>}
@@ -409,7 +409,7 @@ const CartDrawer = ({ isOpen, onClose, stores, onOrderCreated, onOpenAuth }) => 
                             {/* PROCESSING */}
                             {step === STEPS.PROCESSING && (
                                 <div className="flex flex-col items-center justify-center py-20 px-6">
-                                    <div className="w-14 h-14 border-4 border-voraz-red border-t-transparent rounded-full animate-spin mb-5"></div>
+                                    <div className="w-14 h-14 border-4 border-primary border-t-transparent rounded-full animate-spin mb-5"></div>
                                     <p className="text-white font-bold text-lg">
                                         {isCash ? 'Confirmando tu pedido...' : 'Procesando tu pago...'}
                                     </p>
@@ -425,7 +425,7 @@ const CartDrawer = ({ isOpen, onClose, stores, onOrderCreated, onOpenAuth }) => 
                                     <motion.button whileTap={{ scale: 0.97 }}
                                         onClick={() => items.length > 0 && setStep(STEPS.CHECKOUT)}
                                         disabled={items.length === 0}
-                                        className={`w-full py-4 rounded-xl font-black uppercase tracking-wide text-sm flex items-center justify-between px-6 transition ${items.length > 0 ? 'bg-voraz-red text-white shadow-lg hover:bg-red-700' : 'bg-white/5 text-gray-600 cursor-not-allowed'}`}
+                                        className={`w-full py-4 rounded-xl font-black uppercase tracking-wide text-sm flex items-center justify-between px-6 transition ${items.length > 0 ? 'bg-primary text-white shadow-lg hover:opacity-90' : 'bg-white/5 text-gray-600 cursor-not-allowed'}`}
                                     >
                                         <span>Continuar</span>
                                         <span>${fmt(finalTotal)}</span>
@@ -433,7 +433,7 @@ const CartDrawer = ({ isOpen, onClose, stores, onOrderCreated, onOpenAuth }) => 
                                 ) : (
                                     <motion.button whileTap={{ scale: 0.97 }}
                                         onClick={handleCheckout}
-                                        className={`w-full py-4 rounded-xl font-black uppercase tracking-wide text-sm flex items-center justify-between px-6 transition shadow-lg ${isCash ? 'bg-green-600 hover:bg-green-700 text-white' : 'bg-voraz-red hover:bg-red-700 text-white'}`}
+                                        className={`w-full py-4 rounded-xl font-black uppercase tracking-wide text-sm flex items-center justify-between px-6 transition shadow-lg ${isCash ? 'bg-green-600 hover:bg-green-700 text-white' : 'bg-primary hover:opacity-90 text-white'}`}
                                     >
                                         <span>{isCash ? '✅ Confirmar Pedido' : '💳 Confirmar y Pagar'}</span>
                                         <span>${fmt(finalTotal)}</span>

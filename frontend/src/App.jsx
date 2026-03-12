@@ -182,7 +182,7 @@ function App() {
               {categories.map((cat) => (
                 <button key={cat} onClick={() => setActiveCategory(cat)}
                   className={`px-4 py-1.5 rounded-full font-bold text-xs md:text-sm uppercase tracking-wide transition-all whitespace-nowrap active:scale-95
-                    ${activeCategory === cat ? 'bg-voraz-red text-white shadow-lg' : 'bg-voraz-gray text-gray-400 hover:text-white border border-white/5'}`}>
+                    ${activeCategory === cat ? 'bg-primary text-white shadow-lg' : 'bg-voraz-gray text-gray-400 hover:text-white border border-white/5'}`}>
                   {cat}
                 </button>
               ))}
@@ -194,7 +194,7 @@ function App() {
           {Object.keys(menuDisplay).length > 0 ? Object.keys(menuDisplay).map((category) => (
             <section key={category} className="mb-10">
               <div className="flex items-center space-x-3 mb-4">
-                <h3 className="text-xl md:text-2xl font-black uppercase text-white italic border-l-4 border-voraz-red pl-3">{category}</h3>
+                <h3 className="text-xl md:text-2xl font-black uppercase text-white italic border-l-4 border-primary pl-3">{category}</h3>
                 <div className="h-px bg-white/10 flex-grow"></div>
               </div>
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
@@ -225,8 +225,8 @@ function App() {
                             <span className="hidden md:inline text-red-400 text-xs uppercase font-bold">Agotado</span>
                           ) : (
                             <>
-                              <div className="md:hidden bg-voraz-red text-white p-1 rounded-full"><svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 4v16m8-8H4"></path></svg></div>
-                              <button type="button" className="hidden md:block bg-white/10 hover:bg-voraz-red text-white py-1 px-3 rounded text-xs uppercase font-bold transition">Ver</button>
+                              <div className="md:hidden bg-primary text-white p-1 rounded-full"><svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 4v16m8-8H4"></path></svg></div>
+                              <button type="button" className="hidden md:block bg-white/10 hover:bg-primary text-white py-1 px-3 rounded text-xs uppercase font-bold transition">Ver</button>
                             </>
                           )}
                         </div>
@@ -389,13 +389,13 @@ function App() {
       <div className="text-center mb-8"><h2 className="text-3xl md:text-5xl font-black uppercase italic mb-2">Delivery <span className="text-brand-primary">Express</span></h2></div>
       <div className="max-w-4xl mx-auto grid grid-cols-1 md:grid-cols-2 gap-4">
         {stores.map((store) => (
-          <motion.a whileTap={{ scale: 0.98 }} key={store.id} href={store.delivery_link} target="_blank" className="flex items-center p-4 bg-voraz-gray rounded-xl border border-white/5 hover:border-voraz-red transition group">
+          <motion.a whileTap={{ scale: 0.98 }} key={store.id} href={store.delivery_link} target="_blank" className="flex items-center p-4 bg-voraz-gray rounded-xl border border-white/5 hover:border-primary transition group">
             <img src={store.image_url} className="w-14 h-14 rounded-full object-cover border-2 border-white/10 mr-4" />
             <div className="flex-grow">
-              <h3 className="text-lg font-bold text-white group-hover:text-voraz-red">{store.name}</h3>
+              <h3 className="text-lg font-bold text-white group-hover:text-primary">{store.name}</h3>
               <p className="text-gray-400 text-xs">{store.address}</p>
             </div>
-            <div className="bg-voraz-red text-white p-2 rounded-full"><svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg></div>
+            <div className="bg-primary text-white p-2 rounded-full"><svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg></div>
           </motion.a>
         ))}
       </div>
@@ -413,7 +413,7 @@ function App() {
             <div className="p-4">
               <h3 className="text-lg font-black text-white mb-2 leading-tight">{item.title}</h3>
               <p className="text-gray-400 text-xs line-clamp-3 mb-4">{item.content}</p>
-              <button className="text-voraz-red font-bold uppercase text-xs hover:underline">Leer más</button>
+              <button className="text-primary font-bold uppercase text-xs hover:underline">Leer más</button>
             </div>
           </motion.article>
         ))}
@@ -571,7 +571,7 @@ function App() {
             <motion.button
               whileTap={{ scale: 0.9 }}
               onClick={() => setCurrentView('vorazburger')}
-              className={`w-14 h-14 rounded-full flex items-center justify-center shadow-lg border-4 border-voraz-black ${currentView === 'vorazburger' ? 'bg-voraz-yellow text-black' : 'bg-voraz-red text-white'}`}>
+              className={`w-14 h-14 rounded-full flex items-center justify-center shadow-lg border-4 border-voraz-black ${currentView === 'vorazburger' ? 'bg-voraz-yellow text-black' : 'bg-primary text-white'}`}>
               <span className="font-black text-xs">{TENANT.brandName[0]}</span>
             </motion.button>
           </div>
@@ -593,7 +593,7 @@ function App() {
               className="bg-voraz-gray w-full md:max-w-4xl h-[85vh] md:h-auto rounded-t-[30px] md:rounded-2xl overflow-hidden shadow-2xl flex flex-col md:flex-row relative border-t md:border border-white/10"
               onClick={e => e.stopPropagation()}
             >
-              <button onClick={() => setSelectedProduct(null)} className="absolute top-4 right-4 z-20 bg-black/50 text-white p-2 rounded-full hover:bg-voraz-red transition backdrop-blur-md">
+              <button onClick={() => setSelectedProduct(null)} className="absolute top-4 right-4 z-20 bg-black/50 text-white p-2 rounded-full hover:bg-primary transition backdrop-blur-md">
                 <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12"></path></svg>
               </button>
               <div className="h-[35vh] md:h-auto md:w-1/2 relative flex-shrink-0">
@@ -625,7 +625,7 @@ function App() {
                       type="button"
                       whileTap={{ scale: 0.95 }}
                       onClick={() => handleAddToCart(selectedProduct)}
-                      className="w-full bg-voraz-red text-white py-4 md:py-3 rounded-xl font-bold uppercase tracking-wide shadow-lg flex justify-between md:justify-center px-6 hover:bg-red-700 transition"
+                      className="w-full bg-primary text-white py-4 md:py-3 rounded-xl font-bold uppercase tracking-wide shadow-lg flex justify-between md:justify-center px-6 hover:opacity-90 transition"
                     >
                       <span>Agregar al pedido</span>
                       <span className="md:hidden">${fmt(selectedProduct.price)}</span>

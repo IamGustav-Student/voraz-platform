@@ -1193,7 +1193,6 @@ function MercadoPagoSection({ data, token, reload }) {
 
 // ── SECCIÓN BRANDING ──────────────────────────────────────────────────────
 function BrandingSection({ token }) {
-  const API_URL = (import.meta.env.VITE_API_URL || 'http://localhost:3000/api').trim();
   const [branding, setBranding] = useState({
     custom_branding_enabled: false, primary_color: '', secondary_color: '', font_family: '', logo_url: '',
   });
@@ -1201,12 +1200,11 @@ function BrandingSection({ token }) {
   const [msg, setMsg] = useState('');
   const [loaded, setLoaded] = useState(false);
 
+  const enabled = branding.custom_branding_enabled;
+
   useEffect(() => {
     if (!token) return;
-    fetch(`${API_URL}/admin/branding`, {
-      headers: { Authorization: `Bearer ${token}`, 'x-store-domain': window.location.hostname },
-    })
-      .then(r => r.json())
+    adminFetch('/branding', token)
       .then(d => { if (d.data) setBranding(d.data); setLoaded(true); })
       .catch(() => setLoaded(true));
   }, [token]);
@@ -1214,13 +1212,8 @@ function BrandingSection({ token }) {
   const handleSave = async (e) => {
     e.preventDefault(); setSaving(true); setMsg('');
     try {
-      const res = await fetch(`${API_URL}/admin/branding`, {
+      await adminFetch('/branding', token, {
         method: 'PATCH',
-        headers: {
-          Authorization: `Bearer ${token}`,
-          'Content-Type': 'application/json',
-          'x-store-domain': window.location.hostname,
-        },
         body: JSON.stringify({
           primary_color: branding.primary_color,
           secondary_color: branding.secondary_color,
@@ -1228,9 +1221,7 @@ function BrandingSection({ token }) {
           logo_url: branding.logo_url,
         }),
       });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.message || 'Error al guardar');
-      setMsg('Branding actualizado. Los cambios se aplican en el próximo refresh.');
+      setMsg('Branding actualizado. Recargá la página para ver los cambios.');
       if (branding.primary_color)
         document.documentElement.style.setProperty('--primary-color', branding.primary_color);
       if (branding.secondary_color)
@@ -1241,112 +1232,122 @@ function BrandingSection({ token }) {
 
   if (!loaded) return <div className="p-6 text-gray-500 text-sm">Cargando...</div>;
 
-  if (!branding.custom_branding_enabled) {
-    return (
-      <div className="p-6">
-        <div className="bg-purple-950/30 border border-purple-500/30 rounded-2xl p-8 text-center max-w-lg mx-auto">
-          <div className="text-5xl mb-4">🎨</div>
-          <h2 className="text-xl font-black text-white mb-2">Módulo de Branding Premium</h2>
-          <p className="text-gray-400 text-sm mb-6 leading-relaxed">
-            Personalizá los colores, tipografía y logo de tu marca directamente desde tu panel.
-            Este módulo es exclusivo para comercios habilitados por GastroRed.
-          </p>
-          <div className="bg-black/30 border border-white/10 rounded-xl p-4 mb-6 space-y-2">
-            <div className="flex items-center gap-2 text-sm text-gray-500">
-              <span className="w-4 h-4 rounded-full bg-gray-700 inline-block" /> Color primario — bloqueado
-            </div>
-            <div className="flex items-center gap-2 text-sm text-gray-500">
-              <span className="w-4 h-4 rounded-full bg-gray-700 inline-block" /> Color secundario — bloqueado
-            </div>
-            <div className="flex items-center gap-2 text-sm text-gray-500">
-              <span className="text-gray-700">Aa</span> Tipografía — bloqueada
-            </div>
-          </div>
-          <a
-            href="mailto:contacto@gastrored.com.ar?subject=Quiero activar Branding Personalizado"
-            className="inline-block bg-purple-600 hover:bg-purple-700 text-white px-6 py-3 rounded-xl font-bold text-sm transition"
-          >
-            Contactar a GastroRed para activar
-          </a>
-          <p className="text-xs text-gray-600 mt-3">¿Ya lo activaste? Recargá la página.</p>
-        </div>
-      </div>
-    );
-  }
-
   return (
     <div className="p-6 max-w-2xl">
       <div className="flex items-center gap-3 mb-6">
-        <div className="w-8 h-8 bg-purple-600 rounded-lg flex items-center justify-center">🎨</div>
+        <div className="w-8 h-8 bg-purple-600 rounded-lg flex items-center justify-center text-base">🎨</div>
         <div>
           <h2 className="font-black text-white text-lg leading-none">Branding Personalizado</h2>
-          <p className="text-xs text-green-400 mt-0.5">✅ Módulo activo</p>
+          {enabled
+            ? <p className="text-xs text-green-400 mt-0.5">Módulo activo</p>
+            : <p className="text-xs text-yellow-500 mt-0.5">Módulo Premium — contactá a GastroRed para activar</p>
+          }
         </div>
       </div>
+
+      {!enabled && (
+        <div className="mb-5 bg-yellow-950/30 border border-yellow-500/30 rounded-xl px-4 py-3 flex items-start gap-3">
+          <span className="text-yellow-400 text-lg mt-0.5">🔒</span>
+          <div>
+            <p className="text-yellow-300 text-sm font-semibold">Módulo Premium</p>
+            <p className="text-yellow-200/70 text-xs mt-0.5">
+              Los controles están deshabilitados. Contactá a GastroRed para habilitar branding personalizado en tu plan.
+            </p>
+            <a
+              href="mailto:contacto@gastrored.com.ar?subject=Quiero activar Branding Personalizado"
+              className="inline-block mt-2 text-xs text-yellow-400 underline hover:text-yellow-300"
+            >
+              Contactar a GastroRed
+            </a>
+          </div>
+        </div>
+      )}
+
       <form onSubmit={handleSave} className="space-y-5">
         <div className="grid grid-cols-2 gap-4">
           <div>
             <label className="text-xs text-gray-400 block mb-2">Color Primario</label>
-            <div className="flex items-center gap-3 bg-black/30 border border-white/10 rounded-xl px-3 py-2.5">
-              <input type="color" value={branding.primary_color || '#E30613'}
+            <div className={`flex items-center gap-3 bg-black/30 border rounded-xl px-3 py-2.5 ${enabled ? 'border-white/10' : 'border-white/5 opacity-50'}`}>
+              <input type="color" value={branding.primary_color || '#ef4444'}
+                disabled={!enabled}
                 onChange={e => setBranding(b => ({ ...b, primary_color: e.target.value }))}
-                className="w-8 h-8 rounded-md border-0 cursor-pointer bg-transparent" />
+                className="w-8 h-8 rounded-md border-0 cursor-pointer bg-transparent disabled:cursor-not-allowed" />
               <input type="text" value={branding.primary_color || ''}
+                disabled={!enabled}
                 onChange={e => setBranding(b => ({ ...b, primary_color: e.target.value }))}
-                placeholder="#E30613"
-                className="bg-transparent text-white text-sm flex-1 outline-none font-mono" />
+                placeholder="#ef4444"
+                className="bg-transparent text-white text-sm flex-1 outline-none font-mono disabled:cursor-not-allowed" />
             </div>
           </div>
           <div>
             <label className="text-xs text-gray-400 block mb-2">Color Secundario</label>
-            <div className="flex items-center gap-3 bg-black/30 border border-white/10 rounded-xl px-3 py-2.5">
-              <input type="color" value={branding.secondary_color || '#1A1A1A'}
+            <div className={`flex items-center gap-3 bg-black/30 border rounded-xl px-3 py-2.5 ${enabled ? 'border-white/10' : 'border-white/5 opacity-50'}`}>
+              <input type="color" value={branding.secondary_color || '#1f2937'}
+                disabled={!enabled}
                 onChange={e => setBranding(b => ({ ...b, secondary_color: e.target.value }))}
-                className="w-8 h-8 rounded-md border-0 cursor-pointer bg-transparent" />
+                className="w-8 h-8 rounded-md border-0 cursor-pointer bg-transparent disabled:cursor-not-allowed" />
               <input type="text" value={branding.secondary_color || ''}
+                disabled={!enabled}
                 onChange={e => setBranding(b => ({ ...b, secondary_color: e.target.value }))}
-                placeholder="#1A1A1A"
-                className="bg-transparent text-white text-sm flex-1 outline-none font-mono" />
+                placeholder="#1f2937"
+                className="bg-transparent text-white text-sm flex-1 outline-none font-mono disabled:cursor-not-allowed" />
             </div>
           </div>
         </div>
-        <div>
+
+        <div className={!enabled ? 'opacity-50 pointer-events-none' : ''}>
           <label className="text-xs text-gray-400 block mb-2">Tipografía</label>
           <select value={branding.font_family || ''}
+            disabled={!enabled}
             onChange={e => setBranding(b => ({ ...b, font_family: e.target.value }))}
-            className="w-full bg-black/30 border border-white/10 rounded-xl px-4 py-2.5 text-white text-sm">
+            className="w-full bg-black/30 border border-white/10 rounded-xl px-4 py-2.5 text-white text-sm disabled:cursor-not-allowed">
             <option value="">— Sin cambio (default) —</option>
             <option value="Inter, system-ui, sans-serif">Inter (recomendada)</option>
             <option value="'Poppins', sans-serif">Poppins</option>
             <option value="'Montserrat', sans-serif">Montserrat</option>
             <option value="'Playfair Display', serif">Playfair Display</option>
+            <option value="'Roboto', sans-serif">Roboto</option>
           </select>
         </div>
-        <div>
-          <label className="text-xs text-gray-400 block mb-2">URL del Logo</label>
-          <input type="url" value={branding.logo_url || ''}
-            onChange={e => setBranding(b => ({ ...b, logo_url: e.target.value }))}
-            placeholder="https://..."
-            className="w-full bg-black/30 border border-white/10 rounded-xl px-4 py-2.5 text-white text-sm" />
-          {branding.logo_url && (
-            <img src={branding.logo_url} alt="preview" className="mt-2 h-12 rounded-lg object-contain bg-white/5 p-1" />
-          )}
+
+        <div className={!enabled ? 'opacity-50 pointer-events-none' : ''}>
+          <ImageInput
+            label="Logo de la marca"
+            value={branding.logo_url || ''}
+            onChange={url => setBranding(b => ({ ...b, logo_url: url }))}
+            token={token}
+            folder="branding"
+          />
         </div>
-        <div className="bg-black/20 border border-white/5 rounded-xl p-4">
-          <p className="text-xs text-gray-500 mb-3">Vista previa</p>
-          <div className="flex gap-3 flex-wrap">
-            <button type="button" style={{ backgroundColor: branding.primary_color || '#E30613' }}
-              className="px-5 py-2 rounded-xl text-white text-sm font-bold">Botón primario</button>
-            <button type="button"
-              style={{ backgroundColor: branding.secondary_color || '#1A1A1A', border: '1px solid rgba(255,255,255,.15)' }}
-              className="px-5 py-2 rounded-xl text-white text-sm font-bold">Botón secundario</button>
+
+        {enabled && (
+          <div className="bg-black/20 border border-white/5 rounded-xl p-4">
+            <p className="text-xs text-gray-500 mb-3">Vista previa</p>
+            <div className="flex gap-3 flex-wrap items-center">
+              <button type="button"
+                style={{ backgroundColor: branding.primary_color || '#ef4444' }}
+                className="px-5 py-2 rounded-xl text-white text-sm font-bold">
+                Botón primario
+              </button>
+              <button type="button"
+                style={{ backgroundColor: branding.secondary_color || '#1f2937', border: '1px solid rgba(255,255,255,.15)' }}
+                className="px-5 py-2 rounded-xl text-white text-sm font-bold">
+                Botón secundario
+              </button>
+              {branding.logo_url && (
+                <img src={branding.logo_url} alt="logo preview"
+                  className="h-10 rounded-lg object-contain bg-white/5 p-1" />
+              )}
+            </div>
           </div>
-        </div>
-        <button type="submit" disabled={saving}
-          style={{ backgroundColor: branding.primary_color || '#E30613' }}
-          className="w-full py-3 rounded-xl font-bold text-white disabled:opacity-50 hover:opacity-90 transition">
+        )}
+
+        <button type="submit" disabled={saving || !enabled}
+          style={enabled ? { backgroundColor: branding.primary_color || '#ef4444' } : {}}
+          className="w-full py-3 rounded-xl font-bold text-white disabled:opacity-40 hover:opacity-90 transition bg-gray-700">
           {saving ? 'Guardando...' : 'Aplicar Branding'}
         </button>
+
         {msg && (
           <div className={`px-4 py-3 rounded-lg text-sm ${msg.startsWith('Error') ? 'bg-red-900/50 text-red-300' : 'bg-green-900/50 text-green-300'}`}>
             {msg}
