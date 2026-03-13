@@ -45,8 +45,8 @@ export const superadminLogin = async (req, res) => {
 export const getGlobalStats = async (req, res) => {
   try {
     const [total, active, suspended, payments] = await Promise.all([
-      query("SELECT COUNT(*) FROM tenants WHERE id != 1"),
-      query("SELECT COUNT(*) FROM tenants WHERE status = 'active' AND id != 1"),
+      query("SELECT COUNT(*) FROM tenants WHERE id != 'voraz'"),
+      query("SELECT COUNT(*) FROM tenants WHERE status = 'active' AND id != 'voraz'"),
       query("SELECT COUNT(*) FROM tenants WHERE status = 'suspended'"),
       query("SELECT COALESCE(SUM(amount),0) as total FROM subscription_payments WHERE status = 'approved'"),
     ]);
@@ -195,7 +195,7 @@ export const updateStoreStatus = async (req, res) => {
         `UPDATE tenants
          SET status = $1,
              subscription_expires_at = CASE
-               WHEN id::text = '1' THEN NULL
+               WHEN id::text = 'voraz' THEN NULL
                WHEN subscription_expires_at IS NULL OR subscription_expires_at < NOW() THEN $2
                ELSE subscription_expires_at
              END
@@ -302,7 +302,7 @@ export const toggleCustomBranding = async (req, res) => {
   if (typeof enabled !== 'boolean') {
     return res.status(400).json({ status: 'error', message: 'Se requiere el estado booleano enabled.' });
   }
-  
+
   try {
     const result = await query(
       `UPDATE tenant_settings 
@@ -317,11 +317,11 @@ export const toggleCustomBranding = async (req, res) => {
       const resInsert = await query(
         `INSERT INTO tenant_settings (tenant_id, tenant_id_fk, custom_branding_enabled)
          VALUES ($1, $1, $2) RETURNING custom_branding_enabled`,
-         [id, enabled]
+        [id, enabled]
       );
       return res.json({ status: 'success', data: resInsert.rows[0] });
     }
-    
+
     res.json({ status: 'success', data: result.rows[0] });
   } catch (e) { res.status(500).json({ status: 'error', message: e.message }); }
 };
