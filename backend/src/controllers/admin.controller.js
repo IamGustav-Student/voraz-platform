@@ -396,7 +396,7 @@ export const getBranding = async (req, res) => {
     const tenantId = await getStoreId(req);
     const result = await query(
       `SELECT primary_color, secondary_color, font_family, logo_url, custom_branding_enabled
-       FROM tenant_settings WHERE tenant_id = $1 OR tenant_id_fk::text = $1::text LIMIT 1`,
+       FROM tenant_settings WHERE tenant_id::text = $1::text OR tenant_id_fk::text = $1::text LIMIT 1`,
       [String(tenantId)]
     );
     const branding = result.rows[0] || {};

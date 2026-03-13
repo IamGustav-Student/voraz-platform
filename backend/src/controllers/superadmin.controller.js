@@ -45,8 +45,8 @@ export const superadminLogin = async (req, res) => {
 export const getGlobalStats = async (req, res) => {
   try {
     const [total, active, suspended, payments] = await Promise.all([
-      query("SELECT COUNT(*) FROM tenants WHERE id != 'voraz'"),
-      query("SELECT COUNT(*) FROM tenants WHERE status = 'active' AND id != 'voraz'"),
+      query("SELECT COUNT(*) FROM tenants WHERE id != 1"),
+      query("SELECT COUNT(*) FROM tenants WHERE status = 'active' AND id != 1"),
       query("SELECT COUNT(*) FROM tenants WHERE status = 'suspended'"),
       query("SELECT COALESCE(SUM(amount),0) as total FROM subscription_payments WHERE status = 'approved'"),
     ]);
@@ -195,7 +195,7 @@ export const updateStoreStatus = async (req, res) => {
         `UPDATE tenants
          SET status = $1,
              subscription_expires_at = CASE
-               WHEN id = 'voraz' THEN NULL
+               WHEN id::text = '1' THEN NULL
                WHEN subscription_expires_at IS NULL OR subscription_expires_at < NOW() THEN $2
                ELSE subscription_expires_at
              END

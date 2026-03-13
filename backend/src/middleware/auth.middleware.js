@@ -10,8 +10,8 @@ if (!SUPERADMIN_SECRET) {
   console.warn('⚠️  GASTRORED_SUPERADMIN_SECRET no configurado. Panel superadmin deshabilitado.');
 }
 
-const _JWT = JWT_SECRET || 'voraz_dev_secret_key_CAMBIAR';
-const _SA  = SUPERADMIN_SECRET || 'gastrored_dev_secret_CAMBIAR';
+const _JWT = JWT_SECRET || 'gastrored_dev_jwt_ONLY_LOCAL';
+const _SA  = SUPERADMIN_SECRET || 'gastrored_dev_superadmin_ONLY_LOCAL';
 
 export const authMiddleware = (req, res, next) => {
     const token = req.headers.authorization?.split(' ')[1];

@@ -7,7 +7,7 @@ export default defineConfig({
     react(),
     VitePWA({
       registerType: 'autoUpdate',
-      includeAssets: ['favicon.ico', 'images/logo_voraz.jpg'],
+      includeAssets: ['favicon.ico'],
       manifest: false,
       workbox: {
         globPatterns: ['**/*.{js,css,html,png,jpg,svg}'],

@@ -2,7 +2,7 @@ import bcrypt from 'bcrypt';
 import jwt from 'jsonwebtoken';
 import { query } from '../config/db.js';
 
-const JWT_SECRET = process.env.JWT_SECRET || 'voraz_secret_key';
+const JWT_SECRET = process.env.JWT_SECRET || 'gastrored_dev_secret_ONLY_LOCAL';
 const TOKEN_EXPIRY = '30d';
 
 const generateToken = (user) =>

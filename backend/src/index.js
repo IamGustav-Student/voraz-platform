@@ -144,7 +144,7 @@ app.get('/api/manifest', async (req, res) => {
 
 // ── Configuración pública del tenant ─────────────────────────────────────────
 app.get('/api/settings', tenantMiddleware, async (req, res) => {
-    const tenantId = req.tenant?.id || 'voraz';
+    const tenantId = req.tenant?.id || 1;
     try {
         const result = await query(
             `SELECT t.id, ts.cash_on_delivery, t.brand_name, t.brand_color_primary, t.brand_color_secondary,

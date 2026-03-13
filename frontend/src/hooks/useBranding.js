@@ -10,11 +10,19 @@ const DEFAULTS = {
 
 const applyToRoot = (branding) => {
   const root = document.documentElement;
-  root.style.setProperty('--primary-color',   branding.primary_color   || DEFAULTS.primary_color);
-  root.style.setProperty('--secondary-color', branding.secondary_color || DEFAULTS.secondary_color);
+  const primary   = branding.primary_color   || DEFAULTS.primary_color;
+  const secondary = branding.secondary_color || DEFAULTS.secondary_color;
+
+  root.style.setProperty('--primary-color',   primary);
+  root.style.setProperty('--secondary-color', secondary);
+  // Sincronizar también las variables brand-* para Tailwind bg-brand-primary etc.
+  root.style.setProperty('--brand-primary',         primary);
+  root.style.setProperty('--brand-primary-hover',   primary);
+  root.style.setProperty('--brand-secondary',       secondary);
+
   if (branding.font_family) {
     root.style.setProperty('--font-family', branding.font_family);
-    root.style.setProperty('font-family', branding.font_family);
+    root.style.setProperty('font-family',   branding.font_family);
   }
 };
 

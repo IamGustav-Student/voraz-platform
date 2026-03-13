@@ -58,7 +58,7 @@ function validateTenantAccess(tenant) {
     };
   }
   const expiresAt = tenant.subscription_expires_at ? new Date(tenant.subscription_expires_at) : null;
-  if (tenant.id !== 'voraz' && expiresAt && expiresAt < new Date()) {
+  if (String(tenant.id) !== '1' && expiresAt && expiresAt < new Date()) {
     return {
       statusCode: 403,
       body: {
@@ -158,7 +158,7 @@ export const tenantMiddleware = async (req, res, next) => {
 
     const invalid = validateTenantAccess(tenant);
     if (invalid) {
-      if (tenant.id !== 'voraz' && tenant.status === 'active' && tenant.subscription_expires_at && new Date(tenant.subscription_expires_at) < new Date()) {
+      if (String(tenant.id) !== '1' && tenant.status === 'active' && tenant.subscription_expires_at && new Date(tenant.subscription_expires_at) < new Date()) {
         try {
           await query("UPDATE tenants SET status='suspended' WHERE id=$1", [tenant.id]);
           tenantCache.delete(host);
@@ -184,7 +184,7 @@ export const requireCustomBranding = async (req, res, next) => {
   }
   try {
     const result = await query(
-      "SELECT custom_branding_enabled FROM tenant_settings WHERE tenant_id = $1 OR tenant_id_fk = $1 LIMIT 1",
+      "SELECT custom_branding_enabled FROM tenant_settings WHERE tenant_id::text = $1::text OR tenant_id_fk::text = $1::text LIMIT 1",
       [req.tenant.id]
     );
     

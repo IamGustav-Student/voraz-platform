@@ -115,9 +115,9 @@ export const createPreference = async (req, res) => {
                 unit_price: parseFloat(item.product_price),
                 currency_id: 'ARS',
             })),
-            payer: { email: customer_email || 'cliente@voraz.com' },
+            payer: { email: customer_email || 'cliente@gastrored.com' },
             external_reference: String(order_id),
-            statement_descriptor: (credentials.storeName || 'VORAZ BURGER').substring(0, 22).toUpperCase(),
+            statement_descriptor: (credentials.storeName || 'GASTRORED').substring(0, 22).toUpperCase(),
         };
 
         // Solo agregar back_urls si son HTTPS válidas (MercadoPago lo requiere)
