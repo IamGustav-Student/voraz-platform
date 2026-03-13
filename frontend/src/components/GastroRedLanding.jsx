@@ -940,7 +940,7 @@ export default function GastroRedLanding() {
                             <a href="#contacto" className="transition hover:text-teal-400">Contacto</a>
                         </div>
                         <div className="flex items-center gap-4">
-                            <p className="text-sm text-gray-600">© 2026 GastroRed — By <ProgramadorGS>ProgramadorGS</ProgramadorGS></p>
+                            <p className="text-sm text-gray-600">© 2026 GastroRed — By ProgramadorGS</p>
                             <button
                                 onClick={() => setShowSuperAdmin(true)}
                                 className="px-2 py-1 text-xs text-gray-700 transition border rounded hover:text-teal-500 border-white/5 hover:border-teal-500/30"
