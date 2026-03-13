@@ -56,15 +56,15 @@ ALTER TABLE orders ADD COLUMN IF NOT EXISTS discount DECIMAL(10, 2) DEFAULT 0;
 ALTER TABLE orders ADD COLUMN IF NOT EXISTS points_earned INTEGER DEFAULT 0;
 ALTER TABLE orders ADD COLUMN IF NOT EXISTS points_redeemed INTEGER DEFAULT 0;
 
--- Cupones demo
+-- Cupones demo (Corrección de conflictos de inserción multi-tenant)
 INSERT INTO coupons (code, description, discount_type, discount_value, min_order)
 VALUES ('VORAZ10', '10% de descuento en tu pedido', 'percentage', 10, 0)
-ON CONFLICT (code) DO NOTHING;
+ON CONFLICT DO NOTHING;
 
 INSERT INTO coupons (code, description, discount_type, discount_value, min_order)
 VALUES ('BIENVENIDO', '$500 de descuento en pedidos mayores a $3000', 'fixed', 500, 3000)
-ON CONFLICT (code) DO NOTHING;
+ON CONFLICT DO NOTHING;
 
 INSERT INTO coupons (code, description, discount_type, discount_value, min_order)
 VALUES ('VORAZFAN', '15% para los más fanáticos', 'percentage', 15, 5000)
-ON CONFLICT (code) DO NOTHING;
+ON CONFLICT DO NOTHING;
