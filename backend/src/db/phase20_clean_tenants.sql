@@ -5,11 +5,8 @@ DELETE FROM points_history WHERE user_id IN (SELECT id FROM users WHERE store_id
 DELETE FROM coupon_uses WHERE order_id IN (SELECT id FROM orders WHERE store_id IN (SELECT id FROM stores WHERE tenant_id != 'voraz'));
 
 -- 2. Pedidos y Detalles (Blindaje contra Foreign Key Errors)
--- [NUEVO] Eliminamos los items de pedido asociados a productos que vamos a borrar.
 DELETE FROM order_items WHERE product_id IN (SELECT id FROM products WHERE store_id IN (SELECT id FROM stores WHERE tenant_id != 'voraz'));
--- Eliminamos los items vinculados a las órdenes que vamos a borrar.
 DELETE FROM order_items WHERE order_id IN (SELECT id FROM orders WHERE store_id IN (SELECT id FROM stores WHERE tenant_id != 'voraz'));
--- Ahora sí, borramos las órdenes.
 DELETE FROM orders WHERE store_id IN (SELECT id FROM stores WHERE tenant_id != 'voraz');
 
 -- 3. Catálogo (Productos deben borrarse ANTES de Categorias)
@@ -27,6 +24,8 @@ DELETE FROM tenant_settings WHERE tenant_id_fk != 'voraz';
 DELETE FROM subscription_payments WHERE tenant_id != 'voraz';
 
 -- 6. Eliminar usuarios vinculados a los tenants de prueba
+-- [NUEVO] Desvinculamos a estos usuarios de cualquier orden huérfana para evitar error de Foreign Key
+UPDATE orders SET user_id = NULL WHERE user_id IN (SELECT id FROM users WHERE store_id IN (SELECT id FROM stores WHERE tenant_id != 'voraz'));
 DELETE FROM users WHERE store_id IN (SELECT id FROM stores WHERE tenant_id != 'voraz');
 
 -- 7. Eliminar tiendas físicas / sucursales de esos tenants
