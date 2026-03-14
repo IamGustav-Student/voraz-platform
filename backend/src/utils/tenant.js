@@ -26,7 +26,6 @@ export async function getStoreId(req) {
     const r = await query(
       `SELECT id FROM stores
        WHERE tenant_id::varchar = $1::varchar
-          OR subdomain = $1
        ORDER BY id ASC LIMIT 1`,
       [tenantId]
     );
