@@ -56,7 +56,7 @@ function OrdersTableSkeleton() {
   );
 }
 
-const SECTIONS = ['Dashboard', 'Categorías', 'Productos', 'Locales', 'Cupones', 'Videos', 'Noticias', 'Pedidos', 'MercadoPago', 'Branding'];
+const SECTIONS = ['Dashboard', 'Categorías', 'Productos', 'Locales', 'Cupones', 'Videos', 'Noticias', 'Pedidos', 'MercadoPago', 'Branding', 'Suscripción'];
 
 // ── Componente reutilizable: input de imagen (URL o archivo local) ──────────
 function ImageInput({ value, onChange, label = 'Imagen', token, folder = 'general' }) {
@@ -158,6 +158,7 @@ export default function AdminPanel({ onClose }) {
         Pedidos: '/orders',
         MercadoPago: '/mercadopago',
         Branding: '/branding',
+        Suscripción: '/subscription',
       };
       const path = map[sec];
       if (Array.isArray(path)) {
@@ -187,6 +188,7 @@ export default function AdminPanel({ onClose }) {
     Locales:     'M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-2 10v-5a1 1 0 00-1-1h-2a1 1 0 00-1 1v5m4 0H9',
     Pedidos:     'M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2',
     MercadoPago: 'M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z',
+    'Suscripción': 'M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z',
   };
 
   if (!user || (user.role !== 'admin' && user.role !== 'manager')) {
@@ -286,7 +288,8 @@ export default function AdminPanel({ onClose }) {
               {section === 'Noticias'    && <NewsSection token={token} />}
               {section === 'Pedidos'     && <OrdersSection items={data.Pedidos || []} token={token} reload={() => load('Pedidos')} />}
               {section === 'MercadoPago' && <MercadoPagoSection data={data.MercadoPago} token={token} reload={() => load('MercadoPago')} />}
-              {section === 'Branding'    && <BrandingSection token={token} />}
+              {section === 'Branding'    && <BrandingSection token={token} onUpgrade={() => setSection('Suscripción')} />}
+              {section === 'Suscripción' && <SubscriptionSection data={data['Suscripción']} token={token} reload={() => load('Suscripción')} />}
             </>
           )}
         </main>
@@ -1192,7 +1195,7 @@ function MercadoPagoSection({ data, token, reload }) {
 }
 
 // ── SECCIÓN BRANDING ──────────────────────────────────────────────────────
-function BrandingSection({ token }) {
+function BrandingSection({ token, onUpgrade }) {
   const [branding, setBranding] = useState({
     custom_branding_enabled: false, primary_color: '', secondary_color: '', font_family: '', logo_url: '', plan_type: '',
   });
@@ -1256,12 +1259,13 @@ function BrandingSection({ token }) {
             <p className="text-white/80 text-sm leading-relaxed mb-5">
               Mejorá tu plan para tener tu propia identidad visual, colores corporativos y App descargable (PWA) personalizada para tus clientes.
             </p>
-            <a
-              href="mailto:contacto@gastrored.com.ar?subject=Upgrade a Plan Expert"
+            <button
+              type="button"
+              onClick={onUpgrade}
               className="inline-flex items-center gap-2 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white px-6 py-2.5 rounded-xl text-sm font-bold shadow-lg shadow-purple-900/20 transition-all transform hover:scale-[1.02] active:scale-[0.98]"
             >
               🚀 Mejorar mi Plan
-            </a>
+            </button>
           </div>
         </div>
       )}
@@ -1360,3 +1364,143 @@ function BrandingSection({ token }) {
     </div>
   );
 }
+
+// ── SECCIÓN SUSCRIPCIÓN ────────────────────────────────────────────────────
+function SubscriptionSection({ data, token, reload }) {
+  const [loading, setLoading] = useState(false);
+  const [msg, setMsg] = useState('');
+
+  if (!data) return <div className="p-6 text-gray-500 text-sm italic">Cargando datos de suscripción...</div>;
+
+  const currentPlan = data.plan_type || 'Trial';
+  const expiresAt = data.subscription_expires_at ? new Date(data.subscription_expires_at).toLocaleDateString('es-AR') : '—';
+  const isExpired = data.is_expired;
+
+  const handleUpgrade = async (planType, period = 'monthly') => {
+    setLoading(true); setMsg('');
+    try {
+      const res = await adminFetch('/subscription/upgrade', token, {
+        method: 'POST',
+        body: JSON.stringify({ plan_type: planType, period }),
+      });
+      if (res.data?.init_point) {
+        window.location.href = res.data.init_point;
+      } else {
+        throw new Error('No se pudo generar el link de pago.');
+      }
+    } catch (err) {
+      setMsg('Error: ' + err.message);
+      setLoading(false);
+    }
+  };
+
+  const plans = [
+    { type: 'Full Digital', icon: '⭐', color: 'blue' },
+    { type: 'Expert', icon: '🏆', color: 'yellow', best: true },
+  ];
+
+  return (
+    <div className="p-6 max-w-4xl">
+      <div className="mb-10">
+        <h2 className="text-2xl font-black text-white mb-2">Mi Suscripción</h2>
+        <div className="flex items-center gap-4 bg-white/5 border border-white/10 rounded-2xl p-5">
+          <div className={`w-12 h-12 rounded-xl flex items-center justify-center text-2xl bg-gradient-to-br ${currentPlan === 'Expert' ? 'from-yellow-500 to-orange-600' : 'from-blue-500 to-indigo-600 shadow-lg shadow-blue-900/20'}`}>
+            {currentPlan === 'Expert' ? '🏆' : '⭐'}
+          </div>
+          <div>
+            <p className="text-xs text-gray-500 uppercase tracking-widest font-bold">Plan Actual</p>
+            <p className="text-xl font-black text-white">{currentPlan}</p>
+          </div>
+          <div className="ml-auto text-right">
+            <p className="text-xs text-gray-500 uppercase tracking-widest font-bold">Vencimiento</p>
+            <p className={`text-sm font-bold ${isExpired ? 'text-red-400' : 'text-gray-300'}`}>
+              {expiresAt} {isExpired && '(Expirado)'}
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <div className="grid md:grid-cols-2 gap-6">
+        {plans.map(p => {
+          const isCurrent = currentPlan === p.type;
+          const price = data.prices?.[p.type] || {};
+          
+          return (
+            <div key={p.type} className={`relative rounded-3xl p-8 flex flex-col border transition-all ${
+              p.best 
+                ? 'bg-gradient-to-br from-yellow-900/30 to-black border-yellow-500/40 shadow-2xl shadow-yellow-900/20' 
+                : 'bg-white/5 border-white/10'
+            } ${isCurrent ? 'ring-2 ring-green-500/50' : ''}`}>
+              
+              {p.best && (
+                <div className="absolute -top-3 left-1/2 -translate-x-1/2 bg-yellow-500 text-black text-[10px] font-black uppercase px-3 py-1 rounded-full">
+                  Máximo Poder
+                </div>
+              )}
+
+              <div className="flex justify-between items-start mb-6">
+                <div>
+                  <h3 className="text-xl font-black text-white mb-1">{p.type}</h3>
+                  <p className="text-gray-500 text-xs">Suscripción SaaS GastroRed</p>
+                </div>
+                <span className="text-2xl">{p.icon}</span>
+              </div>
+
+              <div className="mb-8">
+                <p className="text-4xl font-black text-white mb-1">
+                  ${(price.monthly || 0).toLocaleString('es-AR')}
+                </p>
+                <p className="text-xs text-gray-500 font-bold uppercase">/ mes (final)</p>
+              </div>
+
+              <ul className="space-y-3 mb-8 flex-1">
+                <li className="flex items-center gap-2 text-sm text-gray-300">
+                  <span className="text-green-500">✓</span> 
+                  {p.type === 'Expert' ? 'Productos ilimitados' : 'Hasta 50 productos'}
+                </li>
+                <li className="flex items-center gap-2 text-sm text-gray-300">
+                  <span className="text-green-500">✓</span> 
+                  {p.type === 'Expert' ? 'Múltiples sucursales' : 'Sucursal única'}
+                </li>
+                <li className="flex items-center gap-2 text-sm text-gray-300">
+                  <span className="text-green-500">✓</span> 
+                  Dominio + Subdominio
+                </li>
+                <li className={`flex items-center gap-2 text-sm ${p.type === 'Expert' ? 'text-gray-300' : 'text-gray-600'}`}>
+                  <span className={p.type === 'Expert' ? 'text-green-500' : 'text-gray-700'}>✓</span> 
+                  Branding & PWA
+                </li>
+              </ul>
+
+              <button
+                onClick={() => handleUpgrade(p.type)}
+                disabled={loading || isCurrent}
+                className={`w-full py-4 rounded-2xl font-black uppercase tracking-widest text-xs transition-all ${
+                  isCurrent 
+                    ? 'bg-green-600/20 text-green-400 border border-green-500/30 cursor-default'
+                    : p.best
+                      ? 'bg-yellow-500 hover:bg-yellow-400 text-black shadow-lg shadow-yellow-900/40'
+                      : 'bg-white/10 hover:bg-white/20 text-white'
+                } disabled:opacity-50`}
+              >
+                {loading ? 'Procesando...' : isCurrent ? 'Plan Actual' : `Mejorar a ${p.type}`}
+              </button>
+            </div>
+          );
+        })}
+      </div>
+
+      {msg && (
+        <div className={`mt-8 px-4 py-3 rounded-xl text-sm font-bold ${msg.startsWith('Error') ? 'bg-red-900/30 text-red-400' : 'bg-green-900/30 text-green-400'}`}>
+          {msg}
+        </div>
+      )}
+
+      <div className="mt-12 bg-gray-900/50 border border-white/5 rounded-2xl p-6 text-center">
+        <p className="text-sm text-gray-500 mb-2">¿Necesitás ayuda con tu suscripción o factura?</p>
+        <a href="mailto:soporte@gastrored.com.ar" className="text-blue-400 font-bold hover:underline">Contactar a Soporte 📩</a>
+      </div>
+    </div>
+  );
+}
+

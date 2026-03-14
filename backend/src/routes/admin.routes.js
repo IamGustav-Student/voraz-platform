@@ -14,6 +14,7 @@ import {
   getMercadopagoConfig, saveMercadopagoConfig,
   getBranding, updateBranding,
 } from '../controllers/admin.controller.js';
+import { getSubscriptionStatus, createUpgradeCheckout } from '../controllers/subscriptions.controller.js';
 
 const router = Router();
 router.use(adminMiddleware);
@@ -58,5 +59,12 @@ router.post('/mercadopago', saveMercadopagoConfig);
 // Branding — lectura libre para admin, escritura requiere custom_branding_enabled=true
 router.get('/branding', getBranding);
 router.patch('/branding', requireCustomBranding, updateBranding);
+
+// Suscripción
+router.get('/subscription', (req, res) => {
+  req.params.store_id = req.tenant.id; // Hack para reutilizar getSubscriptionStatus que espera store_id
+  return getSubscriptionStatus(req, res);
+});
+router.post('/subscription/upgrade', createUpgradeCheckout);
 
 export default router;

@@ -12,6 +12,8 @@ import VorazClub from './components/VorazClub';
 import AdminPanel from './components/AdminPanel';
 import GastroRedLanding from './components/GastroRedLanding';
 import { useBranding } from './hooks/useBranding';
+import { usePWAInstall } from './hooks/usePWAInstall';
+import InstallPWABanner from './components/InstallPWABanner';
 
 // Dominios que deben mostrar la landing de GastroRed en lugar de un tenant
 const GASTRORED_ROOT_DOMAINS = [
@@ -30,6 +32,7 @@ function App() {
   const { itemCount, dispatch } = useCart();
   const { user } = useAuth();
   useBranding(); // Inyecta CSS vars dinámicas desde la BD al montar
+  const { isInstallable, handleInstallClick } = usePWAInstall();
 
   // ── Detección de landing GastroRed ───────────────────────────────────────
   const [showLanding, setShowLanding] = useState(isGastroRedRootDomain());
@@ -644,6 +647,13 @@ function App() {
         onOpenAuth={() => { setIsCartOpen(false); setIsAuthOpen(true); }}
       />
 
+      {/* PWA INSTALL BANNER */}
+      <InstallPWABanner 
+        isInstallable={isInstallable} 
+        handleInstallClick={handleInstallClick}
+        brandName={TENANT.brandName}
+      />
+
       {/* AUTH MODAL */}
       <AuthModal isOpen={isAuthOpen} onClose={() => setIsAuthOpen(false)} />
 
@@ -651,29 +661,6 @@ function App() {
       {isAdminOpen && <AdminPanel onClose={() => setIsAdminOpen(false)} />}
     </div>
   );
-}
-function usePWAInstall() {
-  const [installPrompt, setInstallPrompt] = useState(null);
-
-  useEffect(() => {
-    window.addEventListener('beforeinstallprompt', (e) => {
-      e.preventDefault();
-      setInstallPrompt(e);
-    });
-  }, []);
-
-  const handleInstallClick = () => {
-    if (!installPrompt) return;
-    installPrompt.prompt();
-    installPrompt.userChoice.then((choice) => {
-      if (choice.outcome === 'accepted') {
-        console.log(`Usuario instaló ${TENANT.brandName}`);
-      }
-      setInstallPrompt(null);
-    });
-  };
-
-  return { isInstallable: !!installPrompt, handleInstallClick };
 }
 
 const SkeletonCard = () => (

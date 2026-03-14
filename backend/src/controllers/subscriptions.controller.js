@@ -475,3 +475,63 @@ export const activateSandboxStore = async (req, res) => {
     res.status(500).json({ status: 'error', message: e.message });
   }
 };
+
+/** Crea un checkout de upgrade para un tenant logueado */
+export const createUpgradeCheckout = async (req, res) => {
+  const { plan_type, period } = req.body;
+  const tenantId = req.tenant.id;
+  const admin_email = req.user.email;
+
+  if (!plan_type || !period)
+    return res.status(400).json({ status: 'error', message: 'plan_type y period son requeridos.' });
+
+  try {
+    const config = await getConfig();
+    const mpToken = getMpToken(config);
+    if (!mpToken) return res.status(503).json({ status: 'error', message: 'Sistema de pagos no configurado.' });
+
+    const prices = getPrices(config);
+    const amount = prices[plan_type][period];
+    const periodLabel = period === 'annual' ? 'anual' : 'mensual';
+
+    const tenantRes = await query('SELECT name, brand_name FROM tenants WHERE id = $1', [tenantId]);
+    const tenantName = tenantRes.rows[0]?.brand_name || tenantRes.rows[0]?.name || 'GastroRed';
+
+    const sandbox = config.mp_sandbox_mode === 'true';
+    const mp = new MercadoPagoConfig({ accessToken: mpToken });
+    const preferenceClient = new Preference(mp);
+
+    const backendUrl = config.backend_url || process.env.BACKEND_URL;
+    const frontendUrl = config.frontend_url || process.env.GASTRORED_FRONTEND_URL || 'https://gastrored.com.ar';
+
+    const preferenceBody = {
+      items: [{
+        id: `upgrade_${plan_type.replace(/\s/g, '_').toLowerCase()}_${period}`,
+        title: `Upgrade GastroRed — ${tenantName}: Plan ${plan_type} (${periodLabel})`,
+        quantity: 1, unit_price: amount, currency_id: 'ARS'
+      }],
+      payer: { email: admin_email },
+      external_reference: `tenant_${tenantId}_${plan_type.replace(/\s/g, '_')}_${period}`,
+      notification_url: `${backendUrl}/api/subscriptions/webhook`,
+      back_urls: { 
+        success: `${frontendUrl}/admin?sub=success`, 
+        failure: `${frontendUrl}/admin?sub=failure`, 
+        pending: `${frontendUrl}/admin?sub=pending` 
+      },
+      auto_return: 'approved',
+    };
+
+    const result = await preferenceClient.create({ body: preferenceBody });
+    
+    res.json({
+      status: 'success',
+      data: {
+        init_point: sandbox ? result.sandbox_init_point : result.init_point,
+        preference_id: result.id,
+      }
+    });
+  } catch (e) {
+    res.status(500).json({ status: 'error', message: e.message });
+  }
+};
+
