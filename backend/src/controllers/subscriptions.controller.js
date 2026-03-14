@@ -1,6 +1,7 @@
 import { MercadoPagoConfig, Preference, Payment } from 'mercadopago';
 import { query } from '../config/db.js';
 import bcrypt from 'bcrypt';
+import { initializeTenantData } from '../utils/initialization.js';
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
@@ -94,13 +95,16 @@ export const createTrialTenant = async (req, res) => {
     );
 
     // Crear tenant_settings
-    await query(
-      `INSERT INTO tenant_settings (store_id, tenant_id, tenant_id_fk, cash_on_delivery)
-       VALUES ($1, $2, $2, true) ON CONFLICT (store_id) DO NOTHING`,
-      [storeResult.rows[0].id, cleanSub]
-    );
+     await query(
+       `INSERT INTO tenant_settings (store_id, tenant_id, tenant_id_fk, cash_on_delivery)
+        VALUES ($1, $2, $2, true) ON CONFLICT (store_id) DO NOTHING`,
+       [storeResult.rows[0].id, cleanSub]
+     );
 
-    res.status(201).json({
+     // Inicializar datos de ejemplo (2 productos por categoría)
+     await initializeTenantData(cleanSub, storeResult.rows[0].id);
+
+     res.status(201).json({
       status: 'success',
       data: {
         ...tenant,
@@ -184,15 +188,18 @@ export const createPublicCheckout = async (req, res) => {
 
     // Crear usuario admin desde el inicio (el tenant queda pending pero el user ya existe)
     const adminHash = await bcrypt.hash(admin_password, 10);
-    await query(
-      `INSERT INTO users (email, password_hash, name, store_id, tenant_id, role, points)
-       VALUES ($1, $2, $3, $4, $5, 'admin', 0)
-       ON CONFLICT (email, store_id) DO UPDATE
-         SET password_hash = EXCLUDED.password_hash, name = EXCLUDED.name, role = 'admin'`,
-      [admin_email.trim(), adminHash, (admin_name || name).trim(), storeId, cleanSub]
-    );
+     await query(
+       `INSERT INTO users (email, password_hash, name, store_id, tenant_id, role, points)
+        VALUES ($1, $2, $3, $4, $5, 'admin', 0)
+        ON CONFLICT (email, store_id) DO UPDATE
+          SET password_hash = EXCLUDED.password_hash, name = EXCLUDED.name, role = 'admin'`,
+       [admin_email.trim(), adminHash, (admin_name || name).trim(), storeId, cleanSub]
+     );
 
-    // Crear preferencia en MercadoPago
+     // Inicializar datos de ejemplo (2 productos por categoría)
+     await initializeTenantData(cleanSub, storeId);
+
+     // Crear preferencia en MercadoPago
     const sandbox = config.mp_sandbox_mode === 'true';
     const mp = new MercadoPagoConfig({ accessToken: mpToken });
     const preferenceClient = new Preference(mp);
@@ -248,6 +255,83 @@ export const createPublicCheckout = async (req, res) => {
     console.error('Public checkout error:', e.message);
     if (e.code === '23505')
       return res.status(409).json({ status: 'error', message: 'El subdomain ya está en uso.' });
+    res.status(500).json({ status: 'error', message: e.message });
+  }
+};
+
+// ── Obtener Planes Públicos (para la landing) ────────────────────────────────
+export const getPublicPlans = async (req, res) => {
+  try {
+    const config = await getConfig();
+    const prices = getPrices(config);
+    const trialDays = parseInt(config.trial_days || '7');
+
+    const plans = [
+      {
+        plan_type: 'Trial',
+        name: 'Prueba Gratis',
+        price: 0,
+        period: `${trialDays} días`,
+        badge: '🎁 Sin tarjeta',
+        badgeColor: 'gray',
+        cta: 'Empezar gratis',
+        prices: { monthly: 0, annual: 0 },
+        features: [
+          { text: 'Menú digital completo' },
+          { text: 'Panel de administración' },
+          { text: 'Hasta 20 productos iniciales' },
+          { text: 'Pedidos online' },
+          { text: 'MercadoPago integrado' },
+          { text: 'Soporte por email' },
+          { text: 'Subdominio de GastroRed', disabled: false },
+          { text: 'Dominio propio', disabled: true },
+        ],
+      },
+      {
+        plan_type: 'Full Digital',
+        name: 'Full Digital',
+        price: prices['Full Digital'].monthly,
+        period: 'mes',
+        badge: '⭐️ Más elegido',
+        badgeColor: 'red',
+        highlighted: true,
+        cta: 'Empezar ahora',
+        prices: prices['Full Digital'],
+        features: [
+          { text: 'Todo lo de Prueba Gratis' },
+          { text: 'Hasta 50 productos activos' },
+          { text: 'Cupones de descuento' },
+          { text: 'Sistema de puntos / fidelización' },
+          { text: 'Análisis de ventas y pedidos' },
+          { text: 'Subdominio + Dominio propio' },
+          { text: 'Soporte prioritario' },
+          { text: 'Branding personalizado' },
+        ],
+      },
+      {
+        plan_type: 'Expert',
+        name: 'Expert',
+        price: prices['Expert'].monthly,
+        period: 'mes',
+        badge: '🏆 Máximo poder',
+        badgeColor: 'yellow',
+        cta: 'Quiero Expert',
+        prices: prices['Expert'],
+        features: [
+          { text: 'Todo lo de Full Digital' },
+          { text: 'Productos ilimitados' },
+          { text: 'Múltiples sucursales' },
+          { text: 'Influencers y videos integrados' },
+          { text: 'Noticias y blog de marca' },
+          { text: 'Gestión avanzada de pedidos' },
+          { text: 'Soporte directo por WhatsApp' },
+          { text: 'Acceso anticipado a nuevas funciones' },
+        ],
+      },
+    ];
+
+    res.json({ status: 'success', data: plans });
+  } catch (e) {
     res.status(500).json({ status: 'error', message: e.message });
   }
 };

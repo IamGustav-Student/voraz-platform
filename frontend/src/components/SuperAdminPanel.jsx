@@ -514,7 +514,7 @@ export default function SuperAdminPanel({ onBack }) {
                 <div>
                   <label className="text-xs text-gray-400 mb-1 block">Access Token</label>
                   {config?.mp_access_token_masked && (
-                    <p className="text-xs text-teal-400 font-mono mb-1">Token actual: {config.mp_access_token_masked}</p>
+                    <p className="text-xs text-red-500 font-mono mb-1">Token actual: {config.mp_access_token_masked}</p>
                   )}
                   {config?.mp_token_from_env && (
                     <p className="text-xs text-yellow-400 mb-1">⚠️ Token tomado del env var GASTRORED_MP_ACCESS_TOKEN</p>
@@ -524,7 +524,7 @@ export default function SuperAdminPanel({ onBack }) {
                     placeholder="APP_USR-... (dejá vacío para no cambiar)"
                     value={configForm.mp_access_token || ''}
                     onChange={e => setConfigForm(f => ({ ...f, mp_access_token: e.target.value }))}
-                    className="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-2.5 text-white text-sm focus:outline-none focus:border-teal-500 font-mono"
+                    className="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-2.5 text-white text-sm focus:outline-none focus:border-red-500 font-mono"
                   />
                 </div>
                 <div className="flex items-center gap-3">
@@ -552,7 +552,7 @@ export default function SuperAdminPanel({ onBack }) {
                     <label className="text-xs text-gray-400 mb-1 block">{label}</label>
                     <input type="number" value={configForm[key] || ''}
                       onChange={e => setConfigForm(f => ({ ...f, [key]: e.target.value }))}
-                      className="w-full bg-black/40 border border-white/10 rounded-xl px-3 py-2 text-white text-sm focus:outline-none focus:border-teal-500"
+                      className="w-full bg-black/40 border border-white/10 rounded-xl px-3 py-2 text-white text-sm focus:outline-none focus:border-red-500"
                     />
                   </div>
                 ))}
@@ -567,35 +567,35 @@ export default function SuperAdminPanel({ onBack }) {
                   <label className="text-xs text-gray-400 mb-1 block">Días de prueba gratuita</label>
                   <input type="number" min="1" max="30" value={configForm.trial_days || '7'}
                     onChange={e => setConfigForm(f => ({ ...f, trial_days: e.target.value }))}
-                    className="w-32 bg-black/40 border border-white/10 rounded-xl px-3 py-2 text-white text-sm focus:outline-none focus:border-teal-500"
+                    className="w-32 bg-black/40 border border-white/10 rounded-xl px-3 py-2 text-white text-sm focus:outline-none focus:border-red-500"
                   />
                 </div>
                 <div>
                   <label className="text-xs text-gray-400 mb-1 block">URL del Frontend (para redirecciones de MP)</label>
                   <input type="url" value={configForm.frontend_url || ''}
                     onChange={e => setConfigForm(f => ({ ...f, frontend_url: e.target.value }))}
-                    className="w-full bg-black/40 border border-white/10 rounded-xl px-3 py-2 text-white text-sm font-mono focus:outline-none focus:border-teal-500"
+                    className="w-full bg-black/40 border border-white/10 rounded-xl px-3 py-2 text-white text-sm font-mono focus:outline-none focus:border-red-500"
                   />
                 </div>
                 <div>
                   <label className="text-xs text-gray-400 mb-1 block">URL del Backend (para webhooks de MP)</label>
                   <input type="url" value={configForm.backend_url || ''}
                     onChange={e => setConfigForm(f => ({ ...f, backend_url: e.target.value }))}
-                    className="w-full bg-black/40 border border-white/10 rounded-xl px-3 py-2 text-white text-sm font-mono focus:outline-none focus:border-teal-500"
+                    className="w-full bg-black/40 border border-white/10 rounded-xl px-3 py-2 text-white text-sm font-mono focus:outline-none focus:border-red-500"
                   />
                 </div>
                 <div>
                   <label className="text-xs text-gray-400 mb-1 block">Email de contacto</label>
                   <input type="email" value={configForm.contact_email || ''}
                     onChange={e => setConfigForm(f => ({ ...f, contact_email: e.target.value }))}
-                    className="w-full bg-black/40 border border-white/10 rounded-xl px-3 py-2 text-white text-sm focus:outline-none focus:border-teal-500"
+                    className="w-full bg-black/40 border border-white/10 rounded-xl px-3 py-2 text-white text-sm focus:outline-none focus:border-red-500"
                   />
                 </div>
               </div>
             </div>
 
             <button type="submit" disabled={savingConfig}
-              className="w-full bg-teal-500 hover:bg-teal-400 disabled:opacity-50 text-white py-3 rounded-xl font-black uppercase tracking-wide transition">
+              className="w-full bg-red-600 hover:bg-red-500 disabled:opacity-50 text-white py-3 rounded-xl font-black uppercase tracking-wide transition">
               {savingConfig ? 'Guardando...' : '💾 Guardar configuración'}
             </button>
           </form>

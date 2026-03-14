@@ -4,14 +4,14 @@
 
 /* ── Variables de marca (se sobreescriben por tenant vía JS) ── */
 :root {
-  --primary-color: #ef4444;
-  --secondary-color: #1f2937;
+  --primary-color: #E30613;   /* "Gastro Red" vibrante */
+  --secondary-color: #F59E0B; /* Ámbar/Oro para acentos */
 
   --brand-primary: var(--primary-color);
-  --brand-primary-hover: var(--primary-color);
+  --brand-primary-hover: #C40510;
   --brand-secondary: var(--secondary-color);
-  --brand-bg: #121212;
-  --brand-surface: #1E1E1E;
+  --brand-bg: #0A0A0A;        /* Negro profundo premium */
+  --brand-surface: #141414;   /* Gris oscuro para tarjetas */
   --brand-text: #F5F5F5;
 }
 

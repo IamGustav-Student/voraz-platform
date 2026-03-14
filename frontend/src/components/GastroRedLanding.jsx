@@ -5,6 +5,7 @@ const API_URL = (import.meta.env.VITE_API_URL || 'http://localhost:3000/api').tr
 const GASTRORED_DOMAIN = (import.meta.env.VITE_GASTRORED_DOMAIN || 'gastrored.com.ar').trim();
 
 // ── Logo GastroRed como SVG inline (sin dependencia de archivo externo) ──────
+// ── Logo GastroRed como SVG inline (colores gastronómicos) ──────
 function GastroRedLogo({ size = 48, className = '' }) {
     return (
         <svg width={size * 2.8} height={size} viewBox="0 0 280 80" fill="none" xmlns="http://www.w3.org/2000/svg" className={className}>
@@ -23,19 +24,19 @@ function GastroRedLogo({ size = 48, className = '' }) {
             <line x1="50" y1="30" x2="50" y2="44" stroke="white" strokeWidth="2" strokeLinecap="round" />
             <ellipse cx="50" cy="26" rx="4" ry="5" fill="white" opacity="0.9" />
             {/* Text: Gastro */}
-            <text x="88" y="44" fontFamily="'Segoe UI', system-ui, sans-serif" fontWeight="800" fontSize="32" fill="#1a3a4a" letterSpacing="-0.5">Gastro</text>
+            <text x="88" y="44" fontFamily="'Segoe UI', system-ui, sans-serif" fontWeight="800" fontSize="32" fill="#F5F5F5" letterSpacing="-0.5">Gastro</text>
             {/* Text: Red */}
             <text x="197" y="44" fontFamily="'Segoe UI', system-ui, sans-serif" fontWeight="800" fontSize="32" fill="url(#textGrad)" letterSpacing="-0.5">Red</text>
             {/* Tagline */}
-            <text x="89" y="60" fontFamily="'Segoe UI', system-ui, sans-serif" fontWeight="400" fontSize="11" fill="#0d9488" letterSpacing="2">SINCRONIZACIÓN TOTAL</text>
+            <text x="89" y="60" fontFamily="'Segoe UI', system-ui, sans-serif" fontWeight="400" fontSize="11" fill="#E30613" letterSpacing="2">SINCRONIZACIÓN TOTAL</text>
             <defs>
                 <linearGradient id="hatGrad" x1="8" y1="7" x2="76" y2="60">
-                    <stop offset="0%" stopColor="#0d9488" />
-                    <stop offset="100%" stopColor="#1a3a4a" />
+                    <stop offset="0%" stopColor="#E30613" />
+                    <stop offset="100%" stopColor="#8B0000" />
                 </linearGradient>
                 <linearGradient id="textGrad" x1="197" y1="20" x2="240" y2="50">
-                    <stop offset="0%" stopColor="#0d9488" />
-                    <stop offset="100%" stopColor="#059669" />
+                    <stop offset="0%" stopColor="#E30613" />
+                    <stop offset="100%" stopColor="#FF4500" />
                 </linearGradient>
             </defs>
         </svg>
@@ -52,7 +53,7 @@ function FloatingParticle({ delay, duration, x, size }) {
                 bottom: '-20px',
                 width: size,
                 height: size,
-                background: 'radial-gradient(circle, #0d9488, transparent)',
+                background: 'radial-gradient(circle, #E30613, transparent)',
                 animationDelay: `${delay}s`,
                 animationDuration: `${duration}s`,
             }}
@@ -64,12 +65,12 @@ function FloatingParticle({ delay, duration, x, size }) {
 function FeatureCard({ icon, title, desc, delay = 0 }) {
     return (
         <div
-            className="group relative bg-gradient-to-br from-white/5 to-white/[0.02] border border-white/10 rounded-2xl p-6 hover:border-teal-500/40 transition-all duration-500 hover:translate-y-[-4px]"
+            className="group relative bg-gradient-to-br from-white/5 to-white/[0.02] border border-white/10 rounded-2xl p-6 hover:border-red-500/40 transition-all duration-500 hover:translate-y-[-4px]"
             style={{ animationDelay: `${delay}ms` }}
         >
-            <div className="absolute inset-0 transition-opacity duration-500 opacity-0 rounded-2xl bg-gradient-to-br from-teal-500/5 to-transparent group-hover:opacity-100" />
+            <div className="absolute inset-0 transition-opacity duration-500 opacity-0 rounded-2xl bg-gradient-to-br from-red-500/5 to-transparent group-hover:opacity-100" />
             <div className="relative">
-                <div className="flex items-center justify-center w-12 h-12 mb-4 text-2xl transition-transform duration-300 border rounded-xl bg-teal-500/10 border-teal-500/20 group-hover:scale-110">
+                <div className="flex items-center justify-center w-12 h-12 mb-4 text-2xl transition-transform duration-300 border rounded-xl bg-red-500/10 border-red-500/20 group-hover:scale-110">
                     {icon}
                 </div>
                 <h3 className="mb-2 text-lg font-bold text-white">{title}</h3>
@@ -83,11 +84,11 @@ function FeatureCard({ icon, title, desc, delay = 0 }) {
 function StepCard({ number, title, desc, icon }) {
     return (
         <div className="flex items-start gap-5 group">
-            <div className="flex items-center justify-center flex-shrink-0 text-2xl transition-transform shadow-lg w-14 h-14 rounded-2xl bg-gradient-to-br from-teal-500 to-teal-700 shadow-teal-900/40 group-hover:scale-105">
+            <div className="flex items-center justify-center flex-shrink-0 text-2xl transition-transform shadow-lg w-14 h-14 rounded-2xl bg-gradient-to-br from-red-600 to-red-800 shadow-red-900/40 group-hover:scale-105">
                 {icon}
             </div>
             <div>
-                <div className="mb-1 text-xs font-bold tracking-widest text-teal-400 uppercase">Paso {number}</div>
+                <div className="mb-1 text-xs font-bold tracking-widest text-red-500 uppercase">Paso {number}</div>
                 <h4 className="mb-1 text-lg font-bold leading-tight text-white">{title}</h4>
                 <p className="text-sm leading-relaxed text-gray-400">{desc}</p>
             </div>
@@ -96,16 +97,17 @@ function StepCard({ number, title, desc, icon }) {
 }
 
 // ── Plan card ─────────────────────────────────────────────────────────────────
-function PlanCard({ name, price, period, badge, features, cta, highlighted = false, badgeColor = 'teal', onSelect }) {
+function PlanCard({ name, price, period, badge, features, cta, highlighted = false, badgeColor = 'red', onSelect }) {
     const badgeColors = {
-        teal: 'bg-teal-500 text-white',
+        teal: 'bg-red-500 text-white',
+        red: 'bg-red-600 text-white',
         yellow: 'bg-yellow-400 text-black',
         gray: 'bg-gray-700 text-gray-200',
     };
     return (
         <div className={`relative rounded-3xl p-8 flex flex-col transition-all duration-500 hover:translate-y-[-6px] ${highlighted
-            ? 'bg-gradient-to-br from-teal-900/60 to-teal-800/20 border-2 border-teal-500/60 shadow-2xl shadow-teal-900/40'
-            : 'bg-gradient-to-br from-white/5 to-white/[0.02] border border-white/10 hover:border-teal-500/30'
+            ? 'bg-gradient-to-br from-red-950/60 to-red-800/20 border-2 border-red-500/60 shadow-2xl shadow-red-900/40'
+            : 'bg-gradient-to-br from-white/5 to-white/[0.02] border border-white/10 hover:border-red-500/30'
             }`}>
             {badge && (
                 <div className={`absolute -top-4 left-1/2 -translate-x-1/2 px-4 py-1.5 rounded-full text-xs font-black uppercase tracking-wider ${badgeColors[badgeColor]}`}>
@@ -116,7 +118,7 @@ function PlanCard({ name, price, period, badge, features, cta, highlighted = fal
                 <h3 className="mb-1 text-2xl font-black text-white">{name}</h3>
                 <div className="flex items-end gap-2 mb-1">
                     {price === 0 ? (
-                        <span className="text-4xl font-black text-teal-400">GRATIS</span>
+                        <span className="text-4xl font-black text-red-400">GRATIS</span>
                     ) : (
                         <>
                             <span className="text-4xl font-black text-white">${price.toLocaleString('es-AR')}</span>
@@ -128,7 +130,7 @@ function PlanCard({ name, price, period, badge, features, cta, highlighted = fal
             <ul className="flex-1 mb-8 space-y-3">
                 {features.map((f, i) => (
                     <li key={i} className={`flex items-start gap-3 text-sm ${f.disabled ? 'opacity-40' : ''}`}>
-                        <span className={`mt-0.5 flex-shrink-0 w-5 h-5 rounded-full flex items-center justify-center text-xs ${f.disabled ? 'bg-gray-700 text-gray-500' : 'bg-teal-500/20 text-teal-400'
+                        <span className={`mt-0.5 flex-shrink-0 w-5 h-5 rounded-full flex items-center justify-center text-xs ${f.disabled ? 'bg-gray-700 text-gray-500' : 'bg-red-500/20 text-red-400'
                             }`}>
                             {f.disabled ? '\u2715' : '\u2713'}
                         </span>
@@ -139,7 +141,7 @@ function PlanCard({ name, price, period, badge, features, cta, highlighted = fal
             <button
                 onClick={onSelect}
                 className={`block w-full text-center py-4 rounded-xl font-black uppercase tracking-wide text-sm transition-all duration-300 ${highlighted
-                    ? 'bg-teal-500 hover:bg-teal-400 text-white shadow-lg shadow-teal-900/50'
+                    ? 'bg-red-600 hover:bg-red-500 text-white shadow-lg shadow-red-900/50'
                     : 'bg-white/10 hover:bg-white/20 text-white border border-white/10'
                     }`}
             >
@@ -153,7 +155,7 @@ function PlanCard({ name, price, period, badge, features, cta, highlighted = fal
 function Stat({ value, label }) {
     return (
         <div className="text-center">
-            <div className="mb-1 text-4xl font-black text-transparent md:text-5xl bg-clip-text bg-gradient-to-r from-teal-400 to-emerald-400">{value}</div>
+            <div className="mb-1 text-4xl font-black text-transparent md:text-5xl bg-clip-text bg-gradient-to-r from-red-500 to-orange-500">{value}</div>
             <div className="text-sm text-gray-400">{label}</div>
         </div>
     );
@@ -216,27 +218,27 @@ function CheckoutModal({ plan, onClose }) {
     if (success) {
         return (
             <div className="fixed inset-0 z-[100] bg-black/80 backdrop-blur-sm flex items-center justify-center p-4" onClick={onClose}>
-                <div className="bg-[#0d1117] border border-teal-500/30 rounded-3xl p-8 max-w-md w-full text-center" onClick={e => e.stopPropagation()}>
+                <div className="bg-[#0d1117] border border-red-500/30 rounded-3xl p-8 max-w-md w-full text-center" onClick={e => e.stopPropagation()}>
                     <div className="mb-4 text-6xl">🎉</div>
                     <h3 className="mb-2 text-2xl font-black text-white">¡Tu prueba comenzó!</h3>
                     <p className="mb-6 text-sm text-gray-400">{success.message}</p>
-                    <div className="p-4 mb-6 text-left border bg-teal-900/30 border-teal-500/30 rounded-xl">
+                    <div className="p-4 mb-6 text-left border bg-red-900/30 border-red-500/30 rounded-xl">
                         <p className="mb-1 text-xs text-gray-400">Tu carta está en:</p>
                         <a href={`https://${success.subdomain}.${GASTRORED_DOMAIN}`} target="_blank" rel="noreferrer"
-                            className="font-mono text-sm font-bold text-teal-400 hover:underline">
+                            className="font-mono text-sm font-bold text-red-500 hover:underline">
                             {success.subdomain}.{GASTRORED_DOMAIN}
                         </a>
                         <p className="mt-2 text-xs text-gray-500">
                             Válido hasta: <strong className="text-white">{new Date(success.subscription_expires_at).toLocaleDateString('es-AR')}</strong>
                         </p>
-                        <div className="pt-3 mt-3 border-t border-teal-500/20">
+                        <div className="pt-3 mt-3 border-t border-red-500/20">
                             <p className="text-xs text-gray-400">🔑 Acceso al panel admin:</p>
                             <p className="font-mono text-xs text-white">{form.admin_email}</p>
                         </div>
                     </div>
                     <div className="space-y-2">
                         <a href={`https://${success.subdomain}.${GASTRORED_DOMAIN}/admin`} target="_blank" rel="noreferrer"
-                            className="block w-full py-3 text-sm font-black text-white bg-teal-500 hover:bg-teal-400 rounded-xl">
+                            className="block w-full py-3 text-sm font-black text-white bg-red-600 hover:bg-red-500 rounded-xl">
                             Ir al panel de admin →
                         </a>
                         <button onClick={onClose} className="block w-full py-2 text-sm text-gray-500 hover:text-white">Cerrar</button>
@@ -252,7 +254,7 @@ function CheckoutModal({ plan, onClose }) {
                 {/* Header */}
                 <div className="flex items-center justify-between mb-6">
                     <div>
-                        <div className="text-xs text-teal-400 font-bold uppercase tracking-widest mb-0.5">{isTrial ? 'Prueba gratuita' : 'Suscripción'}</div>
+                        <div className="text-xs text-red-500 font-bold uppercase tracking-widest mb-0.5">{isTrial ? 'Prueba gratuita' : 'Suscripción'}</div>
                         <h2 className="text-2xl font-black text-white">Plan {plan.plan_type}</h2>
                         {!isTrial && (
                             <p className="text-sm text-gray-400">
@@ -270,28 +272,28 @@ function CheckoutModal({ plan, onClose }) {
                     {!isTrial && (
                         <div className="flex gap-2 p-1 bg-white/5 rounded-xl">
                             <button type="button" onClick={() => set('subscription_period', 'monthly')}
-                                className={`flex-1 py-2 rounded-lg text-sm font-bold transition ${form.subscription_period === 'monthly' ? 'bg-teal-500 text-white' : 'text-gray-400 hover:text-white'
+                                className={`flex-1 py-2 rounded-lg text-sm font-bold transition ${form.subscription_period === 'monthly' ? 'bg-red-600 text-white' : 'text-gray-400 hover:text-white'
                                     }`}>
                                 Mensual
                             </button>
                             <button type="button" onClick={() => set('subscription_period', 'annual')}
-                                className={`flex-1 py-2 rounded-lg text-sm font-bold transition ${form.subscription_period === 'annual' ? 'bg-teal-500 text-white' : 'text-gray-400 hover:text-white'
+                                className={`flex-1 py-2 rounded-lg text-sm font-bold transition ${form.subscription_period === 'annual' ? 'bg-red-600 text-white' : 'text-gray-400 hover:text-white'
                                     }`}>
-                                Anual <span className="text-xs text-green-400">(2 meses gratis)</span>
+                                Anual <span className="text-xs text-orange-400">(2 meses gratis)</span>
                             </button>
                         </div>
                     )}
 
                     <input placeholder="Nombre del restaurante *" value={form.name}
                         onChange={e => set('name', e.target.value)} required
-                        className="w-full px-4 py-3 text-sm text-white border bg-black/30 border-white/10 rounded-xl focus:outline-none focus:border-teal-500" />
+                        className="w-full px-4 py-3 text-sm text-white border bg-black/30 border-white/10 rounded-xl focus:outline-none focus:border-red-500" />
 
                     <div>
                         <input placeholder="Subdomain * (ej: miburguer)" value={form.subdomain}
                             onChange={e => set('subdomain', e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, ''))} required
-                            className="w-full px-4 py-3 text-sm text-white border bg-black/30 border-white/10 rounded-xl focus:outline-none focus:border-teal-500" />
+                            className="w-full px-4 py-3 text-sm text-white border bg-black/30 border-white/10 rounded-xl focus:outline-none focus:border-red-500" />
                         {cleanSub && (
-                            <p className="mt-1.5 text-xs text-teal-400 font-mono">
+                            <p className="mt-1.5 text-xs text-red-500 font-mono">
                                 Tu carta: <strong>{cleanSub}.{GASTRORED_DOMAIN}</strong>
                             </p>
                         )}
@@ -299,18 +301,18 @@ function CheckoutModal({ plan, onClose }) {
 
                     <input placeholder="Email del dueño *" type="email" value={form.admin_email}
                         onChange={e => set('admin_email', e.target.value)} required
-                        className="w-full px-4 py-3 text-sm text-white border bg-black/30 border-white/10 rounded-xl focus:outline-none focus:border-teal-500" />
+                        className="w-full px-4 py-3 text-sm text-white border bg-black/30 border-white/10 rounded-xl focus:outline-none focus:border-red-500" />
 
                     {/* Credenciales de acceso al panel */}
                     <div className="p-4 space-y-3 border bg-white/5 border-white/10 rounded-xl">
-                        <p className="text-xs font-bold text-teal-400">🔑 Credenciales para el panel de administración</p>
+                        <p className="text-xs font-bold text-red-500">🔑 Credenciales para el panel de administración</p>
                         <input placeholder="Tu nombre *" value={form.admin_name}
                             onChange={e => set('admin_name', e.target.value)} required
-                            className="w-full bg-black/30 border border-white/10 rounded-xl px-4 py-2.5 text-white text-sm focus:outline-none focus:border-teal-500" />
+                            className="w-full bg-black/30 border border-white/10 rounded-xl px-4 py-2.5 text-white text-sm focus:outline-none focus:border-red-500" />
                         <input type="password" placeholder="Contraseña para ingresar al panel (mín. 6 caracteres) *"
                             value={form.admin_password}
                             onChange={e => set('admin_password', e.target.value)} required minLength={6}
-                            className="w-full bg-black/30 border border-white/10 rounded-xl px-4 py-2.5 text-white text-sm focus:outline-none focus:border-teal-500" />
+                            className="w-full bg-black/30 border border-white/10 rounded-xl px-4 py-2.5 text-white text-sm focus:outline-none focus:border-red-500" />
                         <p className="text-gray-600 text-[11px]">Con estas credenciales vas a poder acceder al panel /admin de tu comercio.</p>
                     </div>
 
@@ -321,7 +323,7 @@ function CheckoutModal({ plan, onClose }) {
                     )}
 
                     <button type="submit" disabled={loading}
-                        className="w-full py-4 font-black tracking-wide text-white uppercase transition bg-teal-500 hover:bg-teal-400 disabled:opacity-50 rounded-xl">
+                        className="w-full py-4 font-black tracking-wide text-white uppercase transition bg-red-600 hover:bg-red-500 disabled:opacity-50 rounded-xl">
                         {loading
                             ? 'Procesando...'
                             : isTrial
@@ -391,7 +393,7 @@ function PostPaymentScreen({ storeId, subResult, onContinue }) {
 
     if (status === 'loading') return (
         <div className="fixed inset-0 z-[200] bg-[#080c12] flex flex-col items-center justify-center text-white gap-4">
-            <div className="w-12 h-12 border-4 border-teal-500 rounded-full border-t-transparent animate-spin" />
+            <div className="w-12 h-12 border-4 border-red-600 rounded-full border-t-transparent animate-spin" />
             <p className="text-lg font-bold">Verificando tu pago…</p>
             <p className="text-sm text-gray-500">Esto tarda unos segundos</p>
         </div>
@@ -401,11 +403,11 @@ function PostPaymentScreen({ storeId, subResult, onContinue }) {
         <div className="fixed inset-0 z-[200] bg-[#080c12] flex flex-col items-center justify-center text-white gap-6 px-4">
             <div className="text-7xl">🎉</div>
             <h2 className="text-3xl font-black text-center">¡Tu comercio está activo!</h2>
-            <div className="max-w-md p-6 text-center border bg-teal-900/30 border-teal-500/30 rounded-2xl">
+            <div className="max-w-md p-6 text-center border bg-red-900/30 border-red-500/30 rounded-2xl">
                 <p className="mb-2 text-sm text-gray-400">Accedé a tu carta en:</p>
                 <a href={`https://${store.subdomain || ''}.${GASTRORED_DOMAIN}`}
                     target="_blank" rel="noreferrer"
-                    className="block mb-4 font-mono text-lg font-bold text-teal-400 hover:underline">
+                    className="block mb-4 font-mono text-lg font-bold text-red-500 hover:underline">
                     {store.subdomain}.{GASTRORED_DOMAIN}
                 </a>
                 <p className="text-xs text-gray-500">
@@ -416,7 +418,7 @@ function PostPaymentScreen({ storeId, subResult, onContinue }) {
             <div className="flex flex-col w-full max-w-sm gap-3">
                 <a href={`https://${store.subdomain}.${GASTRORED_DOMAIN}/admin`}
                     target="_blank" rel="noreferrer"
-                    className="w-full py-4 text-sm font-black text-center text-white bg-teal-500 hover:bg-teal-400 rounded-xl">
+                    className="w-full py-4 text-sm font-black text-center text-white bg-red-600 hover:bg-red-500 rounded-xl">
                     Ir al panel de admin →
                 </a>
                 <button onClick={onContinue} className="py-2 text-sm text-gray-500 hover:text-white">
@@ -458,7 +460,19 @@ export default function GastroRedLanding() {
     const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
     const [selectedPlan, setSelectedPlan] = useState(null); // abre el modal
     const [showSuperAdmin, setShowSuperAdmin] = useState(false);
-    const [postPayment, setPostPayment] = useState(null); // { storeId, result }
+    const [plans, setPlans] = useState([]);
+    const [loadingPlans, setLoadingPlans] = useState(true);
+
+    // Cargar planes dinámicos
+    useEffect(() => {
+        fetch(`${API_URL}/subscriptions/plans`)
+            .then(res => res.json())
+            .then(data => {
+                if (data.status === 'success') setPlans(data.data);
+                setLoadingPlans(false);
+            })
+            .catch(() => setLoadingPlans(false));
+    }, []);
 
     // Detectar retorno desde MercadoPago (?sub=success|failure|pending&store=ID)
     useEffect(() => {
@@ -504,7 +518,7 @@ export default function GastroRedLanding() {
         { number: 4, icon: '🚀', title: 'Comenzás a vender', desc: 'Compartís el link de tu carta, tus clientes hacen pedidos y pagos desde el celular, y vos gestionás todo desde el admin.' },
     ];
 
-    const plans = [
+    const initialPlans = [ // This array is now a fallback/initial structure, actual plans will be fetched
         {
             plan_type: 'Trial',
             name: 'Prueba Gratis',
@@ -597,7 +611,7 @@ export default function GastroRedLanding() {
                     <GastroRedLogo size={36} />
                     <div className="items-center hidden gap-8 md:flex">
                         {navLinks.map(l => (
-                            <a key={l.href} href={l.href} className="text-sm font-medium text-gray-400 transition-colors duration-200 hover:text-white hover:text-teal-400">
+                            <a key={l.href} href={l.href} className="text-sm font-medium text-gray-400 transition-colors duration-200 hover:text-white hover:text-red-500">
                                 {l.label}
                             </a>
                         ))}
@@ -606,7 +620,7 @@ export default function GastroRedLanding() {
                         <a href="#contacto" className="px-4 py-2 text-sm font-medium text-gray-300 transition hover:text-white rounded-xl hover:bg-white/5">
                             Contacto
                         </a>
-                        <a href="#planes" className="px-5 py-2 text-sm font-bold text-white transition-all bg-teal-500 shadow-lg hover:bg-teal-400 rounded-xl shadow-teal-900/30">
+                        <a href="#planes" className="px-5 py-2 text-sm font-bold text-white transition-all bg-red-600 shadow-lg hover:bg-red-500 rounded-xl shadow-red-900/30">
                             Ver planes →
                         </a>
                     </div>
@@ -622,11 +636,11 @@ export default function GastroRedLanding() {
                     <div className="md:hidden bg-[#0d1117] border-b border-white/10 px-4 py-4 space-y-3">
                         {navLinks.map(l => (
                             <a key={l.href} href={l.href} onClick={() => setMobileMenuOpen(false)}
-                                className="block py-2 font-medium text-gray-300 border-b hover:text-teal-400 border-white/5">
+                                className="block py-2 font-medium text-gray-300 border-b hover:text-red-500 border-white/5">
                                 {l.label}
                             </a>
                         ))}
-                        <a href="#planes" className="block py-3 mt-2 font-bold text-center text-white bg-teal-500 rounded-xl">
+                        <a href="#planes" className="block py-3 mt-2 font-bold text-center text-white bg-red-600 rounded-xl">
                             Ver planes →
                         </a>
                     </div>
@@ -637,23 +651,23 @@ export default function GastroRedLanding() {
             <section id="inicio" className="relative flex items-center min-h-screen overflow-hidden">
                 {/* Fondo animado */}
                 <div className="absolute inset-0">
-                    <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-teal-500/10 rounded-full blur-[120px] animate-pulse" style={{ animationDuration: '4s' }} />
-                    <div className="absolute bottom-1/4 right-1/4 w-80 h-80 bg-emerald-500/8 rounded-full blur-[100px] animate-pulse" style={{ animationDuration: '6s', animationDelay: '2s' }} />
-                    <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] border border-teal-500/5 rounded-full" />
-                    <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[900px] h-[900px] border border-teal-500/5 rounded-full" />
+                    <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-red-500/10 rounded-full blur-[120px] animate-pulse" style={{ animationDuration: '4s' }} />
+                    <div className="absolute bottom-1/4 right-1/4 w-80 h-80 bg-orange-500/8 rounded-full blur-[100px] animate-pulse" style={{ animationDuration: '6s', animationDelay: '2s' }} />
+                    <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] border border-red-500/5 rounded-full" />
+                    <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[900px] h-[900px] border border-red-500/5 rounded-full" />
                 </div>
 
                 <div className="relative w-full px-4 pb-20 mx-auto max-w-7xl md:px-8 pt-28">
                     <div className="max-w-3xl mx-auto text-center">
 
-                        <div className="inline-flex items-center gap-2 px-4 py-2 mb-8 text-sm font-medium text-teal-400 border rounded-full bg-teal-500/10 border-teal-500/20">
-                            <span className="w-2 h-2 bg-teal-400 rounded-full animate-pulse"></span>
+                        <div className="inline-flex items-center gap-2 px-4 py-2 mb-8 text-sm font-medium text-red-500 border rounded-full bg-red-500/10 border-red-500/20">
+                            <span className="w-2 h-2 bg-red-500 rounded-full animate-pulse"></span>
                             Plataforma SaaS para Gastronomía Argentina
                         </div>
 
                         <h1 className="mb-6 text-5xl font-black leading-none md:text-7xl">
                             Tu restaurante,{' '}
-                            <span className="text-transparent bg-clip-text bg-gradient-to-r from-teal-400 to-emerald-400">
+                            <span className="text-transparent bg-clip-text bg-gradient-to-r from-red-500 to-orange-500">
                                 digitalizado
                             </span>
                             <br />en minutos.
@@ -667,7 +681,7 @@ export default function GastroRedLanding() {
 
                         <div className="flex flex-col justify-center gap-4 sm:flex-row">
                             <a href="#planes"
-                                className="inline-flex items-center justify-center gap-2 px-8 py-4 text-lg font-black text-white transition-all bg-teal-500 shadow-2xl hover:bg-teal-400 rounded-xl shadow-teal-900/50 hover:shadow-teal-900/70 hover:-translate-y-1">
+                                className="inline-flex items-center justify-center gap-2 px-8 py-4 text-lg font-black text-white transition-all bg-red-600 shadow-2xl hover:bg-red-500 rounded-xl shadow-red-900/50 hover:shadow-red-900/70 hover:-translate-y-1">
                                 Probá gratis 7 días
                                 <span>→</span>
                             </a>
@@ -696,10 +710,10 @@ export default function GastroRedLanding() {
 
             {/* ── EL PROBLEMA ──────────────────────────────────────────────────────── */}
             <section id="problema" className="relative py-24">
-                <div className="absolute inset-0 bg-gradient-to-b from-transparent via-teal-950/10 to-transparent" />
+                <div className="absolute inset-0 bg-gradient-to-b from-transparent via-red-950/10 to-transparent" />
                 <div className="relative px-4 mx-auto max-w-7xl md:px-8">
                     <div className="mb-16 text-center">
-                        <div className="mb-4 text-sm font-bold tracking-widest text-teal-400 uppercase">El problema</div>
+                        <div className="mb-4 text-sm font-bold tracking-widest text-red-500 uppercase">El problema</div>
                         <h2 className="mb-6 text-4xl font-black md:text-5xl">
                             ¿Cuánto tiempo perdés{' '}
                             <span className="text-transparent bg-clip-text bg-gradient-to-r from-red-400 to-rose-600">
@@ -724,7 +738,7 @@ export default function GastroRedLanding() {
                         ))}
                     </div>
                     <div className="text-center">
-                        <div className="inline-flex items-center gap-3 px-8 py-4 text-lg font-bold text-teal-300 border bg-teal-500/10 border-teal-500/30 rounded-2xl">
+                        <div className="inline-flex items-center gap-3 px-8 py-4 text-lg font-bold text-red-100 border bg-red-600/10 border-red-500/30 rounded-2xl">
                             <span className="text-2xl">✨</span>
                             GastroRed resuelve todo esto desde el día 1
                         </div>
@@ -736,10 +750,10 @@ export default function GastroRedLanding() {
             <section id="funcionalidades" className="py-24">
                 <div className="px-4 mx-auto max-w-7xl md:px-8">
                     <div className="mb-16 text-center">
-                        <div className="mb-4 text-sm font-bold tracking-widest text-teal-400 uppercase">Funcionalidades</div>
+                        <div className="mb-4 text-sm font-bold tracking-widest text-red-500 uppercase">Funcionalidades</div>
                         <h2 className="mb-4 text-4xl font-black md:text-5xl">
                             Todo lo que necesitás,{' '}
-                            <span className="text-transparent bg-clip-text bg-gradient-to-r from-teal-400 to-emerald-400">nada más.</span>
+                            <span className="text-transparent bg-clip-text bg-gradient-to-r from-red-500 to-orange-500">nada más.</span>
                         </h2>
                         <p className="max-w-xl mx-auto text-lg text-gray-400">Sin bloat, sin configuraciones infinitas. Cada función fue pensada para el gastronómico argentino.</p>
                     </div>
@@ -751,14 +765,14 @@ export default function GastroRedLanding() {
 
             {/* ── CÓMO FUNCIONA ────────────────────────────────────────────────────── */}
             <section id="como-funciona" className="relative py-24">
-                <div className="absolute inset-0 bg-gradient-to-b from-transparent via-teal-950/15 to-transparent" />
+                <div className="absolute inset-0 bg-gradient-to-b from-transparent via-red-950/15 to-transparent" />
                 <div className="relative px-4 mx-auto max-w-7xl md:px-8">
                     <div className="grid items-center gap-16 lg:grid-cols-2">
                         <div>
-                            <div className="mb-4 text-sm font-bold tracking-widest text-teal-400 uppercase">Cómo funciona</div>
+                            <div className="mb-4 text-sm font-bold tracking-widest text-red-500 uppercase">Cómo funciona</div>
                             <h2 className="mb-6 text-4xl font-black md:text-5xl">
                                 De cero a{' '}
-                                <span className="text-transparent bg-clip-text bg-gradient-to-r from-teal-400 to-emerald-400">
+                                <span className="text-transparent bg-clip-text bg-gradient-to-r from-red-500 to-orange-500">
                                     vender online
                                 </span>
                                 <br />en 4 pasos.
@@ -792,7 +806,7 @@ export default function GastroRedLanding() {
                                             <div className="font-bold text-white">Panel Admin</div>
                                             <div className="text-xs text-gray-500">Mi Restaurante · Hoy</div>
                                         </div>
-                                        <div className="flex items-center justify-center w-8 h-8 text-sm bg-teal-500 rounded-full">🍔</div>
+                                        <div className="flex items-center justify-center w-8 h-8 text-sm bg-red-600 rounded-full">🍔</div>
                                     </div>
                                     <div className="grid grid-cols-2 gap-3 mb-4">
                                         {[
@@ -829,38 +843,39 @@ export default function GastroRedLanding() {
             </section>
 
             {/* ── PLANES ──────────────────────────────────────────────────────────── */}
-            <section id="planes" className="py-24">
+            <section id="planes" className="py-24 scroll-mt-20">
                 <div className="px-4 mx-auto max-w-7xl md:px-8">
                     <div className="mb-16 text-center">
-                        <div className="mb-4 text-sm font-bold tracking-widest text-teal-400 uppercase">Planes y Precios</div>
-                        <h2 className="mb-4 text-4xl font-black md:text-5xl">
-                            Empezá gratis.{' '}
-                            <span className="text-transparent bg-clip-text bg-gradient-to-r from-teal-400 to-emerald-400">
-                                Crecé con nosotros.
-                            </span>
+                        <div className="mb-4 text-sm font-bold tracking-widest text-red-500 uppercase">Planes y Precios</div>
+                        <h2 className="mb-6 text-4xl font-black md:text-5xl">
+                            Elegí el plan perfecto para <span className="text-transparent bg-clip-text bg-gradient-to-r from-red-500 to-orange-500">tu negocio.</span>
                         </h2>
-                        <p className="max-w-xl mx-auto text-lg text-gray-400">
-                            7 días sin costo, sin tarjeta de crédito. Cuando querés seguir, elegís el plan que se adapte a tu negocio.
-                        </p>
+                        <p className="max-w-xl mx-auto text-lg text-gray-400">Sin comisiones por ventas. Pagás un abono fijo y el 100% de la venta es tuya.</p>
                     </div>
+
                     <div className="grid gap-6 mt-8 md:grid-cols-3">
-                        {plans.map(p => <PlanCard key={p.name} {...p} onSelect={() => setSelectedPlan(p)} />)}
+                        {loadingPlans ? (
+                            [1, 2, 3].map(i => (
+                                <div key={i} className="h-[500px] bg-white/5 animate-pulse rounded-3xl" />
+                            ))
+                        ) : (
+                            plans.map((p, i) => (
+                                <PlanCard key={i} {...p} onSelect={() => setSelectedPlan(p)} />
+                            ))
+                        )}
                     </div>
-                    <p className="mt-8 text-sm text-center text-gray-600">
-                        Precios en ARS. Facturación mensual. Podés cancelar cuando quieras.
-                    </p>
                 </div>
             </section>
 
             {/* ── PARA EL DUEÑO ────────────────────────────────────────────────────── */}
             <section className="relative py-24">
-                <div className="absolute inset-0 bg-gradient-to-b from-transparent via-teal-950/10 to-transparent" />
+                <div className="absolute inset-0 bg-gradient-to-b from-transparent via-red-950/10 to-transparent" />
                 <div className="relative px-4 mx-auto max-w-7xl md:px-8">
                     <div className="mb-16 text-center">
-                        <div className="mb-4 text-sm font-bold tracking-widest text-teal-400 uppercase">Para el dueño del comercio</div>
+                        <div className="mb-4 text-sm font-bold tracking-widest text-red-500 uppercase">Para el dueño del comercio</div>
                         <h2 className="mb-4 text-4xl font-black md:text-5xl">
                             Vos mandás.{' '}
-                            <span className="text-transparent bg-clip-text bg-gradient-to-r from-teal-400 to-emerald-400">Nosotros ponemos la tech.</span>
+                            <span className="text-transparent bg-clip-text bg-gradient-to-r from-red-500 to-orange-500">Nosotros ponemos la tech.</span>
                         </h2>
                     </div>
                     <div className="grid gap-8 md:grid-cols-2">
@@ -882,7 +897,7 @@ export default function GastroRedLanding() {
                                 desc: 'Subscripción mensual, cancelás cuando querés. No hay penalidades, no hay períodos mínimos. Transparencia total.'
                             },
                         ].map(f => (
-                            <div key={f.title} className="flex gap-5 p-6 transition-all border bg-white/3 border-white/8 rounded-2xl hover:border-teal-500/20">
+                            <div key={f.title} className="flex gap-5 p-6 transition-all border bg-white/3 border-white/8 rounded-2xl hover:border-red-500/20">
                                 <div className="flex-shrink-0 text-4xl">{f.icon}</div>
                                 <div>
                                     <h3 className="mb-2 text-lg font-bold text-white">{f.title}</h3>
@@ -935,15 +950,15 @@ export default function GastroRedLanding() {
                     <div className="flex flex-col items-center justify-between gap-6 md:flex-row">
                         <GastroRedLogo size={28} />
                         <div className="flex gap-6 text-sm text-gray-500">
-                            <a href="#funcionalidades" className="transition hover:text-teal-400">Funcionalidades</a>
-                            <a href="#planes" className="transition hover:text-teal-400">Planes</a>
-                            <a href="#contacto" className="transition hover:text-teal-400">Contacto</a>
+                            <a href="#funcionalidades" className="transition hover:text-red-500">Funcionalidades</a>
+                            <a href="#planes" className="transition hover:text-red-500">Planes</a>
+                            <a href="#contacto" className="transition hover:text-red-500">Contacto</a>
                         </div>
                         <div className="flex items-center gap-4">
                             <p className="text-sm text-gray-600">© 2026 GastroRed — By ProgramadorGS</p>
                             <button
                                 onClick={() => setShowSuperAdmin(true)}
-                                className="px-2 py-1 text-xs text-gray-700 transition border rounded hover:text-teal-500 border-white/5 hover:border-teal-500/30"
+                                className="px-2 py-1 text-xs text-gray-700 transition border rounded hover:text-red-500 border-white/5 hover:border-red-500/30"
                                 title="Acceso Superadmin"
                             >
                                 🔒 Superadmin

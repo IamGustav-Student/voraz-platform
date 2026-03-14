@@ -1,6 +1,7 @@
 import { query } from '../config/db.js';
 import bcrypt from 'bcrypt';
 import jwt from 'jsonwebtoken';
+import { initializeTenantData } from '../utils/initialization.js';
 
 const SUPERADMIN_SECRET = process.env.GASTRORED_SUPERADMIN_SECRET || 'gastrored_super_secret';
 
@@ -137,13 +138,16 @@ export const createTenant = async (req, res) => {
     const store = storeResult.rows[0];
 
     // 3. Crear tenant_settings
-    await query(
-      `INSERT INTO tenant_settings (store_id, tenant_id, tenant_id_fk, cash_on_delivery)
-       VALUES ($1, $2, $3, true) ON CONFLICT (store_id) DO NOTHING`,
-      [store.id, cleanSub, cleanSub]
-    );
+     await query(
+       `INSERT INTO tenant_settings (store_id, tenant_id, tenant_id_fk, cash_on_delivery)
+        VALUES ($1, $2, $3, true) ON CONFLICT (store_id) DO NOTHING`,
+       [store.id, cleanSub, cleanSub]
+     );
 
-    // 4. Crear usuario administrador si se proveen credenciales
+     // 4. Inicializar datos de ejemplo (2 productos por categoría)
+     await initializeTenantData(cleanSub, store.id);
+
+     // 5. Crear usuario administrador si se proveen credenciales
     let adminUser = null;
     const effectiveAdminEmail = admin_email?.trim() || null;
     const { admin_name, admin_password } = req.body;

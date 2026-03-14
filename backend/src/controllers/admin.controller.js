@@ -19,6 +19,22 @@ export const getAdminProducts = async (req, res) => {
 export const createProduct = async (req, res) => {
   try {
     const storeId = await getStoreId(req);
+    const tenantId = getTenantId(req);
+
+    // ── Validar límite de productos según plan ──
+    const tenantRes = await query('SELECT plan_type FROM tenants WHERE id::text = $1::text OR subdomain = $1::text', [String(tenantId)]);
+    const plan = tenantRes.rows[0]?.plan_type || 'Full Digital';
+
+    if (plan === 'Full Digital') {
+      const countRes = await query('SELECT COUNT(*) FROM products WHERE store_id = $1 AND is_active = true', [storeId]);
+      if (parseInt(countRes.rows[0].count) >= 50) {
+        return res.status(403).json({
+          status: 'error',
+          message: 'Límite de 50 productos alcanzado para el Plan Full Digital. Mejorá a Plan Expert para tener productos ilimitados.'
+        });
+      }
+    }
+
     const { name, description, price, category_id, image_url, badge, stock } = req.body;
     const stockVal = Math.max(0, parseInt(stock, 10) || 0);
     const result = await query(
