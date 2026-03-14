@@ -1194,13 +1194,13 @@ function MercadoPagoSection({ data, token, reload }) {
 // ── SECCIÓN BRANDING ──────────────────────────────────────────────────────
 function BrandingSection({ token }) {
   const [branding, setBranding] = useState({
-    custom_branding_enabled: false, primary_color: '', secondary_color: '', font_family: '', logo_url: '',
+    custom_branding_enabled: false, primary_color: '', secondary_color: '', font_family: '', logo_url: '', plan_type: '',
   });
   const [saving, setSaving] = useState(false);
   const [msg, setMsg] = useState('');
   const [loaded, setLoaded] = useState(false);
 
-  const enabled = branding.custom_branding_enabled;
+  const enabled = branding.plan_type === 'Expert';
 
   useEffect(() => {
     if (!token) return;
@@ -1239,25 +1239,28 @@ function BrandingSection({ token }) {
         <div>
           <h2 className="font-black text-white text-lg leading-none">Branding Personalizado</h2>
           {enabled
-            ? <p className="text-xs text-green-400 mt-0.5">Módulo activo</p>
-            : <p className="text-xs text-yellow-500 mt-0.5">Módulo Premium — contactá a GastroRed para activar</p>
+            ? <p className="text-xs text-green-400 mt-0.5">Módulo activo (Plan Expert)</p>
+            : <p className="text-xs text-yellow-500 mt-0.5">Módulo Premium — disponible en Plan Expert</p>
           }
         </div>
       </div>
 
       {!enabled && (
-        <div className="mb-5 bg-yellow-950/30 border border-yellow-500/30 rounded-xl px-4 py-3 flex items-start gap-3">
-          <span className="text-yellow-400 text-lg mt-0.5">🔒</span>
-          <div>
-            <p className="text-yellow-300 text-sm font-semibold">Módulo Premium</p>
-            <p className="text-yellow-200/70 text-xs mt-0.5">
-              Los controles están deshabilitados. Contactá a GastroRed para habilitar branding personalizado en tu plan.
+        <div className="mb-8 bg-gradient-to-br from-purple-900/40 to-blue-900/40 border border-purple-500/30 rounded-2xl p-6 shadow-2xl overflow-hidden relative group">
+          <div className="absolute -right-4 -top-4 w-24 h-24 bg-purple-500/10 rounded-full blur-2xl group-hover:bg-purple-500/20 transition-all duration-700" />
+          <div className="relative z-10">
+            <div className="flex items-center gap-2 mb-3">
+              <span className="text-2xl">⭐</span>
+              <p className="text-purple-300 font-bold tracking-tight">Módulo exclusivo del Plan Expert</p>
+            </div>
+            <p className="text-white/80 text-sm leading-relaxed mb-5">
+              Mejorá tu plan para tener tu propia identidad visual, colores corporativos y App descargable (PWA) personalizada para tus clientes.
             </p>
             <a
-              href="mailto:contacto@gastrored.com.ar?subject=Quiero activar Branding Personalizado"
-              className="inline-block mt-2 text-xs text-yellow-400 underline hover:text-yellow-300"
+              href="mailto:contacto@gastrored.com.ar?subject=Upgrade a Plan Expert"
+              className="inline-flex items-center gap-2 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white px-6 py-2.5 rounded-xl text-sm font-bold shadow-lg shadow-purple-900/20 transition-all transform hover:scale-[1.02] active:scale-[0.98]"
             >
-              Contactar a GastroRed
+              🚀 Mejorar mi Plan
             </a>
           </div>
         </div>

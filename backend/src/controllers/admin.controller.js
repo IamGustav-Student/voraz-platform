@@ -394,10 +394,12 @@ export const saveMercadopagoConfig = async (req, res) => {
 // ── BRANDING ───────────────────────────────────────────────────────────────
 export const getBranding = async (req, res) => {
   try {
-    const tenantId = await getStoreId(req);
+    const tenantId = getTenantId(req);
     const result = await query(
-      `SELECT primary_color, secondary_color, font_family, logo_url, custom_branding_enabled
-       FROM tenant_settings WHERE tenant_id::text = $1::text OR tenant_id_fk::text = $1::text LIMIT 1`,
+      `SELECT ts.primary_color, ts.secondary_color, ts.font_family, ts.logo_url, ts.custom_branding_enabled, t.plan_type
+       FROM tenants t
+       LEFT JOIN tenant_settings ts ON ts.tenant_id_fk = t.id
+       WHERE t.id::text = $1::text OR t.subdomain = $1::text LIMIT 1`,
       [String(tenantId)]
     );
     const branding = result.rows[0] || {};
@@ -405,6 +407,7 @@ export const getBranding = async (req, res) => {
       status: 'success',
       data: {
         custom_branding_enabled: branding.custom_branding_enabled ?? false,
+        plan_type: branding.plan_type || 'Full Digital',
         primary_color:   branding.primary_color   || null,
         secondary_color: branding.secondary_color || null,
         font_family:     branding.font_family     || null,
@@ -416,7 +419,17 @@ export const getBranding = async (req, res) => {
 
 export const updateBranding = async (req, res) => {
   try {
-    const tenantId = await getStoreId(req);
+    const tenantId = getTenantId(req);
+    
+    // Validar plan Expert
+    const tenantCheck = await query('SELECT plan_type FROM tenants WHERE id::text = $1::text OR subdomain = $1::text', [String(tenantId)]);
+    if (tenantCheck.rows[0]?.plan_type !== 'Expert') {
+      return res.status(403).json({ 
+        status: 'error', 
+        message: 'Función exclusiva del Plan Expert.' 
+      });
+    }
+
     const { primary_color, secondary_color, font_family, logo_url } = req.body;
     await query(
       `INSERT INTO tenant_settings (tenant_id, tenant_id_fk, primary_color, secondary_color, font_family, logo_url, updated_at)

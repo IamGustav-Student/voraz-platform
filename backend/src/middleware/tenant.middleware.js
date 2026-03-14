@@ -188,13 +188,13 @@ export const requireCustomBranding = async (req, res, next) => {
       [req.tenant.id]
     );
     
-    if (result.rows.length > 0 && result.rows[0].custom_branding_enabled) {
+    if ((result.rows.length > 0 && result.rows[0].custom_branding_enabled) || req.tenant.plan_type === 'Expert') {
       return next();
     }
     
     return res.status(403).json({
       status: 'error',
-      message: 'Tu plan actual no incluye branding personalizado. Contactá al Súper Admin',
+      message: 'Tu plan actual no incluye branding personalizado (requiere Plan Expert). Contactá al Súper Admin',
     });
   } catch (err) {
     console.error('requireCustomBranding error:', err);

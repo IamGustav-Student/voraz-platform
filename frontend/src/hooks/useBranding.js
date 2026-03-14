@@ -76,6 +76,33 @@ export const useBranding = () => {
           document.title = b.brand_name;
         }
 
+        // ── Generar Manifiesto PWA Dinámico ──────────────────────────────────
+        const manifestData = {
+          name: b.brand_name || 'GastroRed',
+          short_name: b.brand_name || 'GastroRed',
+          description: b.slogan || 'Tu app de pedidos.',
+          start_url: '/',
+          display: 'standalone',
+          background_color: '#000000',
+          theme_color: b.primary_color || b.brand_color_primary || '#E30613',
+          icons: [
+            {
+              src: b.logo_url || b.brand_logo_url || '/images/logo_voraz.jpg',
+              sizes: '192x192',
+              type: 'image/jpeg'
+            },
+            {
+              src: b.logo_url || b.brand_logo_url || '/images/logo_voraz.jpg',
+              sizes: '512x512',
+              type: 'image/jpeg'
+            }
+          ]
+        };
+        const blob = new Blob([JSON.stringify(manifestData)], { type: 'application/json' });
+        const manifestUrl = URL.createObjectURL(blob);
+        const manifestLink = document.getElementById('app-manifest');
+        if (manifestLink) manifestLink.href = manifestUrl;
+
         // Sincronizar con el objeto global TENANT
         applyBrandTheme(b);
 
