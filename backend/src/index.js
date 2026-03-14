@@ -20,6 +20,7 @@ import superadminRoutes from './routes/superadmin.routes.js';
 import subscriptionRoutes from './routes/subscriptions.routes.js';
 
 import { tenantMiddleware } from './middleware/tenant.middleware.js';
+import { getTenantId } from './utils/tenant.js';
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -115,13 +116,13 @@ app.get('/api/manifest', async (req, res) => {
     const host = (req.headers['x-store-domain'] || req.headers.host || '').split(':')[0].toLowerCase();
     try {
         const result = await query(
-            'SELECT brand_name, brand_color_primary, brand_logo_url, brand_favicon_url, slogan FROM tenants WHERE custom_domain=$1 OR subdomain=$1 LIMIT 1',
+            'SELECT brand_name, brand_color_primary, brand_logo_url, brand_favicon_url, slogan FROM tenants WHERE custom_domain=$1 OR subdomain=$1 OR id::text=$1 LIMIT 1',
             [host]
         );
         const s = result.rows[0] || {};
         const name = s.brand_name || 'GastroRed';
         const color = s.brand_color_primary || '#E30613';
-        const logo = s.brand_logo_url || '/icons/icon-192.png';
+        const logo = s.brand_logo_url || '/images/logo_voraz.jpg';
         res.setHeader('Content-Type', 'application/manifest+json');
         res.json({
             name,
@@ -137,14 +138,22 @@ app.get('/api/manifest', async (req, res) => {
             ],
         });
     } catch {
-        res.json({ name: 'GastroRed', short_name: 'GastroRed', start_url: '/', display: 'standalone', theme_color: '#E30613' });
+        res.json({ 
+            name: 'GastroRed', 
+            short_name: 'GastroRed', 
+            start_url: '/', 
+            display: 'standalone', 
+            theme_color: '#E30613',
+            icons: [{ src: '/images/logo_voraz.jpg', sizes: '192x192', type: 'image/jpeg' }]
+        });
     }
 });
 
 
+
 // ── Configuración pública del tenant ─────────────────────────────────────────
 app.get('/api/settings', tenantMiddleware, async (req, res) => {
-    const tenantId = req.tenant?.id || 1;
+    const tenantId = getTenantId(req);
     try {
         const result = await query(
             `SELECT t.id, ts.cash_on_delivery, t.brand_name, t.brand_color_primary, t.brand_color_secondary,
@@ -152,8 +161,8 @@ app.get('/api/settings', tenantMiddleware, async (req, res) => {
                     ts.primary_color, ts.secondary_color, ts.font_family, ts.logo_url, ts.custom_branding_enabled
              FROM tenants t
              LEFT JOIN tenant_settings ts ON ts.tenant_id_fk = t.id
-             WHERE t.id = $1`,
-            [tenantId]
+             WHERE t.id::text = $1::text OR t.subdomain = $1::text`,
+            [String(tenantId)]
         );
         const cfg = result.rows[0] || {};
         res.json({

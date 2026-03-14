@@ -29,8 +29,10 @@ export const query = async (text, params) => {
     console.error(`🔴 ---------------------------`);
     console.error(`🔴 ERROR EN DB QUERY:`);
     console.error(`🔴 Mensaje: ${err.message}`);
-    console.error(`🔴 Query: ${text}`);
-    console.error(`🔴 Params:`, params);
+    if (process.env.NODE_ENV !== 'production') {
+      console.error(`🔴 Query: ${text}`);
+      console.error(`🔴 Params:`, params);
+    }
     console.error(`🔴 ---------------------------`);
     throw err;
   }

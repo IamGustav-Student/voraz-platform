@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { applyBrandTheme } from '../config/tenant';
 
 const API_URL = (import.meta.env.VITE_API_URL || 'http://localhost:3000/api').trim();
 
@@ -38,7 +39,7 @@ export const useBranding = () => {
     // Aplicar defaults inmediatamente para evitar flash
     applyToRoot(DEFAULTS);
 
-    fetch(`${API_URL}/admin/branding`, {
+    fetch(`${API_URL}/settings`, {
       headers: {
         'x-store-domain': window.location.hostname,
         'Content-Type': 'application/json',
@@ -49,16 +50,36 @@ export const useBranding = () => {
         if (!data?.data) return;
         const b = data.data;
 
-        if (b.custom_branding_enabled) {
-          applyToRoot(b);
+        // Fallback robusto para colores y logo
+        const finalBranding = {
+          ...DEFAULTS,
+          ...b,
+          primary_color:   b.primary_color   || b.brand_color_primary   || DEFAULTS.primary_color,
+          secondary_color: b.secondary_color || b.brand_color_secondary || DEFAULTS.secondary_color,
+          logo_url:        b.logo_url        || b.brand_logo_url        || null,
+          font_family:     b.font_family     || DEFAULTS.font_family,
+        };
 
-          // Actualizar título de la pestaña con el nombre del tenant si está disponible
-          if (b.brand_name) {
-            document.title = b.brand_name;
-          }
+        if (b.custom_branding_enabled) {
+          applyToRoot(finalBranding);
+        } else {
+          // Si no está habilitado custom branding, forzar colores GastroRed
+          applyToRoot({
+            ...finalBranding,
+            primary_color:   '#E30613',
+            secondary_color: '#F2C94C',
+          });
         }
 
-        setBranding({ ...DEFAULTS, ...b, loaded: true });
+        // Actualizar título de la pestaña
+        if (b.brand_name) {
+          document.title = b.brand_name;
+        }
+
+        // Sincronizar con el objeto global TENANT
+        applyBrandTheme(b);
+
+        setBranding({ ...finalBranding, loaded: true });
       })
       .catch(() => {
         setBranding(prev => ({ ...prev, loaded: true }));

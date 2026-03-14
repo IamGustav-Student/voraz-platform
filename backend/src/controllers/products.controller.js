@@ -1,15 +1,7 @@
 import { query } from '../config/db.js';
+import { getStoreId } from '../utils/tenant.js';
 
 const PLAN_PRODUCT_LIMITS = { 'Full Digital': 50 };
-
-async function getStoreId(req) {
-  const rawId = req.tenant?.id || req.store?.id || 1;
-  if (/^\d+$/.test(String(rawId))) return parseInt(rawId);
-  try {
-    const r = await query('SELECT id FROM stores WHERE CAST(tenant_id AS VARCHAR) = CAST($1 AS VARCHAR) ORDER BY id ASC LIMIT 1', [rawId]);
-    return r.rows.length > 0 && !isNaN(parseInt(r.rows[0].id)) ? parseInt(r.rows[0].id) : 1;
-  } catch { return 1; }
-}
 
 export const getMenu = async (req, res) => {
   try {

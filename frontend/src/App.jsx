@@ -53,9 +53,6 @@ function App() {
   const [isAdminOpen, setIsAdminOpen] = useState(false);
 
   useEffect(() => {
-    // Cargar branding dinámico del tenant desde la API
-    loadTenantConfig();
-
     // Si ya sabemos que es el root domain, no hace falta chequear
     if (!landingChecked) {
       const API_URL = (import.meta.env.VITE_API_URL || 'http://localhost:3000/api').trim();

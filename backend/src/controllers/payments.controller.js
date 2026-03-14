@@ -213,8 +213,12 @@ export const webhook = async (req, res) => {
         const newPaymentStatus = paymentStatusMap[mpStatus] || 'pending';
 
         if (newPaymentStatus === 'approved') {
-            const orderCheck = await query('SELECT id, store_id FROM orders WHERE id = $1', [orderId]);
-            if (orderCheck.rows.length && orderCheck.rows[0].store_id !== storeId) {
+            const orderCheck = await query('SELECT id, store_id, payment_status FROM orders WHERE id = $1', [orderId]);
+            if (!orderCheck.rows.length) return res.sendStatus(200);
+            if (orderCheck.rows[0].store_id !== storeId) return res.sendStatus(200);
+            
+            // Idempotencia: si ya está aprobado, no hacer nada más
+            if (orderCheck.rows[0].payment_status === 'approved') {
                 return res.sendStatus(200);
             }
 
@@ -228,8 +232,6 @@ export const webhook = async (req, res) => {
                 [String(paymentId), orderId]
             );
             const order = result.rows[0];
-
-            // El stock ya se descontó al crear el pedido (orders.controller.js).
 
             if (order?.user_id && order?.points_earned > 0) {
                 const already = await query(
@@ -245,6 +247,24 @@ export const webhook = async (req, res) => {
                 }
             }
         } else if (newPaymentStatus === 'rejected' || newPaymentStatus === 'cancelled') {
+            const orderCheck = await query('SELECT id, payment_status, status FROM orders WHERE id = $1', [orderId]);
+            if (!orderCheck.rows.length) return res.sendStatus(200);
+            
+            // Solo restauramos stock si la orden no estaba ya cancelada y el pago no era aprobado
+            if (orderCheck.rows[0].payment_status !== 'approved' && orderCheck.rows[0].status !== 'cancelled') {
+                // Restaurar stock
+                await query(
+                    `UPDATE products p
+                     SET stock = p.stock + agg.total_qty
+                     FROM (
+                         SELECT product_id, SUM(quantity)::int AS total_qty
+                         FROM order_items WHERE order_id = $1 GROUP BY product_id
+                     ) agg
+                     WHERE p.id = agg.product_id`,
+                    [orderId]
+                );
+            }
+
             await query(
                 `UPDATE orders SET payment_status = $1, status = 'cancelled', updated_at = NOW() WHERE id = $2`,
                 [newPaymentStatus, orderId]

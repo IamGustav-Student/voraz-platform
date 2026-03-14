@@ -328,9 +328,10 @@ export const updateOrderStatus = async (req, res) => {
     if (!allowed.includes(status)) {
       return res.status(400).json({ status: 'error', message: 'Estado inválido' });
     }
+    const storeId = await getStoreId(req);
     const result = await query(
-      'UPDATE orders SET status=$1 WHERE id=$2 RETURNING *',
-      [status, id]
+      'UPDATE orders SET status=$1 WHERE id=$2 AND store_id=$3 RETURNING *',
+      [status, id, storeId]
     );
     if (!result.rows.length) return res.status(404).json({ status: 'error', message: 'Pedido no encontrado' });
     res.json({ status: 'success', data: result.rows[0] });
