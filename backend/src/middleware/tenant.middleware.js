@@ -78,6 +78,14 @@ function validateTenantAccess(tenant) {
   return null;
 }
 
+/**
+ * Limpia la caché de tenants (útil tras un cambio de plan o activación).
+ */
+export const clearTenantCache = () => {
+  console.log('[Middleware] Clearing tenant cache...');
+  tenantCache.clear();
+};
+
 export const tenantMiddleware = async (req, res, next) => {
   const host = (req.headers['x-store-domain'] || req.headers.host || '')
     .split(':')[0].toLowerCase().trim();
