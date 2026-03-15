@@ -455,13 +455,78 @@ function PostPaymentScreen({ storeId, subResult, onContinue }) {
 }
 
 
+const FALLBACK_PLANS = [
+    {
+        plan_type: 'Trial',
+        name: 'Prueba Gratis',
+        price: 0,
+        period: '7 días',
+        badge: '🎁 Sin tarjeta',
+        badgeColor: 'gray',
+        cta: 'Empezar gratis',
+        prices: { monthly: 0, annual: 0 },
+        features: [
+            { text: 'Menú digital completo' },
+            { text: 'Panel de administración' },
+            { text: 'Hasta 20 productos' },
+            { text: 'Pedidos online' },
+            { text: 'MercadoPago integrado' },
+            { text: 'Soporte por email' },
+            { text: 'Subdominio de GastroRed', disabled: false },
+            { text: 'Dominio propio', disabled: true },
+        ],
+    },
+    {
+        plan_type: 'Full Digital',
+        name: 'Full Digital',
+        price: 60000,
+        period: 'mes',
+        badge: '⭐ Más elegido',
+        badgeColor: 'red',
+        highlighted: true,
+        cta: 'Empezar ahora',
+        prices: { monthly: 60000, annual: 600000 },
+        features: [
+            { text: 'Todo lo de Prueba Gratis' },
+            { text: 'Hasta 50 productos activos' },
+            { text: 'Cupones de descuento' },
+            { text: 'Sistema de puntos / fidelización' },
+            { text: 'Análisis de ventas y pedidos' },
+            { text: 'Subdominio + Dominio propio' },
+            { text: 'Soporte prioritario' },
+            { text: 'Branding personalizado' },
+        ],
+    },
+    {
+        plan_type: 'Expert',
+        name: 'Expert',
+        price: 100000,
+        period: 'mes',
+        badge: '🏆 Máximo poder',
+        badgeColor: 'yellow',
+        cta: 'Quiero Expert',
+        prices: { monthly: 100000, annual: 1000000 },
+        features: [
+            { text: 'Todo lo de Full Digital' },
+            { text: 'Productos ilimitados' },
+            { text: 'Múltiples sucursales' },
+            { text: 'Influencers y videos integrados' },
+            { text: 'Noticias y blog de marca' },
+            { text: 'Gestión avanzada de pedidos' },
+            { text: 'Soporte directo por WhatsApp' },
+            { text: 'Acceso anticipado a nuevas funciones' },
+        ],
+    },
+];
+
 export default function GastroRedLanding() {
     const [scrolled, setScrolled] = useState(false);
     const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
     const [selectedPlan, setSelectedPlan] = useState(null); // abre el modal
     const [showSuperAdmin, setShowSuperAdmin] = useState(false);
-    const [plans, setPlans] = useState([]);
+    const [plans, setPlans] = useState(FALLBACK_PLANS);
     const [loadingPlans, setLoadingPlans] = useState(true);
+    const [postPayment, setPostPayment] = useState(null); // abre pantalla post-pago
 
     // Cargar planes dinámicos
     useEffect(() => {
@@ -518,69 +583,6 @@ export default function GastroRedLanding() {
         { number: 4, icon: '🚀', title: 'Comenzás a vender', desc: 'Compartís el link de tu carta, tus clientes hacen pedidos y pagos desde el celular, y vos gestionás todo desde el admin.' },
     ];
 
-    const initialPlans = [ // This array is now a fallback/initial structure, actual plans will be fetched
-        {
-            plan_type: 'Trial',
-            name: 'Prueba Gratis',
-            price: 0,
-            period: '7 días',
-            badge: '\uD83C\uDF81 Sin tarjeta',
-            badgeColor: 'gray',
-            cta: 'Empezar gratis',
-            prices: { monthly: 0, annual: 0 },
-            features: [
-                { text: 'Menú digital completo' },
-                { text: 'Panel de administración' },
-                { text: 'Hasta 20 productos' },
-                { text: 'Pedidos online' },
-                { text: 'MercadoPago integrado' },
-                { text: 'Soporte por email' },
-                { text: 'Subdominio de GastroRed', disabled: false },
-                { text: 'Dominio propio', disabled: true },
-            ],
-        },
-        {
-            plan_type: 'Full Digital',
-            name: 'Full Digital',
-            price: 60000,
-            period: 'mes',
-            badge: '\u2B50 Más elegido',
-            badgeColor: 'teal',
-            highlighted: true,
-            cta: 'Empezar ahora',
-            prices: { monthly: 60000, annual: 600000 },
-            features: [
-                { text: 'Todo lo de Prueba Gratis' },
-                { text: 'Hasta 50 productos activos' },
-                { text: 'Cupones de descuento' },
-                { text: 'Sistema de puntos / fidelización' },
-                { text: 'Análisis de ventas y pedidos' },
-                { text: 'Subdominio + Dominio propio' },
-                { text: 'Soporte prioritario' },
-                { text: 'Branding personalizado' },
-            ],
-        },
-        {
-            plan_type: 'Expert',
-            name: 'Expert',
-            price: 100000,
-            period: 'mes',
-            badge: '\uD83C\uDFC6 Máximo poder',
-            badgeColor: 'yellow',
-            cta: 'Quiero Expert',
-            prices: { monthly: 100000, annual: 1000000 },
-            features: [
-                { text: 'Todo lo de Full Digital' },
-                { text: 'Productos ilimitados' },
-                { text: 'Múltiples sucursales' },
-                { text: 'Influencers y videos integrados' },
-                { text: 'Noticias y blog de marca' },
-                { text: 'Gestión avanzada de pedidos' },
-                { text: 'Soporte directo por WhatsApp' },
-                { text: 'Acceso anticipado a nuevas funciones' },
-            ],
-        },
-    ];
 
     return (
         <div className="min-h-screen bg-[#080c12] text-white font-sans overflow-x-hidden">
@@ -786,7 +788,7 @@ export default function GastroRedLanding() {
                         </div>
                         {/* Panel preview mock */}
                         <div className="relative">
-                            <div className="absolute inset-0 bg-teal-500/10 rounded-3xl blur-3xl" />
+                            <div className="absolute inset-0 bg-red-500/10 rounded-3xl blur-3xl" />
                             <div className="relative bg-gradient-to-br from-[#0d1117] to-[#131b26] border border-white/10 rounded-3xl overflow-hidden shadow-2xl">
                                 {/* Browser chrome */}
                                 <div className="bg-[#0a0e16] px-4 py-3 border-b border-white/5 flex items-center gap-3">
@@ -912,13 +914,13 @@ export default function GastroRedLanding() {
             {/* ── CTA FINAL ────────────────────────────────────────────────────────── */}
             <section id="contacto" className="py-24">
                 <div className="max-w-4xl px-4 mx-auto text-center md:px-8">
-                    <div className="relative p-12 overflow-hidden border bg-gradient-to-br from-teal-900/40 to-teal-800/20 border-teal-500/30 rounded-3xl md:p-16">
-                        <div className="absolute top-0 w-64 h-64 -translate-x-1/2 rounded-full left-1/2 bg-teal-500/15 blur-3xl" />
+                    <div className="relative p-12 overflow-hidden border bg-gradient-to-br from-red-950/40 to-red-900/20 border-red-500/30 rounded-3xl md:p-16">
+                        <div className="absolute top-0 w-64 h-64 -translate-x-1/2 rounded-full left-1/2 bg-red-600/15 blur-3xl" />
                         <div className="relative">
                             <div className="mb-6 text-5xl">🍽️</div>
                             <h2 className="mb-4 text-4xl font-black md:text-5xl">
                                 ¿Listo para digitalizar{' '}
-                                <span className="text-teal-400">tu restaurante?</span>
+                                <span className="text-red-500">tu restaurante?</span>
                             </h2>
                             <p className="max-w-xl mx-auto mb-8 text-lg text-gray-300">
                                 Arrancá con 7 días gratis. Sin técnicos, sin complicaciones, sin letra chica.
@@ -927,7 +929,7 @@ export default function GastroRedLanding() {
                             <div className="flex flex-col justify-center gap-4 sm:flex-row">
                                 <a
                                     href="mailto:hola@gastrored.com.ar?subject=Quiero sumarme a GastroRed&body=Hola! Me interesa probar GastroRed para mi restaurante."
-                                    className="inline-flex items-center justify-center gap-2 px-8 py-4 text-lg font-black text-white transition-all bg-teal-500 shadow-2xl hover:bg-teal-400 rounded-xl shadow-teal-900/50 hover:-translate-y-1"
+                                    className="inline-flex items-center justify-center gap-2 px-8 py-4 text-lg font-black text-white transition-all bg-red-600 shadow-2xl hover:bg-red-500 rounded-xl shadow-red-900/50 hover:-translate-y-1"
                                 >
                                     Escribinos por email 📩
                                 </a>
