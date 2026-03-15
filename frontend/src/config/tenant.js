@@ -30,6 +30,11 @@ let _tenant = {
     title: 'GastroRed',
     description: 'Tu carta digital.',
   },
+  social: {
+    instagram: '',
+    whatsapp: '',
+    facebook: '',
+  },
 };
 
 /** Aplica los colores del tenant como CSS custom properties en :root */
@@ -94,7 +99,9 @@ export function applyBrandTheme(settings) {
 /** Oscurece un color hex en `amount` puntos (–20 = 20 más oscuro) */
 function adjustColor(hex, amount) {
   try {
+    if (!hex || typeof hex !== 'string' || !hex.startsWith('#')) return hex;
     const num = parseInt(hex.replace('#', ''), 16);
+    if (isNaN(num)) return hex;
     const r = Math.max(0, Math.min(255, (num >> 16) + amount));
     const g = Math.max(0, Math.min(255, ((num >> 8) & 0x00ff) + amount));
     const b = Math.max(0, Math.min(255, (num & 0x0000ff) + amount));

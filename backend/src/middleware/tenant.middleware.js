@@ -18,12 +18,19 @@ const GASTRORED_SUFFIX = (process.env.GASTRORED_ROOT_DOMAIN || 'gastrored.com.ar
 // Hosts de infra que NO son tenants reales → fallback a Voraz
 const isInfraHost = (host) =>
   host === 'localhost' ||
-  host.startsWith('127.') ||
+  host === '127.0.0.1' ||
+  host.startsWith('192.168.') ||
   host.includes('.up.railway.app') ||
   host.includes('.railway.app') ||
   host.includes('voraz-platform.vercel.app');
 
 function extractSubdomain(host) {
+  // Caso local: subdominio.localhost
+  if (host.endsWith('.localhost')) {
+    return host.replace('.localhost', '');
+  }
+  
+  // Caso prod: subdominio.gastrored.com.ar
   if (host.endsWith(`.${GASTRORED_SUFFIX}`)) {
     return host.slice(0, host.length - GASTRORED_SUFFIX.length - 1);
   }

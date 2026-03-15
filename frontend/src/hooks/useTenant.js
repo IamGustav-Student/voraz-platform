@@ -45,8 +45,8 @@ export function TenantProvider({ children }) {
             text: TENANT.theme.text,
           },
           social: {
-            instagram: s.instagram_url || TENANT.social.instagram,
-            whatsapp: s.whatsapp_number || TENANT.social.whatsapp,
+            instagram: s.instagram_url || (TENANT.social?.instagram || ''),
+            whatsapp: s.whatsapp_number || (TENANT.social?.whatsapp || ''),
             tiktok: s.tiktok_url || null,
           },
           currency: 'ARS',
