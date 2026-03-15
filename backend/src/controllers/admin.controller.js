@@ -256,11 +256,11 @@ export const uploadImage = async (req, res) => {
 export const getDashboardStats = async (req, res) => {
   try {
     const storeId = await getStoreId(req);
-    const [products, orders, users, coupons] = await Promise.all([
+    const [products, orders, users, loyalty] = await Promise.all([
       query('SELECT COUNT(*) FROM products WHERE store_id=$1 AND is_active=true', [storeId]),
       query("SELECT COUNT(*), COALESCE(SUM(total),0) as revenue FROM orders WHERE store_id=$1 AND status != 'cancelled'", [storeId]),
       query('SELECT COUNT(*) FROM users WHERE store_id=$1', [storeId]),
-      query('SELECT COUNT(*) FROM coupons WHERE store_id=$1 AND active=true', [storeId]),
+      query("SELECT COALESCE(SUM(points_redeemed),0) as total_redeemed FROM orders WHERE store_id=$1 AND status != 'cancelled'", [storeId]),
     ]);
     res.json({
       status: 'success',
@@ -269,7 +269,7 @@ export const getDashboardStats = async (req, res) => {
         orders: parseInt(orders.rows[0].count),
         revenue: parseFloat(orders.rows[0].revenue),
         users: parseInt(users.rows[0].count),
-        activeCoupons: parseInt(coupons.rows[0].count),
+        redeemedPoints: parseInt(loyalty.rows[0].total_redeemed),
       }
     });
   } catch (e) { res.status(500).json({ status: 'error', message: e.message }); }

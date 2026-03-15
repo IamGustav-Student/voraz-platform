@@ -10,6 +10,7 @@ const fmt = (n) => parseInt(n).toLocaleString('es-AR');
 const typeConfig = {
     earned:   { label: 'Ganados',   color: 'text-green-400',  bg: 'bg-green-500/10',  sign: '+' },
     redeemed: { label: 'Canjeados', color: 'text-red-400',    bg: 'bg-red-500/10',    sign: '' },
+    refund:   { label: 'Devuelto',  color: 'text-blue-400',   bg: 'bg-blue-500/10',   sign: '+' },
     bonus:    { label: 'Bonus',     color: 'text-voraz-yellow', bg: 'bg-yellow-500/10', sign: '+' },
 };
 

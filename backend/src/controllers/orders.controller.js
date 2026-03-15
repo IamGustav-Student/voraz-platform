@@ -221,6 +221,20 @@ export const updateOrderStatus = async (req, res) => {
             }
         }
 
+        if (status === 'cancelled' && order.user_id && order.points_redeemed > 0) {
+            const alreadyRefunded = await query(
+                `SELECT id FROM points_history WHERE order_id = $1 AND type = 'refund'`,
+                [id]
+            );
+            if (!alreadyRefunded.rows.length) {
+                await query('UPDATE users SET points = points + $1 WHERE id = $2', [order.points_redeemed, order.user_id]);
+                await query(
+                    `INSERT INTO points_history (user_id, order_id, points, type, description) VALUES ($1,$2,$3,'refund',$4)`,
+                    [order.user_id, id, order.points_redeemed, `Devolución de puntos por cancelación de pedido #${id}`]
+                );
+            }
+        }
+
         res.json({ status: 'success', data: order });
     } catch (error) {
         res.status(500).json({ status: 'error', message: error.message });
