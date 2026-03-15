@@ -1515,7 +1515,7 @@ function QRSection({ token, onUpgrade }) {
 
   useEffect(() => {
     adminFetch('/qr-config', token)
-      .then(d => { if (d.data) setData(d.data); setLoading(false); })
+      .then(d => { if (d) setData(d); setLoading(false); })
       .catch(() => setLoading(false));
   }, [token]);
 

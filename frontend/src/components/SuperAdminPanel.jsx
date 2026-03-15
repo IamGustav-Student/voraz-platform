@@ -1,4 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
+import { usePWAInstall } from '../hooks/usePWAInstall';
+import InstallPWABanner from './InstallPWABanner';
 
 const API_URL = (import.meta.env.VITE_API_URL || 'http://localhost:3000/api').trim();
 // Dominio base de GastroRed para preview de URLs de tenant
@@ -54,6 +56,9 @@ export default function SuperAdminPanel({ onBack }) {
   const [config, setConfig] = useState(null);
   const [configForm, setConfigForm] = useState({});
   const [savingConfig, setSavingConfig] = useState(false);
+
+  // PWA Install logic
+  const { isInstallable, handleInstallClick } = usePWAInstall();
 
   const load = useCallback(async (t) => {
     const tk = t || token;
@@ -601,6 +606,16 @@ export default function SuperAdminPanel({ onBack }) {
           </form>
         )}
       </div>
+
+      {/* PWA INSTALL BANNER EXCLUSIVO SUPERADMIN */}
+      {token && (
+        <InstallPWABanner 
+          isInstallable={isInstallable} 
+          handleInstallClick={handleInstallClick}
+          brandName="GastroRed SuperAdmin"
+        />
+      )}
     </div>
   );
 }
+

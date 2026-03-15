@@ -65,9 +65,14 @@ router.patch('/branding', requireCustomBranding, updateBranding);
 router.get('/qr-config', getQRConfig);
 
 // Suscripción
-router.get('/subscription', (req, res) => {
-  req.params.store_id = req.tenant.id; // Hack para reutilizar getSubscriptionStatus que espera store_id
-  return getSubscriptionStatus(req, res);
+router.get('/subscription', async (req, res) => {
+  try {
+    const storeId = await getStoreId(req);
+    req.params.store_id = storeId; 
+    return getSubscriptionStatus(req, res);
+  } catch (e) {
+    res.status(500).json({ status: 'error', message: e.message });
+  }
 });
 router.post('/subscription/upgrade', createUpgradeCheckout);
 
