@@ -17,6 +17,8 @@ const defaultTenant = {
   pointsName: TENANT.pointsName,
   cashOnDelivery: true,
   planType: 'Expert',
+  loyaltyEnabled: false,
+  pointsRedeemValue: 0,
   loaded: false,
 };
 
@@ -54,6 +56,8 @@ export function TenantProvider({ children }) {
           pointsName: s.points_name || TENANT.pointsName,
           cashOnDelivery: s.cash_on_delivery !== false,
           planType: s.plan_type || 'Expert',
+          loyaltyEnabled: !!s.loyalty_enabled,
+          pointsRedeemValue: s.points_redeem_value || 0,
           storeId: s.id || 1,
           subdomain: s.subdomain || null,
           loaded: true,

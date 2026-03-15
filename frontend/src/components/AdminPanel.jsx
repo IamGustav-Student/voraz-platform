@@ -926,6 +926,116 @@ function NewsSection({ token }) {
   );
 }
 
+// ── Fidelización (Loyalty) ──────────────────────────────────────────────────
+function LoyaltySection({ items, token }) {
+  const [config, setConfig] = useState({
+    loyalty_enabled: items.loyalty_enabled ?? false,
+    points_redeem_value: items.points_redeem_value ?? 500,
+  });
+  const [saving, setSaving] = useState(false);
+  const [msg, setMsg] = useState('');
+
+  useEffect(() => {
+    if (items) {
+      setConfig({
+        loyalty_enabled: items.loyalty_enabled ?? false,
+        points_redeem_value: items.points_redeem_value ?? 500,
+      });
+    }
+  }, [items]);
+
+  const save = async (e) => {
+    e.preventDefault();
+    setSaving(true);
+    setMsg('');
+    try {
+      await adminFetch('/loyalty', token, {
+        method: 'POST',
+        body: JSON.stringify(config),
+      });
+      setMsg('Configuración guardada correctamente.');
+    } catch (err) {
+      setMsg('Error: ' + err.message);
+    }
+    setSaving(false);
+  };
+
+  return (
+    <div className="max-w-2xl">
+      <h2 className="text-2xl font-bold mb-2">Fidelización por Puntos</h2>
+      <p className="text-gray-500 text-sm mb-6">
+        Configurá cómo tus clientes acumulan y canjean puntos en tu local.
+      </p>
+
+      <div className={`rounded-xl p-4 border mb-6 flex items-center gap-4 ${config.loyalty_enabled ? 'bg-green-900/20 border-green-500/30' : 'bg-gray-800 border-white/10'}`}>
+        <div className={`w-4 h-4 rounded-full ${config.loyalty_enabled ? 'bg-green-400' : 'bg-gray-500'}`} />
+        <div>
+          <p className={`font-semibold text-sm ${config.loyalty_enabled ? 'text-green-300' : 'text-gray-400'}`}>
+            {config.loyalty_enabled ? 'Sistema de puntos activo' : 'Sistema de puntos desactivado'}
+          </p>
+          <p className="text-xs text-gray-500 mt-0.5">
+            {config.loyalty_enabled ? 'Los clientes pueden ganar y canjear puntos en sus pedidos.' : 'Nadie podrá acumular ni usar puntos actualmente.'}
+          </p>
+        </div>
+        <button
+          onClick={() => setConfig(p => ({ ...p, loyalty_enabled: !p.loyalty_enabled }))}
+          className={`ml-auto px-4 py-1.5 rounded-lg text-xs font-bold transition-all ${config.loyalty_enabled ? 'bg-red-600/20 text-red-400 hover:bg-red-600/30' : 'bg-green-600/20 text-green-400 hover:bg-green-600/30'}`}
+        >
+          {config.loyalty_enabled ? 'Desactivar' : 'Activar'}
+        </button>
+      </div>
+
+      <form onSubmit={save} className="space-y-6">
+        <div className="bg-white/5 rounded-xl p-5 border border-white/10">
+          <h3 className="font-semibold text-gray-200 mb-4 text-sm uppercase tracking-wider">Valor del Canje</h3>
+          
+          <div className="flex items-center gap-4">
+            <div className="bg-black/30 rounded-xl p-4 flex-1 border border-white/5 text-center">
+              <p className="text-[10px] text-gray-500 uppercase font-black mb-1">Bloque de canje</p>
+              <p className="text-xl font-black text-white">500 pts</p>
+            </div>
+            
+            <div className="text-gray-600 text-2xl">=</div>
+
+            <div className="flex-1 bg-white/5 rounded-xl p-4 border border-voraz-yellow/20 relative">
+               <span className="absolute left-4 top-1/2 -translate-y-1/2 text-voraz-yellow font-black">$</span>
+               <input 
+                 type="number"
+                 value={config.points_redeem_value}
+                 onChange={e => setConfig(p => ({ ...p, points_redeem_value: parseInt(e.target.value) || 0 }))}
+                 className="bg-transparent w-full pl-8 py-2 text-xl font-black text-white focus:outline-none"
+               />
+               <p className="absolute -bottom-5 left-1/2 -translate-x-1/2 text-[9px] text-gray-500 uppercase font-bold whitespace-nowrap">
+                 Valor en pesos
+               </p>
+            </div>
+          </div>
+          
+          <div className="mt-10 bg-voraz-yellow/5 border border-voraz-yellow/10 rounded-lg p-4">
+            <p className="text-xs text-voraz-yellow/80 leading-relaxed font-medium">
+              💡 <strong>¿Cómo funciona?</strong> Por cada producto que los clientes compren, sumarán los puntos que definas en la sección "Productos". Al llegar a 500 puntos, podrán canjearlos por <strong>${config.points_redeem_value}</strong> de descuento en su carrito.
+            </p>
+          </div>
+        </div>
+
+        <button 
+          type="submit" 
+          disabled={saving}
+          className="w-full bg-red-600 hover:bg-red-700 py-3 rounded-xl font-bold text-white shadow-lg shadow-red-900/20 disabled:opacity-50 transition-all active:scale-95"
+        >
+          {saving ? 'Guardando...' : 'Guardar Configuración'}
+        </button>
+
+        {msg && (
+          <p className={`text-center text-sm font-bold p-3 rounded-xl ${msg.startsWith('Error') ? 'bg-red-900/20 text-red-300' : 'bg-green-900/20 text-green-300'}`}>
+            {msg}
+          </p>
+        )}
+      </form>
+    </div>
+  );
+}
+
 // ── Pedidos ───────────────────────────────────────────────────────────────────
 const STATUS_LABELS = {
   pending: 'Pendiente',

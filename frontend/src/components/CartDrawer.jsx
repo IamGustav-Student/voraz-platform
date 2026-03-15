@@ -17,6 +17,7 @@ const CartDrawer = ({ isOpen, onClose, stores, onOrderCreated, onOpenAuth }) => 
     const [cashOnDeliveryEnabled, setCashOnDeliveryEnabled] = useState(true);
     const [form, setForm] = useState({ name: '', phone: '', address: '', store_id: '', notes: '' });
     const [loyaltyConfig, setLoyaltyConfig] = useState({ enabled: false, value: 0 });
+    const [pointsToRedeem, setPointsToRedeem] = useState(0);
     const [error, setError] = useState('');
 
     useEffect(() => {
@@ -48,7 +49,6 @@ const CartDrawer = ({ isOpen, onClose, stores, onOrderCreated, onOpenAuth }) => 
     const handleClose = () => {
         setStep(STEPS.CART);
         setError('');
-        setCouponError('');
         onClose();
     };
 
