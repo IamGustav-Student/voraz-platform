@@ -1387,8 +1387,8 @@ function SubscriptionSection({ data, token, reload }) {
         method: 'POST',
         body: JSON.stringify({ plan_type: planType, period }),
       });
-      if (res.data?.init_point) {
-        window.location.href = res.data.init_point;
+      if (res?.init_point) {
+        window.location.href = res.init_point;
       } else {
         throw new Error('No se pudo generar el link de pago.');
       }
