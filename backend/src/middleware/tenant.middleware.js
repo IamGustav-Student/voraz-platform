@@ -83,9 +83,12 @@ export const tenantMiddleware = async (req, res, next) => {
     .split(':')[0].toLowerCase().trim();
 
   if (!host) return res.status(400).json({ status: 'error', message: 'Host requerido.' });
-
+  
+  console.log(`[Middleware] Host: ${host}`, { rootDomains: GASTRORED_ROOT_DOMAINS });
+  
   // root GastroRed → landing
   if (GASTRORED_ROOT_DOMAINS.includes(host)) {
+    console.log(`[Middleware] Root domain detected: ${host}`);
     req.isLanding = true;
     req.tenant = null;
     req.store = null;
@@ -94,12 +97,14 @@ export const tenantMiddleware = async (req, res, next) => {
 
   // Infra hosts (Railway, Vercel dev) → fallback silencioso a Voraz
   if (isInfraHost(host)) {
+    console.log(`[Middleware] Infra host detected: ${host}`);
     req.tenant = FALLBACK_TENANT;
     req.store = FALLBACK_TENANT;
     return next();
   }
 
   const subdomainPart = extractSubdomain(host);
+  console.log(`[Middleware] Extracted subdomain: ${subdomainPart}`);
 
   try {
     let tenant = null;
