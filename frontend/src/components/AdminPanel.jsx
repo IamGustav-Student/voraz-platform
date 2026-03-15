@@ -434,6 +434,7 @@ function ProductsSection({ items, categories, token, reload }) {
       name: p.name, description: p.description || '', price: p.price,
       category_id: p.category_id, image_url: p.image_url || '', badge: p.badge || '',
       stock: p.stock != null ? String(p.stock) : '0',
+      points_earned: p.points_earned ?? 0,
     });
     setMsg('');
     window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -449,7 +450,12 @@ function ProductsSection({ items, categories, token, reload }) {
   const submit = async (e) => {
     e.preventDefault(); setSubmitting(true); setMsg('');
     try {
-      const payload = { ...form, price: parseFloat(form.price), stock: parseStock(form.stock) };
+      const payload = { 
+        ...form, 
+        price: parseFloat(form.price), 
+        stock: parseStock(form.stock),
+        points_earned: parseInt(form.points_earned) || 0
+      };
       if (editing) {
         await adminFetch(`/products/${editing}`, token, { method: 'PUT', body: JSON.stringify({ ...payload, is_active: true }) });
         setMsg('Producto actualizado');

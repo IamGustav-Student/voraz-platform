@@ -207,17 +207,28 @@ export const updateOrderStatus = async (req, res) => {
         }
         const order = result.rows[0];
 
-        if (status === 'delivered' && order.user_id && order.points_earned > 0) {
-            const already = await query(
-                `SELECT id FROM points_history WHERE order_id = $1 AND type = 'earned'`,
-                [id]
+        if (status === 'delivered' && order.user_id && (order.points_earned || 0) > 0) {
+            // Verificar si la fidelización está activa para este comercio
+            const loyaltyCheck = await query(
+                'SELECT loyalty_enabled FROM tenant_settings WHERE tenant_id_fk = $1',
+                [getTenantId(req)]
             );
-            if (!already.rows.length) {
-                await query('UPDATE users SET points = points + $1 WHERE id = $2', [order.points_earned, order.user_id]);
-                await query(
-                    `INSERT INTO points_history (user_id, order_id, points, type, description) VALUES ($1,$2,$3,'earned',$4)`,
-                    [order.user_id, id, order.points_earned, `Puntos ganados por pedido #${id}`]
+            
+            if (loyaltyCheck.rows[0]?.loyalty_enabled) {
+                const already = await query(
+                    `SELECT id FROM points_history WHERE order_id = $1 AND type = 'earned'`,
+                    [id]
                 );
+                if (!already.rows.length) {
+                    await query('UPDATE users SET points = points + $1 WHERE id = $2', [order.points_earned || 0, order.user_id]);
+                    await query(
+                        `INSERT INTO points_history (user_id, order_id, points, type, description) VALUES ($1,$2,$3,'earned',$4)`,
+                        [order.user_id, id, order.points_earned, `Puntos ganados por pedido #${id}`]
+                    );
+                    console.log(`[Loyalty] Puntos acreditados para pedido #${id}: ${order.points_earned} pts`);
+                }
+            } else {
+                console.log(`[Loyalty] Fidelización desactivada para el comercio. No se acreditan puntos para pedido #${id}`);
             }
         }
 

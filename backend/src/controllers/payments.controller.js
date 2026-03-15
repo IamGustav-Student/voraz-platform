@@ -233,17 +233,26 @@ export const webhook = async (req, res) => {
             );
             const order = result.rows[0];
 
-            if (order?.user_id && order?.points_earned > 0) {
-                const already = await query(
-                    `SELECT id FROM points_history WHERE order_id = $1 AND type = 'earned'`,
-                    [orderId]
+            if (order?.user_id && (order?.points_earned || 0) > 0) {
+                // Verificar si la fidelización está activa para este comercio
+                const loyaltyCheck = await query(
+                    'SELECT loyalty_enabled FROM tenant_settings WHERE tenant_id_fk = (SELECT tenant_id_fk FROM stores WHERE id = $1)',
+                    [order.store_id]
                 );
-                if (!already.rows.length) {
-                    await query('UPDATE users SET points = points + $1 WHERE id = $2', [order.points_earned, order.user_id]);
-                    await query(
-                        `INSERT INTO points_history (user_id, order_id, points, type, description) VALUES ($1,$2,$3,'earned',$4)`,
-                        [order.user_id, orderId, order.points_earned, `Puntos ganados por pedido #${orderId}`]
+
+                if (loyaltyCheck.rows[0]?.loyalty_enabled) {
+                    const already = await query(
+                        `SELECT id FROM points_history WHERE order_id = $1 AND type = 'earned'`,
+                        [orderId]
                     );
+                    if (!already.rows.length) {
+                        await query('UPDATE users SET points = points + $1 WHERE id = $2', [order.points_earned || 0, order.user_id]);
+                        await query(
+                            `INSERT INTO points_history (user_id, order_id, points, type, description) VALUES ($1,$2,$3,'earned',$4)`,
+                            [order.user_id, orderId, order.points_earned, `Puntos ganados por pedido #${orderId}`]
+                        );
+                        console.log(`[Loyalty Webhook] Puntos acreditados para pedido #${orderId}: ${order.points_earned} pts`);
+                    }
                 }
             }
         } else if (newPaymentStatus === 'rejected' || newPaymentStatus === 'cancelled') {

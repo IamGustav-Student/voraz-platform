@@ -56,6 +56,7 @@ function App() {
   const [activeOrderId, setActiveOrderId] = useState(null);
   const [isAuthOpen, setIsAuthOpen] = useState(false);
   const [isAdminOpen, setIsAdminOpen] = useState(false);
+  const [earnedPoints, setEarnedPoints] = useState(0);
 
   useEffect(() => {
     // Si ya sabemos que es el root domain, no hace falta chequear
@@ -121,8 +122,9 @@ function App() {
     setIsCartOpen(true);
   };
 
-  const handleOrderCreated = (orderId) => {
+  const handleOrderCreated = (orderId, points = 0) => {
     setActiveOrderId(orderId);
+    setEarnedPoints(points);
     setCurrentView('tracking');
   };
 
@@ -558,7 +560,12 @@ function App() {
               {currentView === 'brandworld' && <BrandWorldView key="brandworld" />}
               {currentView === 'vorazburger' && <BrandWorldView key="vorazburger" />}
               {currentView === 'tracking' && activeOrderId && (
-                <OrderTracking key="tracking" orderId={activeOrderId} onBack={() => setCurrentView('menu')} />
+                <OrderTracking 
+                  key="tracking" 
+                  orderId={activeOrderId} 
+                  earnedPoints={earnedPoints}
+                  onBack={() => setCurrentView('menu')} 
+                />
               )}
               {currentView === 'club' && (
                 <VorazClub key="club" onBack={() => setCurrentView('menu')} onOpenAuth={() => setIsAuthOpen(true)} />

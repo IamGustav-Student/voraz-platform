@@ -17,7 +17,7 @@ const STEPS_PICKUP     = ['pending', 'confirmed', 'preparing', 'ready', 'deliver
 
 const fmt = (n) => parseInt(n).toLocaleString('es-AR');
 
-const OrderTracking = ({ orderId, onBack }) => {
+const OrderTracking = ({ orderId, earnedPoints = 0, onBack }) => {
     const [order, setOrder] = useState(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState('');
@@ -111,6 +111,36 @@ const OrderTracking = ({ orderId, onBack }) => {
                     )}
                     {order.status === 'delivered' && (
                         <p className="text-voraz-yellow font-bold">¡Gracias por elegir Voraz!</p>
+                    )}
+
+                    {/* Mensaje de Puntos (Fase 2) */}
+                    {order.status === 'pending' && earnedPoints > 0 && (
+                        <motion.div 
+                            initial={{ opacity: 0, scale: 0.9 }}
+                            animate={{ opacity: 1, scale: 1 }}
+                            className="mt-6 p-4 rounded-xl bg-gradient-to-r from-voraz-red/20 to-voraz-yellow/10 border border-voraz-yellow/20"
+                        >
+                            <div className="flex items-center justify-center gap-2 mb-1">
+                                <span className="text-xl">⭐</span>
+                                <p className="text-white font-bold text-sm">¡Ganaste puntos!</p>
+                            </div>
+                            <p className="text-voraz-yellow text-2xl font-black">{earnedPoints} pts</p>
+                            <p className="text-[10px] text-gray-500 uppercase font-bold mt-1 tracking-widest">
+                                Se acreditarán cuando el pedido sea entregado
+                            </p>
+                            
+                            {!order.user_id && (
+                                <div className="mt-3 pt-3 border-t border-white/5">
+                                    <p className="text-gray-400 text-[10px] mb-2">Para no perderlos, registrate en Voraz Club</p>
+                                    <button 
+                                        onClick={() => window.location.reload()} // Esto forzará el AuthModal vía persistencia o similar, o simplemente invita a registrarse
+                                        className="bg-white/10 hover:bg-white/20 text-white text-[9px] font-black py-1.5 px-3 rounded-lg uppercase transition"
+                                    >
+                                        Crear mi Cuenta
+                                    </button>
+                                </div>
+                            )}
+                        </motion.div>
                     )}
 
                     {/* Barra de progreso */}

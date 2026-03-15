@@ -97,7 +97,7 @@ const CartDrawer = ({ isOpen, onClose, stores, onOrderCreated, onOpenAuth }) => 
             handleClose();
 
             if (paymentMethod === 'cash') {
-                onOrderCreated(orderRes.order_id);
+                onOrderCreated(orderRes.order_id, orderRes.points_earned);
             } else {
                 const payRes = await createPaymentPreference({
                     order_id: orderRes.order_id,
@@ -106,11 +106,11 @@ const CartDrawer = ({ isOpen, onClose, stores, onOrderCreated, onOpenAuth }) => 
                 }, token);
 
                 if (payRes?.demo) {
-                    onOrderCreated(orderRes.order_id);
+                    onOrderCreated(orderRes.order_id, orderRes.points_earned);
                 } else if (payRes?.init_point) {
                     window.location.href = payRes.init_point;
                 } else {
-                    onOrderCreated(orderRes.order_id);
+                    onOrderCreated(orderRes.order_id, orderRes.points_earned);
                 }
             }
         } catch (err) {
