@@ -6,6 +6,7 @@ import { HelmetProvider } from 'react-helmet-async';
 import { CartProvider } from './context/CartContext.jsx';
 import { AuthProvider } from './context/AuthContext.jsx';
 import { TENANT } from './config/tenant.js';
+import { TenantProvider } from './hooks/useTenant.jsx';
 
 // Inyectar variables CSS del tenant al arrancar la app
 const root = document.documentElement;
@@ -25,9 +26,11 @@ ReactDOM.createRoot(document.getElementById('root')).render(
   <React.StrictMode>
     <HelmetProvider>
       <AuthProvider>
-        <CartProvider>
-          <App />
-        </CartProvider>
+        <TenantProvider>
+          <CartProvider>
+            <App />
+          </CartProvider>
+        </TenantProvider>
       </AuthProvider>
     </HelmetProvider>
   </React.StrictMode>,
