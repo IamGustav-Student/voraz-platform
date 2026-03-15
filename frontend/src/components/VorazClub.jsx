@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { useAuth } from '../context/AuthContext';
+import { useTenant } from '../hooks/useTenant';
 import { getPointsHistory, getUserOrders } from '../services/api';
 
 // Points constants moved to TENANT config logic
@@ -16,6 +17,7 @@ const typeConfig = {
 
 const VorazClub = ({ onBack, onOpenAuth }) => {
     const { user, logout, refreshUser, getToken } = useAuth();
+    const TENANT = useTenant();
     const [activeTab, setActiveTab] = useState('puntos');
     const [pointsData, setPointsData] = useState({ points: 0, history: [] });
     const [orders, setOrders] = useState([]);
@@ -34,7 +36,8 @@ const VorazClub = ({ onBack, onOpenAuth }) => {
     }, [user]);
 
     const POINTS_BLOCK = 500;
-    const pointsInPesos = Math.floor(pointsData.points / POINTS_BLOCK) * (TENANT.pointsRedeemValue || 0);
+    const pointsValue = TENANT.pointsRedeemValue || 0;
+    const pointsInPesos = Math.floor(pointsData.points / POINTS_BLOCK) * pointsValue;
     const canRedeem = pointsData.points >= POINTS_BLOCK;
 
     if (!user) {

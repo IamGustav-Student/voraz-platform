@@ -226,7 +226,12 @@ function App() {
                           <p className="text-gray-400 text-[10px] md:text-xs line-clamp-2">{product.description}</p>
                         </div>
                         <div className="flex justify-between items-end mt-1 md:mt-4">
-                          <div className="text-voraz-yellow font-black text-sm md:text-base">${fmt(product.price)}</div>
+                          <div className="flex flex-col">
+                            <div className="text-voraz-yellow font-black text-sm md:text-base">${fmt(product.price)}</div>
+                            {TENANT.loyaltyEnabled && product.points_earned > 0 && (
+                              <div className="text-green-400 text-[9px] font-bold italic">+{product.points_earned} pts</div>
+                            )}
+                          </div>
                           {outOfStock ? (
                             <span className="hidden md:inline text-red-400 text-xs uppercase font-bold">Agotado</span>
                           ) : (

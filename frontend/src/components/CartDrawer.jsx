@@ -227,6 +227,11 @@ const CartDrawer = ({ isOpen, onClose, stores, onOrderCreated, onOpenAuth }) => 
                                                 <div className="flex justify-between text-sm text-gray-400">
                                                     <span>Subtotal</span><span className="text-white">${fmt(total)}</span>
                                                 </div>
+                                                {pointsDiscount > 0 && (
+                                                    <div className="flex justify-between text-sm text-green-400">
+                                                        <span>Descuento por puntos</span><span>-${fmt(pointsDiscount)}</span>
+                                                    </div>
+                                                )}
                                                 <div className="border-t border-white/10 pt-2 flex justify-between font-black">
                                                     <span className="text-white uppercase text-sm">Total</span>
                                                     <span className="text-voraz-yellow text-lg">${fmt(finalTotal)}</span>

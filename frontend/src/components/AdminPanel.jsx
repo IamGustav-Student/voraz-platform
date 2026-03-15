@@ -950,7 +950,7 @@ function LoyaltySection({ items, token }) {
     setMsg('');
     try {
       await adminFetch('/loyalty', token, {
-        method: 'POST',
+        method: 'PATCH',
         body: JSON.stringify(config),
       });
       setMsg('Configuración guardada correctamente.');
