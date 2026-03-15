@@ -243,4 +243,5 @@ app.listen(PORT, async () => {
     await runMigration('phase23_products_stock_column.sql');
     await runMigration('phase24_loyalty_system.sql');
     await runMigration('phase25_loyalty_fix.sql');
+    await runMigration('phase26_welcome_bonus.sql');
 });
