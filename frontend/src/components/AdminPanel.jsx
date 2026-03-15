@@ -1333,7 +1333,7 @@ function BrandingSection({ token, onUpgrade }) {
   const [msg, setMsg] = useState('');
   const [loaded, setLoaded] = useState(false);
 
-  const enabled = branding.plan_type === 'Expert';
+  const enabled = branding.plan_type?.toLowerCase().trim() === 'expert';
 
   useEffect(() => {
     if (!token) return;
@@ -1648,7 +1648,7 @@ function QRSection({ token, onUpgrade }) {
   if (loading) return <div className="p-6 text-gray-500 text-sm">Cargando configuración...</div>;
   if (!data) return <div className="p-6 text-red-500 text-sm">Error cargando configuración.</div>;
 
-  const enabled = data.plan_type === 'Expert';
+  const enabled = data.plan_type?.toLowerCase().trim() === 'expert';
   const menuUrl = data.subdomain 
     ? `https://${data.subdomain}.${data.root_domain}`
     : `https://${data.root_domain}`;

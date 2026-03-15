@@ -424,7 +424,7 @@ export const getBranding = async (req, res) => {
     res.json({
       status: 'success',
       data: {
-        custom_branding_enabled: !!branding.custom_branding_enabled || branding.plan_type === 'Expert',
+        custom_branding_enabled: !!branding.custom_branding_enabled || (branding.plan_type && branding.plan_type.toLowerCase().trim() === 'expert'),
         plan_type: branding.plan_type || 'Full Digital',
         primary_color:   branding.primary_color   || null,
         secondary_color: branding.secondary_color || null,
@@ -441,7 +441,7 @@ export const updateBranding = async (req, res) => {
     
     // Validar plan Expert
     const tenantCheck = await query('SELECT plan_type FROM tenants WHERE id::text = $1::text OR subdomain = $1::text', [String(tenantId)]);
-    if (tenantCheck.rows[0]?.plan_type !== 'Expert') {
+    if (tenantCheck.rows[0]?.plan_type?.toLowerCase().trim() !== 'expert') {
       return res.status(403).json({ 
         status: 'error', 
         message: 'Función exclusiva del Plan Expert.' 

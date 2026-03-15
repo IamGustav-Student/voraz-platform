@@ -200,7 +200,7 @@ export const requireCustomBranding = async (req, res, next) => {
       [req.tenant.id]
     );
     
-    if ((result.rows.length > 0 && result.rows[0].custom_branding_enabled) || req.tenant.plan_type === 'Expert') {
+    if ((result.rows.length > 0 && result.rows[0].custom_branding_enabled) || (req.tenant.plan_type && req.tenant.plan_type.toLowerCase().trim() === 'expert')) {
       return next();
     }
     
