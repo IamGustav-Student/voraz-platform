@@ -2,6 +2,7 @@ import { MercadoPagoConfig, Preference, Payment } from 'mercadopago';
 import { query } from '../config/db.js';
 import bcrypt from 'bcrypt';
 import { initializeTenantData } from '../utils/initialization.js';
+import { clearTenantCache } from '../middleware/tenant.middleware.js';
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
@@ -392,6 +393,7 @@ export const handleSubscriptionWebhook = async (req, res) => {
     );
 
     console.log(`✅ Suscripción aprobada: tenant=${tenantId} plan=${planType} period=${period}`);
+    clearTenantCache();
     res.sendStatus(200);
   } catch (e) {
     console.error('Subscription webhook error:', e.message);
@@ -543,6 +545,8 @@ export const activateSandboxStore = async (req, res) => {
         [storeIdForPayment, resolvedTenantId, `sandbox_manual_${Date.now()}`, tenant.plan_type || 'Trial']
       );
     }
+
+    clearTenantCache();
 
     res.json({
       status: 'success',
