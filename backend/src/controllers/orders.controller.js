@@ -6,22 +6,16 @@ import { getStoreId, getTenantId } from '../utils/tenant.js';
 export const createOrder = async (req, res) => {
     const {
         customer_name, customer_phone, order_type,
-        delivery_address, store_id: bodyStoreId, items, notes, total,
-        user_id, points_redeemed, payment_method
+        delivery_address, store_id: bodyStoreId, items, notes, total: frontendTotal,
+        user_id, points_redeemed: requestedPoints, payment_method
     } = req.body;
 
-    if (!customer_name || !customer_phone || !order_type || !items?.length || total == null) {
+    if (!customer_name || !customer_phone || !order_type || !items?.length) {
         return res.status(400).json({ status: 'error', message: 'Datos incompletos.' });
     }
-    if (order_type === 'delivery' && !delivery_address) {
-        return res.status(400).json({ status: 'error', message: 'Dirección de entrega requerida.' });
-    }
-    if (order_type === 'pickup' && !bodyStoreId) {
-        return res.status(400).json({ status: 'error', message: 'Sucursal requerida para retiro.' });
-    }
-
-    const tenantStoreId = await getStoreId(req);
+    
     const tenantId = getTenantId(req);
+    const tenantStoreId = await getStoreId(req);
     let store_id = tenantStoreId;
     if (bodyStoreId != null) {
         const storeCheck = await query(
@@ -32,136 +26,117 @@ export const createOrder = async (req, res) => {
     }
 
     const resolvedPaymentMethod = payment_method === 'cash' ? 'cash' : 'mercadopago';
-
-    // ── Loyalty Config ──
-    const loyaltyRes = await query(
-        'SELECT loyalty_enabled, points_redeem_value FROM tenant_settings WHERE tenant_id_fk = $1',
-        [tenantId]
-    );
-    const loyalty = loyaltyRes.rows[0] || { loyalty_enabled: false, points_redeem_value: 0 };
-
-    let points_discount = 0;
-    if (loyalty.loyalty_enabled && points_redeemed > 0) {
-        // Redención en bloques de 500
-        const blocks = Math.floor(points_redeemed / 500);
-        points_discount = blocks * (loyalty.points_redeem_value || 0);
-    }
-
-    const finalTotal = Math.max(0, parseFloat(total) - points_discount);
-
     const client = await pool.connect();
+
     try {
         await client.query('BEGIN');
 
-        // Validar puntos del usuario si intenta redimir
-        if (user_id && points_redeemed > 0) {
-            const userRes = await client.query('SELECT points FROM users WHERE id = $1 FOR UPDATE', [user_id]);
-            const userPoints = userRes.rows[0]?.points || 0;
-            if (userPoints < points_redeemed) {
-                await client.query('ROLLBACK');
-                return res.status(400).json({ status: 'error', message: 'No tenés suficientes puntos.' });
-            }
-        }
+        // 1. Obtener configuración del Tenant (Bloqueo preventivo de settings no es necesario, pero leemos valor fresco)
+        const loyaltyRes = await client.query(
+            'SELECT loyalty_enabled, points_redeem_value FROM tenant_settings WHERE tenant_id_fk = $1',
+            [tenantId]
+        );
+        const loyalty = loyaltyRes.rows[0] || { loyalty_enabled: false, points_redeem_value: 0 };
+        const pointsRedeemValue = parseFloat(loyalty.points_redeem_value) || 0;
 
+        // 2. Bloqueo y obtención de productos frescos (Anti-concurrencia de stock y precios)
         const productIds = [...new Set(items.map((i) => i.product_id))];
-        if (productIds.length === 0) {
-            await client.query('ROLLBACK');
-            return res.status(400).json({ status: 'error', message: 'Ítems inválidos.' });
-        }
-
         const placeholders = productIds.map((_, i) => `$${i + 1}`).join(',');
         const lockResult = await client.query(
-            `SELECT id, COALESCE(stock, -1) as stock, store_id, points_earned
-             FROM products
-             WHERE id IN (${placeholders})
-             FOR UPDATE`,
+            `SELECT id, price, COALESCE(stock, 0) as stock, store_id, points_earned 
+             FROM products WHERE id IN (${placeholders}) FOR UPDATE`,
             productIds
         );
         const productsById = Object.fromEntries(lockResult.rows.map((r) => [r.id, r]));
 
-        // Calcular puntos ganados totales basado en los productos comprados
+        // 3. Cálculo de Subtotal y Puntos Ganados (Lado del servidor)
+        let calculatedSubtotal = 0;
         let totalPointsEarned = 0;
-        for (const item of items) {
-            const prod = productsById[item.product_id];
-            if (prod) {
-                totalPointsEarned += (prod.points_earned || 0) * (parseInt(item.quantity, 10) || 1);
-            }
-        }
 
         const qtyByProduct = {};
         for (const item of items) {
-            const pid = item.product_id;
+            const product = productsById[item.product_id];
+            if (!product) throw new Error(`Producto ${item.product_id} no disponible.`);
+            if (product.store_id != null && product.store_id !== store_id) throw new Error('Producto no pertenece al comercio.');
+            
             const qty = parseInt(item.quantity, 10) || 0;
-            qtyByProduct[pid] = (qtyByProduct[pid] || 0) + qty;
+            if (product.stock < qty) throw new Error(`Stock insuficiente para ${item.product_name || 'producto'}.`);
+            
+            calculatedSubtotal += parseFloat(product.price) * qty;
+            if (loyalty.loyalty_enabled) {
+                totalPointsEarned += (parseInt(product.points_earned, 10) || 0) * qty;
+            }
+            qtyByProduct[item.product_id] = (qtyByProduct[item.product_id] || 0) + qty;
         }
-        for (const [pid, totalQty] of Object.entries(qtyByProduct)) {
-            const product = productsById[Number(pid)];
-            if (!product) {
-                await client.query('ROLLBACK');
-                return res.status(400).json({ status: 'error', message: `Producto ${pid} no encontrado o no disponible.` });
-            }
-            if (product.store_id != null && product.store_id !== store_id) {
-                await client.query('ROLLBACK');
-                return res.status(403).json({ status: 'error', message: 'Producto no pertenece al comercio.' });
-            }
-            const productName = items.find((i) => Number(i.product_id) === Number(pid))?.product_name || `ID ${pid}`;
-            if (product.stock < totalQty) {
-                await client.query('ROLLBACK');
-                return res.status(400).json({
-                    status: 'error',
-                    message: `Stock insuficiente para "${productName}". Disponible: ${product.stock}, solicitado: ${totalQty}.`,
-                });
+
+        // 4. Lógica de Redención (Con bloqueo FOR UPDATE en Usuario)
+        let pointsDiscount = 0;
+        let actualPointsRedeemed = 0;
+
+        if (user_id && requestedPoints > 0 && loyalty.loyalty_enabled && pointsRedeemValue > 0) {
+            const userRes = await client.query('SELECT points FROM users WHERE id = $1 FOR UPDATE', [user_id]);
+            if (userRes.rows.length === 0) throw new Error('Usuario no encontrado.');
+            
+            const availablePoints = userRes.rows[0].points;
+            // Solo redimimos lo que el usuario tiene y lo que el subtotal permite
+            const maxPointsByUser = availablePoints;
+            const maxPointsBySubtotal = Math.floor(calculatedSubtotal / pointsRedeemValue);
+            
+            actualPointsRedeemed = Math.min(requestedPoints, maxPointsByUser, maxPointsBySubtotal);
+            pointsDiscount = actualPointsRedeemed * pointsRedeemValue;
+
+            if (actualPointsRedeemed > 0) {
+                await client.query('UPDATE users SET points = points - $1 WHERE id = $2', [actualPointsRedeemed, user_id]);
+                // Log de redención inmediato (El earning es diferido)
+                await client.query(
+                    `INSERT INTO points_history (user_id, points, type, description) VALUES ($1,$2,'redeemed',$3)`,
+                    [user_id, -actualPointsRedeemed, `Canje en pedido pendiente`]
+                );
             }
         }
 
+        const finalTotal = Math.max(0, calculatedSubtotal - pointsDiscount);
+
+        // 5. Insertar Orden
         const orderResult = await client.query(
-            `INSERT INTO orders
-             (customer_name, customer_phone, order_type, delivery_address, store_id, total, notes,
-              user_id, points_earned, points_redeemed, points_discount, payment_method)
-             VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12) RETURNING *`,
+            `INSERT INTO orders 
+             (customer_name, customer_phone, order_type, delivery_address, store_id, total, notes, 
+              user_id, points_earned, points_redeemed, points_discount, payment_method, status) 
+             VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,'pending') RETURNING id`,
             [
-                customer_name, customer_phone, order_type,
-                delivery_address || null, store_id, finalTotal, notes || null,
-                user_id || null, totalPointsEarned, points_redeemed || 0, points_discount, resolvedPaymentMethod
+                customer_name, customer_phone, order_type, delivery_address || null, store_id,
+                finalTotal, notes || null, user_id || null, totalPointsEarned, 
+                actualPointsRedeemed, pointsDiscount, resolvedPaymentMethod
             ]
         );
-        const order = orderResult.rows[0];
+        const orderId = orderResult.rows[0].id;
 
+        // 6. Insertar ítems y Actualizar Stock
         for (const item of items) {
+            const product = productsById[item.product_id];
             await client.query(
-                `INSERT INTO order_items (order_id, product_id, product_name, product_price, quantity, notes, subtotal)
+                `INSERT INTO order_items (order_id, product_id, product_name, product_price, quantity, notes, subtotal) 
                  VALUES ($1,$2,$3,$4,$5,$6,$7)`,
-                [order.id, item.product_id, item.product_name, item.product_price, item.quantity, item.notes || null, item.subtotal]
+                [orderId, item.product_id, item.product_name || 'Producto', product.price, item.quantity, item.notes || null, (product.price * item.quantity)]
+            );
+            await client.query(
+                'UPDATE products SET stock = stock - $1 WHERE id = $2',
+                [item.quantity, item.product_id]
             );
         }
 
-        await client.query(
-            `UPDATE products p
-             SET stock = p.stock - agg.total_qty
-             FROM (
-                 SELECT product_id, SUM(quantity)::int AS total_qty
-                 FROM order_items WHERE order_id = $1 GROUP BY product_id
-             ) agg
-             WHERE p.id = agg.product_id`,
-            [order.id]
-        );
-
-        // Cupones eliminados; ya no se procesan aquí
-
-        if (user_id && points_redeemed > 0) {
-            await client.query('UPDATE users SET points = points - $1 WHERE id = $2', [points_redeemed, user_id]);
-            await client.query(
-                `INSERT INTO points_history (user_id, order_id, points, type, description) VALUES ($1,$2,$3,'redeemed',$4)`,
-                [user_id, order.id, -points_redeemed, `Puntos canjeados en pedido #${order.id}`]
-            );
+        // Vincular el historial de puntos a la orden creada
+        if (actualPointsRedeemed > 0) {
+            await client.query('UPDATE points_history SET order_id = $1 WHERE user_id = $2 AND order_id IS NULL AND type = \'redeemed\'', [orderId, user_id]);
         }
 
         await client.query('COMMIT');
-        res.status(201).json({ status: 'success', data: { order_id: order.id, points_earned: totalPointsEarned, final_total: finalTotal } });
+        res.status(201).json({ status: 'success', data: { order_id: orderId, final_total: finalTotal, points_earned: totalPointsEarned } });
+
     } catch (error) {
         await client.query('ROLLBACK').catch(() => {});
-        console.error('Error creando orden:', error);
-        res.status(500).json({ status: 'error', message: error.message });
+        console.error('Error procesando orden maestra:', error.message);
+        res.status(400).json({ status: 'error', message: error.message });
     } finally {
         client.release();
     }
@@ -198,56 +173,67 @@ export const updateOrderStatus = async (req, res) => {
     }
 
     try {
-        const result = await query(
-            'UPDATE orders SET status = $1, updated_at = NOW() WHERE id = $2 AND store_id = $3 RETURNING *',
-            [status, id, storeId]
+        const client = await pool.connect();
+        await client.query('BEGIN');
+
+        const orderRes = await client.query(
+            'SELECT * FROM orders WHERE id = $1 AND store_id = $2 FOR UPDATE',
+            [id, storeId]
         );
-        if (!result.rows.length) {
+        if (!orderRes.rows.length) {
+            await client.query('ROLLBACK');
+            client.release();
             return res.status(404).json({ status: 'error', message: 'Pedido no encontrado.' });
         }
-        const order = result.rows[0];
+        const order = orderRes.rows[0];
 
-        if (status === 'delivered' && order.user_id && (order.points_earned || 0) > 0) {
-            // Verificar si la fidelización está activa para este comercio
-            const loyaltyCheck = await query(
+        // 1. Acreditación Diferida de Puntos (Solo si passa a delivered)
+        if (status === 'delivered' && order.status !== 'delivered' && order.user_id && (order.points_earned || 0) > 0) {
+            const loyaltyCheck = await client.query(
                 'SELECT loyalty_enabled FROM tenant_settings WHERE tenant_id_fk = $1',
                 [getTenantId(req)]
             );
             
             if (loyaltyCheck.rows[0]?.loyalty_enabled) {
-                const already = await query(
+                const alreadyEarned = await client.query(
                     `SELECT id FROM points_history WHERE order_id = $1 AND type = 'earned'`,
                     [id]
                 );
-                if (!already.rows.length) {
-                    await query('UPDATE users SET points = points + $1 WHERE id = $2', [order.points_earned || 0, order.user_id]);
-                    await query(
+                if (!alreadyEarned.rows.length) {
+                    await client.query('UPDATE users SET points = points + $1 WHERE id = $2', [order.points_earned, order.user_id]);
+                    await client.query(
                         `INSERT INTO points_history (user_id, order_id, points, type, description) VALUES ($1,$2,$3,'earned',$4)`,
                         [order.user_id, id, order.points_earned, `Puntos ganados por pedido #${id}`]
                     );
-                    console.log(`[Loyalty] Puntos acreditados para pedido #${id}: ${order.points_earned} pts`);
                 }
-            } else {
-                console.log(`[Loyalty] Fidelización desactivada para el comercio. No se acreditan puntos para pedido #${id}`);
             }
         }
 
-        if (status === 'cancelled' && order.user_id && order.points_redeemed > 0) {
-            const alreadyRefunded = await query(
+        // 2. Devolución de Puntos por Cancelación
+        if (status === 'cancelled' && order.status !== 'cancelled' && order.user_id && (order.points_redeemed || 0) > 0) {
+            const alreadyRefunded = await client.query(
                 `SELECT id FROM points_history WHERE order_id = $1 AND type = 'refund'`,
                 [id]
             );
             if (!alreadyRefunded.rows.length) {
-                await query('UPDATE users SET points = points + $1 WHERE id = $2', [order.points_redeemed, order.user_id]);
-                await query(
+                await client.query('UPDATE users SET points = points + $1 WHERE id = $2', [order.points_redeemed, order.user_id]);
+                await client.query(
                     `INSERT INTO points_history (user_id, order_id, points, type, description) VALUES ($1,$2,$3,'refund',$4)`,
                     [order.user_id, id, order.points_redeemed, `Devolución de puntos por cancelación de pedido #${id}`]
                 );
             }
         }
 
-        res.json({ status: 'success', data: order });
+        const updateResult = await client.query(
+            'UPDATE orders SET status = $1, updated_at = NOW() WHERE id = $2 RETURNING *',
+            [status, id]
+        );
+        
+        await client.query('COMMIT');
+        client.release();
+        res.json({ status: 'success', data: updateResult.rows[0] });
     } catch (error) {
+        console.error('Error actualizando estado de orden maestro:', error);
         res.status(500).json({ status: 'error', message: error.message });
     }
 };
