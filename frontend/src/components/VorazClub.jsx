@@ -191,7 +191,7 @@ const VorazClub = ({ onBack, onOpenAuth }) => {
                             <div className="flex justify-between items-center">
                                 <p className="text-gray-400 text-xs capitalize">{order.order_type === 'delivery' ? '🛵 Delivery' : '🏪 Retiro'}</p>
                                 <div className="text-right">
-                                    <p className="text-voraz-yellow font-black text-sm">${fmt(order.total)}</p>
+                                    <p className="text-voraz-yellow font-black text-sm">{fmt(order.total)}</p>
                                     {order.points_earned > 0 && <p className="text-[9px] text-green-400">+{order.points_earned} pts</p>}
                                 </div>
                             </div>

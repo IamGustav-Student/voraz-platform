@@ -175,7 +175,7 @@ function App() {
                 <img src={product.image_url} className="w-full h-full object-cover brightness-75" />
                 <div className="absolute bottom-0 left-0 p-3 w-full bg-gradient-to-t from-black to-transparent">
                   <div className="text-white font-bold leading-none mb-1 text-sm">{product.name}</div>
-                  <div className="text-voraz-yellow text-xs font-bold">${fmt(product.price)}</div>
+                  <div className="text-voraz-yellow text-xs font-bold">{fmt(product.price)}</div>
                 </div>
               </motion.div>
             ))}
@@ -227,7 +227,7 @@ function App() {
                         </div>
                         <div className="flex justify-between items-end mt-1 md:mt-4">
                           <div className="flex flex-col">
-                            <div className="text-voraz-yellow font-black text-sm md:text-base">${fmt(product.price)}</div>
+                            <div className="text-voraz-yellow font-black text-sm md:text-base">{fmt(product.price)}</div>
                             {TENANT.loyaltyEnabled && product.points_earned > 0 && (
                               <div className="text-green-400 text-[9px] font-bold italic">+{product.points_earned} pts</div>
                             )}

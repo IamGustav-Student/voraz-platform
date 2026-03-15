@@ -8,7 +8,7 @@ export const getMenu = async (req, res) => {
     const storeId = await getStoreId(req);
     const sql = `
       SELECT
-        p.id, p.name, p.description, p.price, p.image_url, p.badge, p.stock,
+        p.id, p.name, p.description, p.price, p.image_url, p.badge, p.stock, p.points_earned,
         c.name as category
       FROM products p
       JOIN categories c ON p.category_id = c.id
@@ -54,11 +54,11 @@ export const createProduct = async (req, res) => {
         });
       }
     }
-    const { name, description, price, category_id, image_url, badge } = req.body;
+    const { name, description, price, category_id, image_url, badge, points_earned } = req.body;
     const result = await query(
-      `INSERT INTO products (name, description, price, category_id, image_url, badge, store_id, is_active)
-       VALUES ($1,$2,$3,$4,$5,$6,$7,true) RETURNING *`,
-      [name, description, price, category_id, image_url, badge, storeId]
+      `INSERT INTO products (name, description, price, category_id, image_url, badge, store_id, is_active, points_earned)
+       VALUES ($1,$2,$3,$4,$5,$6,$7,true,$8) RETURNING *`,
+      [name, description, price, category_id, image_url, badge, storeId, points_earned || 0]
     );
     res.status(201).json({ status: 'success', data: result.rows[0] });
   } catch (error) {
@@ -69,11 +69,11 @@ export const createProduct = async (req, res) => {
 export const updateProduct = async (req, res) => {
   try {
     const storeId = await getStoreId(req);
-    const { name, description, price, category_id, image_url, badge, is_active } = req.body;
+    const { name, description, price, category_id, image_url, badge, is_active, points_earned } = req.body;
     const result = await query(
       `UPDATE products SET name=$1, description=$2, price=$3, category_id=$4,
-       image_url=$5, badge=$6, is_active=$7 WHERE id=$8 AND store_id=$9 RETURNING *`,
-      [name, description, price, category_id, image_url, badge, is_active, req.params.id, storeId]
+       image_url=$5, badge=$6, is_active=$7, points_earned=$8 WHERE id=$9 AND store_id=$10 RETURNING *`,
+      [name, description, price, category_id, image_url, badge, is_active, points_earned, req.params.id, storeId]
     );
     if (!result.rows.length) return res.status(404).json({ status: 'error', message: 'Producto no encontrado.' });
     res.json({ status: 'success', data: result.rows[0] });
