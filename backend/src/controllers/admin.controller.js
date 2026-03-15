@@ -424,7 +424,7 @@ export const getBranding = async (req, res) => {
     res.json({
       status: 'success',
       data: {
-        custom_branding_enabled: branding.custom_branding_enabled ?? false,
+        custom_branding_enabled: !!branding.custom_branding_enabled || branding.plan_type === 'Expert',
         plan_type: branding.plan_type || 'Full Digital',
         primary_color:   branding.primary_color   || null,
         secondary_color: branding.secondary_color || null,

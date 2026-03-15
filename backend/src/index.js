@@ -182,7 +182,7 @@ app.get('/api/settings', tenantMiddleware, async (req, res) => {
                 secondary_color: cfg.secondary_color || null,
                 font_family: cfg.font_family || null,
                 logo_url: cfg.logo_url || null,
-                custom_branding_enabled: !!cfg.custom_branding_enabled,
+                custom_branding_enabled: !!cfg.custom_branding_enabled || cfg.plan_type === 'Expert',
                 loyalty_enabled: !!cfg.loyalty_enabled,
                 points_redeem_value: cfg.points_redeem_value || 0,
             }
