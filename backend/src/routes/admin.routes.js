@@ -13,6 +13,7 @@ import {
   getAdminOrders, updateOrderStatus,
   getMercadopagoConfig, saveMercadopagoConfig,
   getBranding, updateBranding,
+  getQRConfig,
 } from '../controllers/admin.controller.js';
 import { getSubscriptionStatus, createUpgradeCheckout } from '../controllers/subscriptions.controller.js';
 
@@ -59,6 +60,9 @@ router.post('/mercadopago', saveMercadopagoConfig);
 // Branding — lectura libre para admin, escritura requiere custom_branding_enabled=true
 router.get('/branding', getBranding);
 router.patch('/branding', requireCustomBranding, updateBranding);
+
+// QR Menu
+router.get('/qr-config', getQRConfig);
 
 // Suscripción
 router.get('/subscription', (req, res) => {

@@ -461,3 +461,24 @@ export const updateBranding = async (req, res) => {
     res.json({ status: 'success', message: 'Branding actualizado correctamente.' });
   } catch (e) { res.status(500).json({ status: 'error', message: e.message }); }
 };
+
+// ── QR MENU ────────────────────────────────────────────────────────────────
+export const getQRConfig = async (req, res) => {
+  try {
+    const tenantId = getTenantId(req);
+    const result = await query(
+      `SELECT subdomain, plan_type FROM tenants WHERE id::text = $1::text OR subdomain = $1::text LIMIT 1`,
+      [String(tenantId)]
+    );
+    const tenant = result.rows[0] || {};
+    res.json({
+      status: 'success',
+      data: {
+        subdomain: tenant.subdomain,
+        plan_type: tenant.plan_type || 'Full Digital',
+        root_domain: process.env.GASTRORED_DOMAIN || 'gastrored.com.ar'
+      }
+    });
+  } catch (e) { res.status(500).json({ status: 'error', message: e.message }); }
+};
+

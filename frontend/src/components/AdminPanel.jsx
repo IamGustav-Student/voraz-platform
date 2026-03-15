@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
+import { QRCodeCanvas } from 'qrcode.react';
 import { useAuth } from '../context/AuthContext';
 import { adminFetch } from '../services/api';
 
@@ -56,7 +57,7 @@ function OrdersTableSkeleton() {
   );
 }
 
-const SECTIONS = ['Dashboard', 'Categorías', 'Productos', 'Locales', 'Cupones', 'Videos', 'Noticias', 'Pedidos', 'MercadoPago', 'Branding', 'Suscripción'];
+const SECTIONS = ['Dashboard', 'Categorías', 'Productos', 'Locales', 'Cupones', 'Videos', 'Noticias', 'Pedidos', 'MercadoPago', 'Branding', 'Menú QR', 'Suscripción'];
 
 // ── Componente reutilizable: input de imagen (URL o archivo local) ──────────
 function ImageInput({ value, onChange, label = 'Imagen', token, folder = 'general' }) {
@@ -158,6 +159,7 @@ export default function AdminPanel({ onClose }) {
         Pedidos: '/orders',
         MercadoPago: '/mercadopago',
         Branding: '/branding',
+        'Menú QR': '/qr-config',
         Suscripción: '/subscription',
       };
       const path = map[sec];
@@ -189,6 +191,7 @@ export default function AdminPanel({ onClose }) {
     Pedidos:     'M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2',
     MercadoPago: 'M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z',
     'Suscripción': 'M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z',
+    'Menú QR': 'M12 4v1m0 11v1m4-8h1m-11 0h1m2-2h5a2 2 0 012 2v5a2 2 0 01-2 2h-5a2 2 0 01-2-2v-5a2 2 0 012-2zm0 2h5v5h-5v-5zM8 8h2v2H8V8zm0 4h2v2H8v-2zm4-4h2v2h-2V8zm0 4h2v2h-2v-2z',
   };
 
   if (!user || (user.role !== 'admin' && user.role !== 'manager')) {
@@ -289,6 +292,7 @@ export default function AdminPanel({ onClose }) {
               {section === 'Pedidos'     && <OrdersSection items={data.Pedidos || []} token={token} reload={() => load('Pedidos')} />}
               {section === 'MercadoPago' && <MercadoPagoSection data={data.MercadoPago} token={token} reload={() => load('MercadoPago')} />}
               {section === 'Branding'    && <BrandingSection token={token} onUpgrade={() => setSection('Suscripción')} />}
+              {section === 'Menú QR'     && <QRSection token={token} onUpgrade={() => setSection('Suscripción')} />}
               {section === 'Suscripción' && <SubscriptionSection data={data['Suscripción']} token={token} reload={() => load('Suscripción')} />}
             </>
           )}
@@ -1503,4 +1507,106 @@ function SubscriptionSection({ data, token, reload }) {
     </div>
   );
 }
+
+// ── QR SECTION ─────────────────────────────────────────────────────────────
+function QRSection({ token, onUpgrade }) {
+  const [data, setData] = useState(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    adminFetch('/qr-config', token)
+      .then(d => { if (d.data) setData(d.data); setLoading(false); })
+      .catch(() => setLoading(false));
+  }, [token]);
+
+  if (loading) return <div className="p-6 text-gray-500 text-sm">Cargando configuración...</div>;
+  if (!data) return <div className="p-6 text-red-500 text-sm">Error cargando configuración.</div>;
+
+  const enabled = data.plan_type === 'Expert';
+  const menuUrl = data.subdomain 
+    ? `https://${data.subdomain}.${data.root_domain}`
+    : `https://${data.root_domain}`;
+
+  const downloadQR = () => {
+    const canvas = document.getElementById('qr-gen');
+    if (!canvas) return;
+    const pngUrl = canvas
+      .toDataURL("image/png")
+      .replace("image/png", "image/octet-stream");
+    let downloadLink = document.createElement("a");
+    downloadLink.href = pngUrl;
+    downloadLink.download = `QR_Menu_${data.subdomain || 'GastroRed'}.png`;
+    document.body.appendChild(downloadLink);
+    downloadLink.click();
+    document.body.removeChild(downloadLink);
+  };
+
+  return (
+    <div className="p-6 max-w-2xl">
+      <div className="flex items-center gap-3 mb-6">
+        <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center text-base">📱</div>
+        <div>
+          <h2 className="font-black text-white text-lg leading-none">Tu Menú en QR</h2>
+          {enabled
+            ? <p className="text-xs text-green-400 mt-0.5">Módulo activo (Plan Expert)</p>
+            : <p className="text-xs text-yellow-500 mt-0.5">Módulo Premium — disponible en Plan Expert</p>
+          }
+        </div>
+      </div>
+
+      {!enabled && (
+        <div className="mb-8 bg-gradient-to-br from-blue-900/40 to-indigo-900/40 border border-blue-500/30 rounded-2xl p-6 shadow-2xl overflow-hidden relative group">
+          <div className="absolute -right-4 -top-4 w-24 h-24 bg-blue-500/10 rounded-full blur-2xl group-hover:bg-blue-500/20 transition-all duration-700" />
+          <div className="relative z-10">
+            <div className="flex items-center gap-2 mb-3">
+              <span className="text-2xl">⭐</span>
+              <p className="text-blue-300 font-bold tracking-tight">Potenciá tu restaurante</p>
+            </div>
+            <p className="text-white/80 text-sm leading-relaxed mb-5">
+              Con el Plan Expert podés generar tu propio QR dinámico para que los clientes escaneen desde la mesa y accedan directo a tu carta digital.
+            </p>
+            <button
+              onClick={onUpgrade}
+              className="inline-flex items-center gap-2 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white px-6 py-2.5 rounded-xl text-sm font-bold shadow-lg shadow-blue-900/20 transition-all transform hover:scale-[1.02] active:scale-[0.98]"
+            >
+              🚀 Ver Planes
+            </button>
+          </div>
+        </div>
+      )}
+
+      <div className={`flex flex-col items-center gap-8 ${!enabled ? 'opacity-30 pointer-events-none grayscale' : ''}`}>
+        <div className="bg-white p-6 rounded-3xl shadow-2xl shadow-blue-900/20">
+          <QRCodeCanvas 
+            id="qr-gen"
+            value={menuUrl} 
+            size={256} 
+            level="H"
+            includeMargin={true}
+          />
+        </div>
+
+        <div className="text-center">
+          <p className="text-gray-400 text-sm mb-4">
+            Link de tu carta:<br/>
+            <span className="text-white font-mono text-xs">{menuUrl}</span>
+          </p>
+          <button
+            onClick={downloadQR}
+            className="bg-white text-black px-8 py-3 rounded-xl font-black text-sm hover:bg-gray-200 transition-all active:scale-95 flex items-center gap-2 mx-auto"
+          >
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+            </svg>
+            Descargar Código QR (PNG)
+          </button>
+          <p className="text-[10px] text-gray-600 mt-4 max-w-xs uppercase tracking-widest font-bold">
+            Podés imprimir este código y ponerlo en tus mesas o vidriera.
+          </p>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 
