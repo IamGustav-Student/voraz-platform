@@ -158,7 +158,8 @@ app.get('/api/settings', tenantMiddleware, async (req, res) => {
         const result = await query(
             `SELECT t.id, ts.cash_on_delivery, t.brand_name, t.brand_color_primary, t.brand_color_secondary,
                     t.brand_logo_url, t.slogan, t.plan_type, t.subdomain,
-                    ts.primary_color, ts.secondary_color, ts.font_family, ts.logo_url, ts.custom_branding_enabled
+                    ts.primary_color, ts.secondary_color, ts.font_family, ts.logo_url, ts.custom_branding_enabled,
+                    ts.loyalty_enabled, ts.points_redeem_value
              FROM tenants t
              LEFT JOIN tenant_settings ts ON ts.tenant_id_fk = t.id
              WHERE t.id::text = $1::text OR t.subdomain = $1::text`,
@@ -182,6 +183,8 @@ app.get('/api/settings', tenantMiddleware, async (req, res) => {
                 font_family: cfg.font_family || null,
                 logo_url: cfg.logo_url || null,
                 custom_branding_enabled: !!cfg.custom_branding_enabled,
+                loyalty_enabled: !!cfg.loyalty_enabled,
+                points_redeem_value: cfg.points_redeem_value || 0,
             }
         });
     } catch {
@@ -235,5 +238,8 @@ app.listen(PORT, async () => {
     await runMigration('phase18_tenant_admin_user.sql');       // GastroRed: admin user por tenant, email único por store
     await runMigration('phase19_admin_errors_fix.sql');        // Correcciones a columnas en Categorias, Productos y Videos
     await runMigration('phase20_clean_tenants.sql');           // Elimina todos los tenants (clientes SaaS testeados) y deja base a Voraz
-    await runMigration('phase21_fix_constraints.sql');         // Soluciona conflictos UNIQUE entre tenants (categorias 'smash', cupones genéricos)
+    await runMigration('phase21_fix_constraints.sql');         // Soluciona conflictos UNIQUE entre tenants
+    await runMigration('phase22_products_stock.sql');
+    await runMigration('phase23_products_stock_column.sql');
+    await runMigration('phase24_loyalty_system.sql');
 });

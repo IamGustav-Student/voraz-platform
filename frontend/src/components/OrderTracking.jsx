@@ -153,6 +153,12 @@ const OrderTracking = ({ orderId, onBack }) => {
                             <span className="text-white font-bold">${fmt(item.subtotal)}</span>
                         </div>
                     ))}
+                    {order.points_discount > 0 && (
+                        <div className="flex justify-between text-sm text-voraz-yellow">
+                            <span className="font-bold">Descuento puntos ({order.points_redeemed} pts)</span>
+                            <span className="font-bold">-${fmt(order.points_discount)}</span>
+                        </div>
+                    )}
                 </div>
                 <div className="border-t border-white/10 pt-3 flex justify-between">
                     <span className="text-white font-black uppercase text-sm">Total</span>

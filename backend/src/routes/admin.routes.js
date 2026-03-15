@@ -6,7 +6,7 @@ import {
   getAdminProducts, createProduct, updateProduct, deleteProduct,
   getCategories, createCategory, updateCategory, deleteCategory,
   getAdminStores, createStore, updateStore, deleteStore,
-  getAdminCoupons, createCoupon, updateCoupon, deleteCoupon,
+  getLoyaltyConfig, updateLoyaltyConfig,
   createVideo, deleteVideo,
   createNews, updateNews, deleteNews,
   uploadImage,
@@ -38,10 +38,8 @@ router.post('/stores', createStore);
 router.put('/stores/:id', updateStore);
 router.delete('/stores/:id', deleteStore);
 
-router.get('/coupons', getAdminCoupons);
-router.post('/coupons', createCoupon);
-router.patch('/coupons/:id', updateCoupon);
-router.delete('/coupons/:id', deleteCoupon);
+router.get('/loyalty', getLoyaltyConfig);
+router.patch('/loyalty', updateLoyaltyConfig);
 
 router.post('/videos', createVideo);
 router.delete('/videos/:id', deleteVideo);

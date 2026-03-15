@@ -5,8 +5,7 @@ import { useAuth } from '../context/AuthContext';
 import { createOrder, createPaymentPreference, validateCoupon, getTenantSettings } from '../services/api';
 
 const STEPS = { CART: 'cart', CHECKOUT: 'checkout', PROCESSING: 'processing' };
-const POINTS_TO_REDEEM = 100;
-const POINTS_VALUE = 5;
+// Loyalty constants removed as they are now dynamic from tenant settings
 
 const CartDrawer = ({ isOpen, onClose, stores, onOrderCreated, onOpenAuth }) => {
     const { items, total, itemCount, dispatch } = useCart();
@@ -17,11 +16,7 @@ const CartDrawer = ({ isOpen, onClose, stores, onOrderCreated, onOpenAuth }) => 
     const [paymentMethod, setPaymentMethod] = useState('mercadopago');
     const [cashOnDeliveryEnabled, setCashOnDeliveryEnabled] = useState(true);
     const [form, setForm] = useState({ name: '', phone: '', address: '', store_id: '', notes: '' });
-    const [couponCode, setCouponCode] = useState('');
-    const [coupon, setCoupon] = useState(null);
-    const [couponError, setCouponError] = useState('');
-    const [couponLoading, setCouponLoading] = useState(false);
-    const [pointsToRedeem, setPointsToRedeem] = useState(0);
+    const [loyaltyConfig, setLoyaltyConfig] = useState({ enabled: false, value: 0 });
     const [error, setError] = useState('');
 
     useEffect(() => {
@@ -31,15 +26,22 @@ const CartDrawer = ({ isOpen, onClose, stores, onOrderCreated, onOpenAuth }) => 
     }, [user, isOpen]);
 
     useEffect(() => {
-        getTenantSettings().then(s => setCashOnDeliveryEnabled(s.cash_on_delivery !== false));
+        getTenantSettings().then(s => {
+            setCashOnDeliveryEnabled(s.cash_on_delivery !== false);
+            setLoyaltyConfig({
+                enabled: !!s.loyalty_enabled,
+                value: s.points_redeem_value || 0
+            });
+        });
     }, []);
 
-    const maxRedeemable = user ? Math.floor(user.points / POINTS_TO_REDEEM) * POINTS_TO_REDEEM : 0;
-    const pointsDiscount = pointsToRedeem * POINTS_VALUE;
-    const couponDiscount = coupon?.discount || 0;
-    const totalDiscount = couponDiscount + pointsDiscount;
-    const finalTotal = Math.max(0, total - totalDiscount);
-    const estimatedPoints = Math.floor(finalTotal / 100);
+    const POINTS_BLOCK = 500;
+    const maxRedeemableBlocks = user ? Math.floor(user.points / POINTS_BLOCK) : 0;
+    const pointsDiscount = (Math.floor(pointsToRedeem / POINTS_BLOCK)) * loyaltyConfig.value;
+    const finalTotal = Math.max(0, total - pointsDiscount);
+    
+    // Calcular puntos ganados totales basado en los productos en el carrito
+    const estimatedPoints = items.reduce((sum, item) => sum + (item.points_earned || 0) * item.quantity, 0);
 
     const fmt = (n) => parseInt(n).toLocaleString('es-AR');
 
@@ -52,21 +54,7 @@ const CartDrawer = ({ isOpen, onClose, stores, onOrderCreated, onOpenAuth }) => 
 
     const handleQty = (product_id, qty) => dispatch({ type: 'UPDATE_QTY', payload: { product_id, qty } });
 
-    const handleApplyCoupon = async () => {
-        if (!couponCode.trim()) return;
-        setCouponLoading(true);
-        setCouponError('');
-        try {
-            const res = await validateCoupon({ code: couponCode.trim(), order_total: total });
-            if (res) { setCoupon(res); } else { setCouponError('Cupón inválido.'); }
-        } catch (err) {
-            setCouponError(err.message || 'Cupón inválido.');
-        } finally {
-            setCouponLoading(false);
-        }
-    };
-
-    const handleRemoveCoupon = () => { setCoupon(null); setCouponCode(''); setCouponError(''); };
+    // Cupones eliminados en favor de fidelización
 
     const handleCheckout = async () => {
         if (!form.name.trim() || !form.phone.trim()) { setError('Nombre y teléfono son obligatorios.'); return; }
@@ -87,8 +75,7 @@ const CartDrawer = ({ isOpen, onClose, stores, onOrderCreated, onOpenAuth }) => 
                 notes: form.notes || null,
                 total,
                 user_id: user?.id || null,
-                coupon_id: coupon?.coupon_id || null,
-                discount: totalDiscount,
+                discount: pointsDiscount,
                 points_redeemed: pointsToRedeem,
                 payment_method: paymentMethod,
                 items: items.map(i => ({
@@ -106,8 +93,6 @@ const CartDrawer = ({ isOpen, onClose, stores, onOrderCreated, onOpenAuth }) => 
             if (user) await refreshUser();
 
             dispatch({ type: 'CLEAR' });
-            setCoupon(null);
-            setCouponCode('');
             setPointsToRedeem(0);
             handleClose();
 
@@ -203,63 +188,36 @@ const CartDrawer = ({ isOpen, onClose, stores, onOrderCreated, onOpenAuth }) => 
                                                 ))}
                                             </div>
 
-                                            {/* Cupón */}
-                                            <div className="mb-4">
-                                                <label className="text-xs font-bold text-gray-400 uppercase tracking-wider block mb-2">Código de descuento</label>
-                                                {!coupon ? (
-                                                    <div className="flex space-x-2">
-                                                        <input
-                                                            type="text"
-                                                            placeholder="Ej: VORAZ10"
-                                                            value={couponCode}
-                                                            onChange={e => { setCouponCode(e.target.value.toUpperCase()); setCouponError(''); }}
-                                                            onKeyDown={e => e.key === 'Enter' && handleApplyCoupon()}
-                                                            className="flex-1 bg-white/5 border border-white/10 rounded-xl px-4 py-2.5 text-white text-sm placeholder-gray-600 focus:outline-none focus:border-voraz-yellow uppercase"
-                                                        />
-                                                        <button
-                                                            onClick={handleApplyCoupon}
-                                                            disabled={couponLoading || !couponCode.trim()}
-                                                            className="bg-voraz-yellow text-black px-4 py-2.5 rounded-xl font-black text-xs uppercase disabled:opacity-50 hover:bg-yellow-300 transition"
-                                                        >
-                                                            {couponLoading ? '...' : 'Aplicar'}
-                                                        </button>
-                                                    </div>
-                                                ) : (
-                                                    <div className="flex items-center justify-between bg-green-500/10 border border-green-500/30 rounded-xl px-4 py-2.5">
-                                                        <div>
-                                                            <p className="text-green-400 font-black text-sm">{coupon.code} — {coupon.description}</p>
-                                                            <p className="text-green-300 text-xs">-${fmt(coupon.discount)}</p>
-                                                        </div>
-                                                        <button onClick={handleRemoveCoupon} className="text-gray-500 hover:text-red-400 ml-3">
-                                                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" /></svg>
-                                                        </button>
-                                                    </div>
-                                                )}
-                                                {couponError && <p className="text-red-400 text-xs mt-1 font-bold">{couponError}</p>}
-                                            </div>
+                                            {/* Sección de Cupones eliminada */}
 
                                             {/* Canjear puntos */}
-                                            {user && user.points >= POINTS_TO_REDEEM && (
+                                            {loyaltyConfig.enabled && user && user.points >= POINTS_BLOCK && (
                                                 <div className="mb-4 bg-voraz-yellow/10 border border-voraz-yellow/20 rounded-xl p-4">
                                                     <div className="flex items-center justify-between mb-2">
                                                         <p className="text-voraz-yellow font-bold text-sm">⭐ Canjear puntos</p>
                                                         <p className="text-white text-xs font-bold">{user.points} pts disponibles</p>
                                                     </div>
-                                                    <div className="flex items-center space-x-3">
-                                                        <button
-                                                            onClick={() => setPointsToRedeem(p => Math.max(0, p - POINTS_TO_REDEEM))}
-                                                            disabled={pointsToRedeem === 0}
-                                                            className="w-8 h-8 rounded-full bg-white/10 hover:bg-voraz-yellow hover:text-black text-white font-bold flex items-center justify-center transition disabled:opacity-30"
-                                                        >-</button>
-                                                        <div className="flex-1 text-center">
-                                                            <p className="text-white font-black">{pointsToRedeem} pts</p>
-                                                            {pointsToRedeem > 0 && <p className="text-voraz-yellow text-xs">= -${fmt(pointsDiscount)}</p>}
+                                                    <div className="flex flex-col gap-3">
+                                                        <div className="relative">
+                                                            <select
+                                                                value={pointsToRedeem}
+                                                                onChange={(e) => setPointsToRedeem(parseInt(e.target.value))}
+                                                                className="w-full bg-[#1a1a1a] border border-voraz-yellow/30 rounded-xl px-4 py-3 text-white text-sm font-bold focus:outline-none appearance-none"
+                                                            >
+                                                                <option value={0}>No canjear puntos</option>
+                                                                {Array.from({ length: maxRedeemableBlocks }, (_, i) => (i + 1) * POINTS_BLOCK).map(pts => (
+                                                                    <option key={pts} value={pts}>
+                                                                        Canjear {pts} puntos (Descuento: ${fmt((pts / POINTS_BLOCK) * loyaltyConfig.value)})
+                                                                    </option>
+                                                                ))}
+                                                            </select>
+                                                            <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-voraz-yellow">
+                                                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" /></svg>
+                                                            </div>
                                                         </div>
-                                                        <button
-                                                            onClick={() => setPointsToRedeem(p => Math.min(maxRedeemable, p + POINTS_TO_REDEEM))}
-                                                            disabled={pointsToRedeem >= maxRedeemable}
-                                                            className="w-8 h-8 rounded-full bg-white/10 hover:bg-voraz-yellow hover:text-black text-white font-bold flex items-center justify-center transition disabled:opacity-30"
-                                                        >+</button>
+                                                        <p className="text-[10px] text-gray-500 text-center uppercase tracking-widest font-bold">
+                                                            Podés canjear en bloques de {POINTS_BLOCK} puntos
+                                                        </p>
                                                     </div>
                                                 </div>
                                             )}
@@ -269,16 +227,6 @@ const CartDrawer = ({ isOpen, onClose, stores, onOrderCreated, onOpenAuth }) => 
                                                 <div className="flex justify-between text-sm text-gray-400">
                                                     <span>Subtotal</span><span className="text-white">${fmt(total)}</span>
                                                 </div>
-                                                {couponDiscount > 0 && (
-                                                    <div className="flex justify-between text-sm text-green-400">
-                                                        <span>Descuento cupón</span><span>-${fmt(couponDiscount)}</span>
-                                                    </div>
-                                                )}
-                                                {pointsDiscount > 0 && (
-                                                    <div className="flex justify-between text-sm text-voraz-yellow">
-                                                        <span>Canje de puntos</span><span>-${fmt(pointsDiscount)}</span>
-                                                    </div>
-                                                )}
                                                 <div className="border-t border-white/10 pt-2 flex justify-between font-black">
                                                     <span className="text-white uppercase text-sm">Total</span>
                                                     <span className="text-voraz-yellow text-lg">${fmt(finalTotal)}</span>
@@ -393,11 +341,6 @@ const CartDrawer = ({ isOpen, onClose, stores, onOrderCreated, onOpenAuth }) => 
                                                 <span className="text-white font-bold">${fmt(i.subtotal)}</span>
                                             </div>
                                         ))}
-                                        {totalDiscount > 0 && (
-                                            <div className="flex justify-between text-sm text-green-400">
-                                                <span>Descuentos</span><span>-${fmt(totalDiscount)}</span>
-                                            </div>
-                                        )}
                                         <div className="border-t border-white/10 pt-2 mt-2 flex justify-between">
                                             <span className="text-white font-black uppercase text-sm">Total</span>
                                             <span className="text-voraz-yellow font-black">${fmt(finalTotal)}</span>

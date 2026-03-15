@@ -18,7 +18,7 @@ const cartReducer = (state, action) => {
             }
             return {
                 ...state,
-                items: [...state.items, { ...action.payload, quantity: 1, subtotal: action.payload.product_price }]
+                items: [...state.items, { ...action.payload, points_earned: action.payload.points_earned || 0, quantity: 1, subtotal: action.payload.product_price }]
             };
         }
         case 'UPDATE_QTY': {

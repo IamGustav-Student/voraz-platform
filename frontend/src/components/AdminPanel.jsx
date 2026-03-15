@@ -57,7 +57,7 @@ function OrdersTableSkeleton() {
   );
 }
 
-const SECTIONS = ['Dashboard', 'Categorías', 'Productos', 'Locales', 'Cupones', 'Videos', 'Noticias', 'Pedidos', 'MercadoPago', 'Branding', 'Menú QR', 'Suscripción'];
+const SECTIONS = ['Dashboard', 'Categorías', 'Productos', 'Locales', 'Fidelización', 'Videos', 'Noticias', 'Pedidos', 'MercadoPago', 'Branding', 'Menú QR', 'Suscripción'];
 
 // ── Componente reutilizable: input de imagen (URL o archivo local) ──────────
 function ImageInput({ value, onChange, label = 'Imagen', token, folder = 'general' }) {
@@ -155,7 +155,7 @@ export default function AdminPanel({ onClose }) {
         Categorías: '/categories',
         Productos: ['/products', '/categories'],
         Locales: '/stores',
-        Cupones: '/coupons',
+        Fidelización: '/loyalty',
         Pedidos: '/orders',
         MercadoPago: '/mercadopago',
         Branding: '/branding',
@@ -184,7 +184,7 @@ export default function AdminPanel({ onClose }) {
     Dashboard:   'M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6',
     'Categorías':'M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A2 2 0 013 12V7a4 4 0 014-4z',
     Productos:   'M4 6h16M4 10h16M4 14h16M4 18h16',
-    Cupones:     'M7 7h.01M17 17h.01M3 7a4 4 0 014-4h10a4 4 0 014 4v10a4 4 0 01-4 4H7a4 4 0 01-4-4V7z',
+    Fidelización: 'M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 11c-1.11 0-2.08-.402-2.599-1M12 18v1m-7-4a4 4 0 110-8 4 4 0 010 8zM17 11a4 4 0 110-8 4 4 0 010 8z',
     Videos:      'M15 10l4.553-2.277A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M3 8a2 2 0 012-2h8a2 2 0 012 2v8a2 2 0 01-2 2H5a2 2 0 01-2-2V8z',
     Noticias:    'M19 20H5a2 2 0 01-2-2V6a2 2 0 012-2h10a2 2 0 012 2v1m2 13a2 2 0 01-2-2V7m2 13a2 2 0 002-2V9a2 2 0 00-2-2h-2m-4-3H9M7 16h6M7 8h6v4H7V8z',
     Locales:     'M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-2 10v-5a1 1 0 00-1-1h-2a1 1 0 00-1 1v5m4 0H9',
@@ -286,7 +286,7 @@ export default function AdminPanel({ onClose }) {
               {section === 'Categorías'  && <CategoriesSection items={data['Categorías'] || []} token={token} reload={() => load('Categorías')} />}
               {section === 'Productos'   && <ProductsSection items={data.Productos || []} categories={data._categories || []} token={token} reload={() => load('Productos')} />}
               {section === 'Locales'     && <StoresSection items={data.Locales || []} token={token} reload={() => load('Locales')} showToast={showToast} />}
-              {section === 'Cupones'     && <CouponsSection items={data.Cupones || []} token={token} reload={() => load('Cupones')} />}
+              {section === 'Fidelización' && <LoyaltySection items={data.Fidelización || {}} token={token} />}
               {section === 'Videos'      && <VideosSection token={token} />}
               {section === 'Noticias'    && <NewsSection token={token} />}
               {section === 'Pedidos'     && <OrdersSection items={data.Pedidos || []} token={token} reload={() => load('Pedidos')} />}
@@ -322,7 +322,7 @@ function DashboardSection({ data }) {
     { label: 'Pedidos totales', value: data.orders, color: 'text-blue-400' },
     { label: 'Ingresos', value: `$${(data.revenue || 0).toLocaleString('es-AR')}`, color: 'text-yellow-400' },
     { label: 'Usuarios', value: data.users, color: 'text-purple-400' },
-    { label: 'Cupones activos', value: data.activeCoupons, color: 'text-red-400' },
+    { label: 'Puntos canjeados', value: data.redeemedPoints || 0, color: 'text-red-400' },
   ];
   return (
     <div>
@@ -422,7 +422,7 @@ function CategoriesSection({ items, token, reload }) {
 
 // ── Productos ─────────────────────────────────────────────────────────────────
 function ProductsSection({ items, categories, token, reload }) {
-  const emptyForm = { name: '', description: '', price: '', category_id: '', image_url: '', badge: '', stock: '' };
+  const emptyForm = { name: '', description: '', price: '', category_id: '', image_url: '', badge: '', stock: '', points_earned: '0' };
   const [form, setForm] = useState(emptyForm);
   const [editing, setEditing] = useState(null);
   const [submitting, setSubmitting] = useState(false);
@@ -514,6 +514,16 @@ function ProductsSection({ items, categories, token, reload }) {
             const v = e.target.value;
             if (v === '' || /^\d+$/.test(v)) setForm(p => ({ ...p, stock: v }));
           }}
+          className="bg-black/30 border border-white/10 rounded-lg px-3 py-2 text-white text-sm"
+          required
+        />
+
+        <input
+          type="number"
+          min={0}
+          placeholder="Puntos ganados *"
+          value={form.points_earned}
+          onChange={e => setForm(p => ({ ...p, points_earned: e.target.value }))}
           className="bg-black/30 border border-white/10 rounded-lg px-3 py-2 text-white text-sm"
           required
         />

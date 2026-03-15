@@ -35,12 +35,13 @@ export const createProduct = async (req, res) => {
       }
     }
 
-    const { name, description, price, category_id, image_url, badge, stock } = req.body;
+    const { name, description, price, category_id, image_url, badge, stock, points_earned } = req.body;
     const stockVal = Math.max(0, parseInt(stock, 10) || 0);
+    const pointsVal = parseInt(points_earned, 10) || 0;
     const result = await query(
-      `INSERT INTO products (name, description, price, category_id, image_url, badge, store_id, stock)
-       VALUES ($1,$2,$3,$4,$5,$6,$7,$8) RETURNING *`,
-      [name, description, price, category_id, image_url, badge || null, storeId, stockVal]
+      `INSERT INTO products (name, description, price, category_id, image_url, badge, store_id, stock, points_earned)
+       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9) RETURNING *`,
+      [name, description, price, category_id, image_url, badge || null, storeId, stockVal, pointsVal]
     );
     res.status(201).json({ status: 'success', data: result.rows[0] });
   } catch (e) { res.status(500).json({ status: 'error', message: e.message }); }
@@ -50,13 +51,14 @@ export const updateProduct = async (req, res) => {
   try {
     const storeId = await getStoreId(req);
     const { id } = req.params;
-    const { name, description, price, category_id, image_url, badge, is_active, stock } = req.body;
+    const { name, description, price, category_id, image_url, badge, is_active, stock, points_earned } = req.body;
     const stockVal = typeof stock === 'number' ? Math.max(0, stock) : Math.max(0, parseInt(stock, 10) || 0);
+    const pointsVal = typeof points_earned === 'number' ? points_earned : (parseInt(points_earned, 10) || 0);
     const result = await query(
       `UPDATE products SET name=$1, description=$2, price=$3, category_id=$4,
-       image_url=$5, badge=$6, is_active=$7, stock=$8
-       WHERE id=$9 AND store_id=$10 RETURNING *`,
-      [name, description, price, category_id, image_url, badge || null, is_active ?? true, stockVal, id, storeId]
+       image_url=$5, badge=$6, is_active=$7, stock=$8, points_earned=$9
+       WHERE id=$10 AND store_id=$11 RETURNING *`,
+      [name, description, price, category_id, image_url, badge || null, is_active ?? true, stockVal, pointsVal, id, storeId]
     );
     if (!result.rows.length) return res.status(404).json({ status: 'error', message: 'Producto no encontrado' });
     res.json({ status: 'success', data: result.rows[0] });
@@ -484,5 +486,36 @@ export const getQRConfig = async (req, res) => {
     console.error('getQRConfig error:', e.message);
     res.status(500).json({ status: 'error', message: e.message }); 
   }
+};
+
+// ── FIDELIZACIÓN (LOYALTY) ───────────────────────────────────────────────────
+export const getLoyaltyConfig = async (req, res) => {
+  try {
+    const tenantId = getTenantId(req);
+    const result = await query(
+      `SELECT loyalty_enabled, points_redeem_value FROM tenant_settings WHERE tenant_id_fk = $1`,
+      [String(tenantId)]
+    );
+    const config = result.rows[0] || { loyalty_enabled: false, points_redeem_value: 0 };
+    res.json({ status: 'success', data: config });
+  } catch (e) { res.status(500).json({ status: 'error', message: e.message }); }
+};
+
+export const updateLoyaltyConfig = async (req, res) => {
+  try {
+    const tenantId = getTenantId(req);
+    const { loyalty_enabled, points_redeem_value } = req.body;
+    
+    await query(
+      `INSERT INTO tenant_settings (tenant_id, tenant_id_fk, loyalty_enabled, points_redeem_value, updated_at)
+       VALUES ($1, $1, $2, $3, NOW())
+       ON CONFLICT (tenant_id) DO UPDATE SET
+         loyalty_enabled     = $2,
+         points_redeem_value = $3,
+         updated_at          = NOW()`,
+      [String(tenantId), !!loyalty_enabled, parseInt(points_redeem_value, 10) || 0]
+    );
+    res.json({ status: 'success', message: 'Configuración de fidelización actualizada.' });
+  } catch (e) { res.status(500).json({ status: 'error', message: e.message }); }
 };
 

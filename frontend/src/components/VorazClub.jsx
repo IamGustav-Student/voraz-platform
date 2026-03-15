@@ -3,8 +3,7 @@ import { motion } from 'framer-motion';
 import { useAuth } from '../context/AuthContext';
 import { getPointsHistory, getUserOrders } from '../services/api';
 
-const POINTS_VALUE = 5;
-const POINTS_TO_REDEEM = 100;
+// Points constants moved to TENANT config logic
 
 const fmt = (n) => parseInt(n).toLocaleString('es-AR');
 
@@ -33,8 +32,9 @@ const VorazClub = ({ onBack, onOpenAuth }) => {
         }).finally(() => setLoading(false));
     }, [user]);
 
-    const pointsInPesos = Math.floor(pointsData.points / POINTS_TO_REDEEM) * (POINTS_TO_REDEEM * POINTS_VALUE);
-    const canRedeem = pointsData.points >= POINTS_TO_REDEEM;
+    const POINTS_BLOCK = 500;
+    const pointsInPesos = Math.floor(pointsData.points / POINTS_BLOCK) * (TENANT.pointsRedeemValue || 0);
+    const canRedeem = pointsData.points >= POINTS_BLOCK;
 
     if (!user) {
         return (
@@ -51,9 +51,9 @@ const VorazClub = ({ onBack, onOpenAuth }) => {
                 </motion.button>
                 <div className="mt-8 grid grid-cols-3 gap-4 w-full max-w-sm">
                     {[
-                        { icon: '⭐', title: 'Puntos por pedido', desc: '1 pt c/ $100' },
-                        { icon: '🎁', title: 'Canjear puntos', desc: '100 pts = $500' },
-                        { icon: '🎉', title: 'Bonus bienvenida', desc: '50 puntos gratis' },
+                        { icon: '🛒', title: 'Puntos por pedido', desc: 'Acumulá puntos en cada producto' },
+                        { icon: '🎁', title: 'Canjear puntos', desc: `500 pts = $${TENANT.pointsRedeemValue || 0}` },
+                        { icon: '🎉', title: 'Beneficios', desc: 'Descuentos exclusivos' },
                     ].map(b => (
                         <div key={b.title} className="bg-white/5 rounded-xl p-3 border border-white/5 text-center">
                             <div className="text-2xl mb-1">{b.icon}</div>
@@ -98,24 +98,24 @@ const VorazClub = ({ onBack, onOpenAuth }) => {
                         <p className="text-white/70 text-xs">
                             {canRedeem
                                 ? `Podés canjear hasta $${fmt(pointsInPesos)} de descuento`
-                                : `Te faltan ${POINTS_TO_REDEEM - (pointsData.points % POINTS_TO_REDEEM)} pts para canjear`}
+                                : `Te faltan ${POINTS_BLOCK - (pointsData.points % POINTS_BLOCK)} pts para canjear`}
                         </p>
                     </div>
                     <div className="mt-3 bg-black/20 rounded-full h-1.5">
                         <div
                             className="bg-voraz-yellow h-1.5 rounded-full transition-all"
-                            style={{ width: `${Math.min(100, (pointsData.points % POINTS_TO_REDEEM) / POINTS_TO_REDEEM * 100)}%` }}
+                            style={{ width: `${Math.min(100, (pointsData.points % POINTS_BLOCK) / POINTS_BLOCK * 100)}%` }}
                         ></div>
                     </div>
-                    <p className="text-white/40 text-[10px] mt-1 text-right">{pointsData.points % POINTS_TO_REDEEM}/{POINTS_TO_REDEEM} pts para próximo canje</p>
+                    <p className="text-white/40 text-[10px] mt-1 text-right">{pointsData.points % POINTS_BLOCK}/{POINTS_BLOCK} pts para próximo canje</p>
                 </div>
             </div>
 
             {/* Cómo funciona */}
             <div className="grid grid-cols-3 gap-3 mb-6">
                 {[
-                    { icon: '🛒', title: 'Comprá', desc: '1 pt c/ $100' },
-                    { icon: '⭐', title: 'Acumulá', desc: '100 pts = $500' },
+                    { icon: '🛒', title: 'Comprá', desc: 'Acumulá puntos' },
+                    { icon: '⭐', title: 'Acumulá', desc: `500 pts = $${TENANT.pointsRedeemValue || 0}` },
                     { icon: '🎁', title: 'Canjea', desc: 'En tu próximo pedido' },
                 ].map(b => (
                     <div key={b.title} className="bg-white/5 border border-white/5 rounded-xl p-3 text-center">

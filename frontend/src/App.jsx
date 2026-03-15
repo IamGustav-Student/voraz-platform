@@ -109,6 +109,7 @@ function App() {
         product_name: product.name,
         product_price: parseFloat(product.price),
         image_url: product.image_url,
+        points_earned: product.points_earned || 0,
       }
     });
     setSelectedProduct(null);

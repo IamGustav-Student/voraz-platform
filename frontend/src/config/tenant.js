@@ -76,6 +76,8 @@ export function applyBrandTheme(settings) {
   _tenant.theme.secondary = secondary;
   _tenant.theme.primaryHover = adjustColor(primary, -20);
   _tenant.customBrandingEnabled = !!settings.custom_branding_enabled;
+  _tenant.loyaltyEnabled = !!settings.loyalty_enabled;
+  _tenant.pointsRedeemValue = settings.points_redeem_value || 0;
 
   // Actualizar favicon si existe
   if (settings.brand_favicon_url) {
