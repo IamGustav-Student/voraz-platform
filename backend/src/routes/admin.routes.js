@@ -15,6 +15,7 @@ import {
   getBranding, updateBranding,
   getQRConfig,
 } from '../controllers/admin.controller.js';
+import { getStoreId } from '../utils/tenant.js';
 import { getSubscriptionStatus, createUpgradeCheckout } from '../controllers/subscriptions.controller.js';
 
 const router = Router();
