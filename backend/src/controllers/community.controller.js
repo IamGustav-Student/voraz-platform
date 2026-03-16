@@ -18,7 +18,7 @@ export const getVideos = async (req, res) => {
   try {
     const storeId = await getStoreId(req);
     const result = await query(
-      'SELECT * FROM community_videos WHERE store_id = $1 ORDER BY created_at DESC',
+      'SELECT * FROM videos WHERE store_id = $1 ORDER BY created_at DESC',
       [storeId]
     );
     res.json({ status: 'success', data: result.rows });

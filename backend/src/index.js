@@ -34,13 +34,14 @@ app.set('trust proxy', 1); // Confiar en el proxy (Railway/Vercel) para rate-lim
 app.use(helmet()); 
 app.use(morgan('dev'));
 
-// Rate limiting global: 100 peticiones cada 15 minutos por IP
+// Rate limiting global: 300 peticiones cada 15 minutos por IP (suficiente para el admin panel)
 const globalLimiter = rateLimit({
     windowMs: 15 * 60 * 1000, 
-    max: 100, 
+    max: 300, 
     message: { status: 'error', message: 'Demasiadas peticiones. Intentá de nuevo más tarde.' },
     standardHeaders: true,
     legacyHeaders: false,
+    skip: (req) => req.path.startsWith('/api/superadmin'), // superadmin no tiene límite por IP
 });
 app.use('/api/', globalLimiter);
 

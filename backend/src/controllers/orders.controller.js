@@ -130,6 +130,16 @@ export const createOrder = async (req, res) => {
             await client.query('UPDATE points_history SET order_id = $1 WHERE user_id = $2 AND order_id IS NULL AND type = \'redeemed\'', [orderId, user_id]);
         }
 
+        // 7. Acreditar puntos de forma INMEDIATA para pedidos en efectivo
+        // (Para MercadoPago, se acreditan al confirmar el pago via webhook)
+        if (resolvedPaymentMethod === 'cash' && user_id && totalPointsEarned > 0 && loyalty.loyalty_enabled) {
+            await client.query('UPDATE users SET points = points + $1 WHERE id = $2', [totalPointsEarned, user_id]);
+            await client.query(
+                `INSERT INTO points_history (user_id, order_id, points, type, description) VALUES ($1,$2,$3,'earned',$4)`,
+                [user_id, orderId, totalPointsEarned, `Puntos ganados por pedido #${orderId}`]
+            );
+        }
+
         await client.query('COMMIT');
         res.status(201).json({ status: 'success', data: { order_id: orderId, final_total: finalTotal, points_earned: totalPointsEarned } });
 
