@@ -30,6 +30,7 @@ const PORT = process.env.PORT || 3000;
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 // ── Seguridad Global ────────────────────────────────────────────────────────
+app.set('trust proxy', 1); // Confiar en el proxy (Railway/Vercel) para rate-limit
 app.use(helmet()); 
 app.use(morgan('dev'));
 
@@ -43,17 +44,21 @@ const globalLimiter = rateLimit({
 });
 app.use('/api/', globalLimiter);
 
-// CORS restringido (recomendar configurar FRONTEND_URL en producción)
-const allowedOrigins = [
-    process.env.FRONTEND_URL || '*', 
-    'http://localhost:5173',
-    'http://localhost:3000'
-];
+// CORS dinámico para soportar subdomains del SaaS
+const rootDomain = process.env.GASTRORED_ROOT_DOMAIN || 'gastrored.com.ar';
 app.use(cors({
     origin: (origin, callback) => {
-        if (!origin || allowedOrigins.includes('*') || allowedOrigins.includes(origin)) {
+        // Permitir si no hay origin (ej. mobile app o server-to-server) 
+        // o si coincide con localhost o con el dominio raíz y sus subdominios
+        if (!origin || 
+            origin.includes('localhost') || 
+            origin.includes('127.0.0.1') || 
+            origin.endsWith(rootDomain) ||
+            origin.endsWith('vercel.app') // Permitir despliegues de Vercel
+        ) {
             callback(null, true);
         } else {
+            console.warn(`[CORS Blocked] Origin: ${origin}`);
             callback(new Error('CORS no permitido'));
         }
     },
