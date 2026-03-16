@@ -484,7 +484,7 @@ function App() {
           </div>
           <nav className="flex space-x-6">
             <NavButtonPC active={currentView === 'menu'} onClick={() => setCurrentView('menu')} image="/images/menu.jpg" label="Menú" />
-            <NavButtonPC active={currentView === 'promos'} onClick={() => setCurrentView('promos')} image="/images/promos.jpg" label="Promos" />
+            <NavButtonPC active={currentView === 'promos'} onClick={() => setCurrentView('promos')} image="/images/promos.png" label="Promos" />
             <NavButtonPC active={currentView === 'videos'} onClick={() => setCurrentView('videos')} image="/images/eventos.jpg" label="Videos" />
             <NavButtonPC active={currentView === 'locations'} onClick={() => setCurrentView('locations')} image="/images/locales.jpg" label="Locales" />
             <NavButtonPC active={currentView === 'delivery'} onClick={() => setCurrentView('delivery')} image="/images/delivery.jpg" label="Delivery" />

@@ -1886,7 +1886,7 @@ function PromosSection({ items, products, token, reload }) {
           {items.map(p => (
             <div key={p.id} className={`group bg-white/5 border border-white/10 rounded-3xl overflow-hidden transition-all hover:border-white/30 ${!p.is_active ? 'opacity-60' : ''}`}>
               <div className="h-40 relative">
-                <img src={p.image_url || '/images/placeholder_promo.jpg'} className="w-full h-full object-cover" alt="" />
+                <img src={p.image_url || '/images/placeholder_promo.png'} className="w-full h-full object-cover" alt="" />
                 <div className="absolute top-3 left-3 flex gap-2">
                   <span className="bg-red-600 text-white text-[10px] font-black px-2 py-1 rounded-lg uppercase shadow-lg">
                     {p.promo_type}
