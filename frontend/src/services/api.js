@@ -23,14 +23,14 @@ export const getMenu = async () => {
   }
 };
 
-export const getInfluencers = async () => {
+export const getPromos = async () => {
   try {
-    const response = await fetch(`${API_URL}/community/influencers`, { headers: baseHeaders });
+    const response = await fetch(`${API_URL}/promos`, { headers: baseHeaders });
     if (!response.ok) throw new Error('Error server');
     const data = await response.json();
     return data.data || [];
   } catch (error) {
-    console.error('Error fetching influencers:', error);
+    console.error('Error fetching promos:', error);
     return [];
   }
 };

@@ -18,6 +18,7 @@ import couponsRoutes from './routes/coupons.routes.js';
 import adminRoutes from './routes/admin.routes.js';
 import superadminRoutes from './routes/superadmin.routes.js';
 import subscriptionRoutes from './routes/subscriptions.routes.js';
+import promosRoutes from './routes/promos.routes.js';
 
 import { tenantMiddleware } from './middleware/tenant.middleware.js';
 import { getTenantId } from './utils/tenant.js';
@@ -195,6 +196,7 @@ app.get('/api/settings', tenantMiddleware, async (req, res) => {
 // ── Rutas con tenant middleware ───────────────────────────────────────────────
 app.use('/api/products', tenantMiddleware, productsRoutes);
 app.use('/api/community', tenantMiddleware, communityRoutes);
+app.use('/api/promos', tenantMiddleware, promosRoutes);
 app.use('/api/stores', tenantMiddleware, storesRoutes);
 app.use('/api/news', tenantMiddleware, newsRoutes);
 app.use('/api/orders', tenantMiddleware, ordersRoutes);
@@ -244,4 +246,5 @@ app.listen(PORT, async () => {
     await runMigration('phase24_loyalty_system.sql');
     await runMigration('phase25_loyalty_fix.sql');
     await runMigration('phase26_welcome_bonus.sql');
+    await runMigration('phase27_promos.sql');
 });

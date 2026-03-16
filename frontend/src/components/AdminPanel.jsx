@@ -57,7 +57,7 @@ function OrdersTableSkeleton() {
   );
 }
 
-const SECTIONS = ['Dashboard', 'Categorías', 'Productos', 'Locales', 'Fidelización', 'Videos', 'Noticias', 'Pedidos', 'MercadoPago', 'Branding', 'Menú QR', 'Suscripción'];
+const SECTIONS = ['Dashboard', 'Categorías', 'Productos', 'Promociones', 'Locales', 'Fidelización', 'Videos', 'Noticias', 'Pedidos', 'MercadoPago', 'Branding', 'Menú QR', 'Suscripción'];
 
 // ── Componente reutilizable: input de imagen (URL o archivo local) ──────────
 function ImageInput({ value, onChange, label = 'Imagen', token, folder = 'general' }) {
@@ -154,6 +154,7 @@ export default function AdminPanel({ onClose }) {
         Dashboard: '/stats',
         Categorías: '/categories',
         Productos: ['/products', '/categories'],
+        Promociones: ['/promos', '/products'],
         Locales: '/stores',
         Fidelización: '/loyalty',
         Pedidos: '/orders',
@@ -164,8 +165,13 @@ export default function AdminPanel({ onClose }) {
       };
       const path = map[sec];
       if (Array.isArray(path)) {
-        const [products, categories] = await Promise.all(path.map(p => adminFetch(p, token)));
-        setData(prev => ({ ...prev, Productos: products, _categories: categories }));
+        if (sec === 'Productos') {
+          const [products, categories] = await Promise.all(path.map(p => adminFetch(p, token)));
+          setData(prev => ({ ...prev, Productos: products, _categories: categories }));
+        } else if (sec === 'Promociones') {
+          const [promos, products] = await Promise.all(path.map(p => adminFetch(p, token)));
+          setData(prev => ({ ...prev, Promociones: promos, _allProducts: products }));
+        }
       } else if (path) {
         const result = await adminFetch(path, token);
         setData(prev => ({ ...prev, [sec]: result }));
@@ -184,6 +190,7 @@ export default function AdminPanel({ onClose }) {
     Dashboard:   'M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6',
     'Categorías':'M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A2 2 0 013 12V7a4 4 0 014-4z',
     Productos:   'M4 6h16M4 10h16M4 14h16M4 18h16',
+    Promociones: 'M12 8v13m0-13V6a2 2 0 112 2h-2zm0 0V5a2 2 0 10-2 2h2zm0 0v4l2 2m-2-2l-2 2',
     Fidelización: 'M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 11c-1.11 0-2.08-.402-2.599-1M12 18v1m-7-4a4 4 0 110-8 4 4 0 010 8zM17 11a4 4 0 110-8 4 4 0 010 8z',
     Videos:      'M15 10l4.553-2.277A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M3 8a2 2 0 012-2h8a2 2 0 012 2v8a2 2 0 01-2 2H5a2 2 0 01-2-2V8z',
     Noticias:    'M19 20H5a2 2 0 01-2-2V6a2 2 0 012-2h10a2 2 0 012 2v1m2 13a2 2 0 01-2-2V7m2 13a2 2 0 002-2V9a2 2 0 00-2-2h-2m-4-3H9M7 16h6M7 8h6v4H7V8z',
@@ -285,6 +292,7 @@ export default function AdminPanel({ onClose }) {
               {section === 'Dashboard'   && <DashboardSection data={data.Dashboard} />}
               {section === 'Categorías'  && <CategoriesSection items={data['Categorías'] || []} token={token} reload={() => load('Categorías')} />}
               {section === 'Productos'   && <ProductsSection items={data.Productos || []} categories={data._categories || []} token={token} reload={() => load('Productos')} />}
+              {section === 'Promociones' && <PromosSection items={data.Promociones || []} products={data._allProducts || []} token={token} reload={() => load('Promociones')} />}
               {section === 'Locales'     && <StoresSection items={data.Locales || []} token={token} reload={() => load('Locales')} showToast={showToast} />}
               {section === 'Fidelización' && <LoyaltySection items={data.Fidelización || {}} token={token} />}
               {section === 'Videos'      && <VideosSection token={token} />}
@@ -1731,6 +1739,191 @@ function QRSection({ token, onUpgrade }) {
           </p>
         </div>
       </div>
+    </div>
+  );
+}
+
+// ── PROMOS SECTION ────────────────────────────────────────────────────────
+function PromosSection({ items, products, token, reload }) {
+  const [showForm, setShowForm] = useState(false);
+  const [editing, setEditing] = useState(null);
+  const [loading, setLoading] = useState(false);
+  const [form, setForm] = useState({
+    product_id: '',
+    title: '',
+    description: '',
+    promo_type: 'Libre',
+    price: 0,
+    image_url: '',
+    is_active: true
+  });
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setLoading(true);
+    try {
+      const isUpdate = !!editing;
+      await adminFetch(isUpdate ? `/promos/${editing.id}` : '/promos', token, {
+        method: isUpdate ? 'PUT' : 'POST',
+        body: JSON.stringify(form)
+      });
+      reload();
+      setShowForm(false);
+      setEditing(null);
+      setForm({ product_id: '', title: '', description: '', promo_type: 'Libre', price: 0, image_url: '', is_active: true });
+    } catch (e) { alert(e.message); }
+    setLoading(false);
+  };
+
+  const deletePromo = async (id) => {
+    if (!confirm('¿Eliminar esta promoción?')) return;
+    try {
+      await adminFetch(`/promos/${id}`, token, { method: 'DELETE' });
+      reload();
+    } catch (e) { alert(e.message); }
+  };
+
+  const startEdit = (p) => {
+    setEditing(p);
+    setForm({
+      product_id: p.product_id || '',
+      title: p.title,
+      description: p.description || '',
+      promo_type: p.promo_type || 'Libre',
+      price: p.price || 0,
+      image_url: p.image_url || '',
+      is_active: p.is_active
+    });
+    setShowForm(true);
+  };
+
+  return (
+    <div className="p-4 md:p-6">
+      <div className="flex items-center justify-between mb-8">
+        <div>
+          <h2 className="text-2xl font-black text-white">Promociones</h2>
+          <p className="text-gray-500 text-sm">Gestioná tus ofertas y combos dinámicos.</p>
+        </div>
+        {!showForm && (
+          <button onClick={() => { setEditing(null); setShowForm(true); }} className="bg-red-600 hover:bg-red-700 text-white px-5 py-2.5 rounded-xl font-bold text-sm transition shadow-lg shadow-red-900/20">
+            + Nueva Promo
+          </button>
+        )}
+      </div>
+
+      {showForm ? (
+        <form onSubmit={handleSubmit} className="max-w-2xl bg-white/5 border border-white/10 rounded-3xl p-6 md:p-8 space-y-6">
+          <h3 className="text-xl font-bold text-white mb-2">{editing ? 'Editar' : 'Crear'} Promoción</h3>
+          
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="md:col-span-2">
+              <label className="text-xs text-gray-400 font-bold uppercase tracking-widest mb-1.5 block">Título de la Promo *</label>
+              <input value={form.title} onChange={e => setForm(f => ({ ...f, title: e.target.value }))} required
+                placeholder="Ej: Combo Familiar, Mega Burger 2x1..."
+                className="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-3 text-white focus:border-red-500 outline-none transition" />
+            </div>
+
+            <div className="md:col-span-2">
+              <label className="text-xs text-gray-400 font-bold uppercase tracking-widest mb-1.5 block">Descripción (opcional)</label>
+              <textarea value={form.description} onChange={e => setForm(f => ({ ...f, description: e.target.value }))}
+                placeholder="Explicá en que consiste la promo..."
+                className="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-3 text-white focus:border-red-500 outline-none transition h-20 resize-none" />
+            </div>
+
+            <div>
+              <label className="text-xs text-gray-400 font-bold uppercase tracking-widest mb-1.5 block">Producto Relacionado</label>
+              <select value={form.product_id} onChange={e => setForm(f => ({ ...f, product_id: e.target.value }))}
+                className="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-3 text-white focus:border-red-500 outline-none transition">
+                <option value="">— Sin producto —</option>
+                {products.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
+              </select>
+            </div>
+
+            <div>
+              <label className="text-xs text-gray-400 font-bold uppercase tracking-widest mb-1.5 block">Tipo de Promo</label>
+              <select value={form.promo_type} onChange={e => setForm(f => ({ ...f, promo_type: e.target.value }))}
+                className="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-3 text-white focus:border-red-500 outline-none transition">
+                <option value="Libre">Libre (Solo precio)</option>
+                <option value="2x1">2 x 1</option>
+                <option value="3x2">3 x 2</option>
+                <option value="Envío Gratis">Envío Gratis</option>
+              </select>
+            </div>
+
+            <div>
+              <label className="text-xs text-gray-400 font-bold uppercase tracking-widest mb-1.5 block">Precio Promo (ARS)</label>
+              <input type="number" value={form.price} onChange={e => setForm(f => ({ ...f, price: e.target.value }))}
+                className="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-3 text-white focus:border-red-500 outline-none transition" />
+            </div>
+
+            <div className="flex items-end">
+              <label className="flex items-center gap-3 cursor-pointer group mb-3">
+                <input type="checkbox" checked={form.is_active} onChange={e => setForm(f => ({ ...f, is_active: e.target.checked }))} className="hidden" />
+                <div className={`w-10 h-6 rounded-full transition-colors relative ${form.is_active ? 'bg-green-600' : 'bg-gray-700'}`}>
+                  <div className={`absolute top-1 w-4 h-4 bg-white rounded-full transition-all ${form.is_active ? 'left-5' : 'left-1'}`} />
+                </div>
+                <span className="text-sm font-bold text-gray-300">Mostrar públicamente</span>
+              </label>
+            </div>
+
+            <div className="md:col-span-2">
+              <label className="text-xs text-gray-400 font-bold uppercase tracking-widest mb-1.5 block">Imagen de la Promo</label>
+              <ImageInput value={form.image_url} onChange={val => setForm(f => ({ ...f, image_url: val }))} token={token} folder="promos" />
+            </div>
+          </div>
+
+          <div className="flex gap-3 pt-4">
+            <button type="submit" disabled={loading} className="flex-1 bg-white text-black hover:bg-gray-200 py-3.5 rounded-2xl font-black uppercase tracking-widest text-xs transition disabled:opacity-50">
+              {loading ? 'Guardando...' : (editing ? 'Actualizar Promoción' : 'Crear Promoción')}
+            </button>
+            <button type="button" onClick={() => setShowForm(false)} className="px-8 py-3.5 rounded-2xl bg-white/5 border border-white/10 text-white font-bold text-xs uppercase hover:bg-white/10 transition">
+              Cancelar
+            </button>
+          </div>
+        </form>
+      ) : (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {items.map(p => (
+            <div key={p.id} className={`group bg-white/5 border border-white/10 rounded-3xl overflow-hidden transition-all hover:border-white/30 ${!p.is_active ? 'opacity-60' : ''}`}>
+              <div className="h-40 relative">
+                <img src={p.image_url || '/images/placeholder_promo.jpg'} className="w-full h-full object-cover" alt="" />
+                <div className="absolute top-3 left-3 flex gap-2">
+                  <span className="bg-red-600 text-white text-[10px] font-black px-2 py-1 rounded-lg uppercase shadow-lg">
+                    {p.promo_type}
+                  </span>
+                  {!p.is_active && <span className="bg-gray-800 text-gray-400 text-[10px] font-black px-2 py-1 rounded-lg uppercase">Oculta</span>}
+                </div>
+              </div>
+              <div className="p-5">
+                <h4 className="font-bold text-lg text-white mb-1">{p.title}</h4>
+                <p className="text-gray-500 text-xs line-clamp-2 mb-4">{p.description || 'Sin descripción.'}</p>
+                
+                <div className="flex items-center justify-between mt-auto">
+                   <div>
+                      <p className="text-[10px] text-gray-500 font-bold uppercase mb-0.5">Precio Especial</p>
+                      <p className="text-xl font-black text-green-400">${Number(p.price).toLocaleString('es-AR')}</p>
+                   </div>
+                   <div className="flex gap-2">
+                      <button onClick={() => startEdit(p)} className="p-2 bg-white/5 hover:bg-white/10 border border-white/10 rounded-xl transition text-gray-400 hover:text-white" title="Editar">
+                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" /></svg>
+                      </button>
+                      <button onClick={() => deletePromo(p.id)} className="p-2 bg-red-900/20 hover:bg-red-900/40 border border-red-500/20 rounded-xl transition text-red-500" title="Eliminar">
+                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
+                      </button>
+                   </div>
+                </div>
+              </div>
+            </div>
+          ))}
+          {items.length === 0 && (
+            <div className="col-span-full py-20 bg-white/5 border border-dashed border-white/10 rounded-3xl flex flex-col items-center justify-center text-center px-4">
+              <div className="text-4xl mb-4 opacity-30">🎁</div>
+              <p className="text-gray-500 font-bold">No tenés promociones creadas.</p>
+              <button onClick={() => setShowForm(true)} className="mt-4 text-red-500 text-xs font-black uppercase hover:underline">Crear mi primera promo</button>
+            </div>
+          )}
+        </div>
+      )}
     </div>
   );
 }

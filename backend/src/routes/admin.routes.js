@@ -15,6 +15,7 @@ import {
   getBranding, updateBranding,
   getQRConfig,
 } from '../controllers/admin.controller.js';
+import { getAdminPromos, createPromo, updatePromo, deletePromo } from '../controllers/promos.controller.js';
 import { getStoreId } from '../utils/tenant.js';
 import { getSubscriptionStatus, createUpgradeCheckout } from '../controllers/subscriptions.controller.js';
 
@@ -62,6 +63,12 @@ router.patch('/branding', requireCustomBranding, updateBranding);
 
 // QR Menu
 router.get('/qr-config', getQRConfig);
+
+// Promociones
+router.get('/promos', getAdminPromos);
+router.post('/promos', createPromo);
+router.put('/promos/:id', updatePromo);
+router.delete('/promos/:id', deletePromo);
 
 // Suscripción
 router.get('/subscription', async (req, res) => {

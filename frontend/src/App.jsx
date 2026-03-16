@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { getMenu, getInfluencers, getVideos, getStores, getNews } from './services/api';
+import { getMenu, getPromos, getVideos, getStores, getNews } from './services/api';
 import { Helmet } from 'react-helmet-async';
 import { TENANT, formatPrice, loadTenantConfig } from './config/tenant.js';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -41,7 +41,7 @@ function App() {
   const [landingChecked, setLandingChecked] = useState(isGastroRedRootDomain());
 
   const [products, setProducts] = useState([]);
-  const [influencers, setInfluencers] = useState([]);
+  const [promos, setPromos] = useState([]);
   const [videos, setVideos] = useState([]);
   const [stores, setStores] = useState([]);
   const [news, setNews] = useState([]);
@@ -87,12 +87,12 @@ function App() {
 
   const loadAllData = async () => {
     try {
-      const [menuData, squadData, videoData, storesData, newsData] = await Promise.all([
-        getMenu(), getInfluencers(), getVideos(), getStores(), getNews()
+      const [menuData, promosData, videoData, storesData, newsData] = await Promise.all([
+        getMenu(), getPromos(), getVideos(), getStores(), getNews()
       ]);
       if (menuData) {
         setProducts(menuData || []);
-        setInfluencers(squadData || []);
+        setPromos(promosData || []);
         setVideos(videoData || []);
         setStores(storesData || []);
         setNews(newsData || []);
@@ -255,21 +255,54 @@ function App() {
     );
   };
 
-  const CommunityView = () => (
+  const PromosView = () => (
     <motion.div initial="initial" animate="in" exit="out" variants={pageVariants} transition={pageTransition} className="container mx-auto px-4 py-8 pb-32">
-      <Helmet><title>Squad | {TENANT.brandName}</title></Helmet>
-      <div className="text-center mb-8"><h2 className="text-3xl md:text-5xl font-black uppercase italic mb-2">{TENANT.brandName} <span className="text-brand-secondary">Squad</span></h2></div>
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        {influencers.map((inf) => (
-          <motion.div whileHover={{ scale: 1.05 }} key={inf.id} className="relative rounded-2xl overflow-hidden aspect-square group shadow-lg">
-            <img src={inf.image_url} className="w-full h-full object-cover" />
-            <div className="absolute inset-0 bg-gradient-to-t from-black via-transparent to-transparent opacity-90"></div>
-            <div className="absolute bottom-3 left-3">
-              <p className="text-white font-bold text-sm">{inf.name}</p>
-              <p className="text-voraz-yellow text-[10px] font-bold">{inf.social_handle}</p>
+      <Helmet><title>Promos | {TENANT.brandName}</title></Helmet>
+      <div className="text-center mb-8">
+        <h2 className="text-3xl md:text-5xl font-black uppercase italic mb-2">
+          Nuestras <span className="text-primary">Promos</span>
+        </h2>
+        <p className="text-gray-500 text-sm">Aprovechá las mejores ofertas que tenemos para vos.</p>
+      </div>
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        {promos.map((p) => (
+          <motion.div 
+            whileHover={{ y: -5 }} 
+            key={p.id} 
+            onClick={() => {
+              const product = products.find(pr => pr.id === p.product_id);
+              if (product) setSelectedProduct(product);
+            }}
+            className="group bg-voraz-gray border border-white/5 rounded-3xl overflow-hidden shadow-2xl relative cursor-pointer"
+          >
+            <div className="h-48 relative">
+              <img src={p.image_url || '/images/placeholder_promo.jpg'} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" alt={p.title} />
+              <div className="absolute top-4 left-4">
+                <span className="bg-primary text-white text-[10px] font-black px-3 py-1.5 rounded-xl uppercase shadow-xl">
+                  {p.promo_type}
+                </span>
+              </div>
+            </div>
+            <div className="p-6">
+              <h3 className="text-xl font-black text-white mb-2">{p.title}</h3>
+              <p className="text-gray-400 text-xs line-clamp-2 mb-4 leading-relaxed">{p.description || 'Consultá disponibilidad.'}</p>
+              
+              <div className="flex items-center justify-between mt-auto">
+                <div className="text-2xl font-black text-green-400">
+                  ${Number(p.price).toLocaleString('es-AR')}
+                </div>
+                <button className="bg-white/10 hover:bg-primary text-white px-4 py-2 rounded-xl text-[10px] font-black uppercase transition-colors">
+                  Ver {p.product_id ? 'Producto' : 'Promo'}
+                </button>
+              </div>
             </div>
           </motion.div>
         ))}
+        {promos.length === 0 && (
+          <div className="col-span-full py-20 text-center opacity-30">
+            <p className="text-xl font-bold">No hay promos activas en este momento.</p>
+          </div>
+        )}
       </div>
     </motion.div>
   );
@@ -451,7 +484,7 @@ function App() {
           </div>
           <nav className="flex space-x-6">
             <NavButtonPC active={currentView === 'menu'} onClick={() => setCurrentView('menu')} image="/images/menu.jpg" label="Menú" />
-            <NavButtonPC active={currentView === 'community'} onClick={() => setCurrentView('community')} image="/images/comunidad.jpg" label="Squad" />
+            <NavButtonPC active={currentView === 'promos'} onClick={() => setCurrentView('promos')} image="/images/promos.jpg" label="Promos" />
             <NavButtonPC active={currentView === 'videos'} onClick={() => setCurrentView('videos')} image="/images/eventos.jpg" label="Videos" />
             <NavButtonPC active={currentView === 'locations'} onClick={() => setCurrentView('locations')} image="/images/locales.jpg" label="Locales" />
             <NavButtonPC active={currentView === 'delivery'} onClick={() => setCurrentView('delivery')} image="/images/delivery.jpg" label="Delivery" />
@@ -553,7 +586,7 @@ function App() {
           ) : !error ? (
             <>
               {currentView === 'menu' && <MenuView key="menu" />}
-              {currentView === 'community' && <CommunityView key="community" />}
+              {currentView === 'promos' && <PromosView key="promos" />}
               {currentView === 'videos' && <VideosView key="videos" />}
               {currentView === 'locations' && <LocationsView key="locations" />}
               {currentView === 'delivery' && <DeliveryView key="delivery" />}
@@ -584,7 +617,7 @@ function App() {
       <nav className="md:hidden fixed bottom-0 left-0 w-full bg-[#121212] border-t border-white/10 z-50 px-6 pb-4 pt-2 safe-area-pb">
         <div className="flex justify-between items-end">
           <BottomNavItem icon="home" label="Menú" active={currentView === 'menu'} onClick={() => setCurrentView('menu')} />
-          <BottomNavItem icon="users" label="Squad" active={currentView === 'community'} onClick={() => setCurrentView('community')} />
+          <BottomNavItem icon="gift" label="Promos" active={currentView === 'promos'} onClick={() => setCurrentView('promos')} />
           <div className="relative -top-6">
             <motion.button
               whileTap={{ scale: 0.9 }}
@@ -708,6 +741,7 @@ const BottomNavItem = ({ icon, label, active, onClick }) => {
   const getIcon = () => {
     if (icon === 'home') return <path d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" />;
     if (icon === 'users') return <path d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" />;
+    if (icon === 'gift') return <path d="M20 12V8H4v4m16 0v8H4v-8m16 0H4m12-4V4H8v4m8 0H8" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" />;
     if (icon === 'map') return <path d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0zM15 11a3 3 0 11-6 0 3 3 0 016 0z" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" />;
     if (icon === 'bike') return <path d="M13 10V3L4 14h7v7l9-11h-7z" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" />;
     return null;
