@@ -223,3 +223,27 @@ export const validateCoupon = async (payload) => {
     throw error;
   }
 };
+
+// ── RECUPERACIÓN DE CONTRASEÑA ─────────────────────────────────────────────
+
+export const forgotPassword = async (email) => {
+  const response = await fetch(`${API_URL}/auth/forgot-password`, {
+    method: 'POST',
+    headers: baseHeaders,
+    body: JSON.stringify({ email }),
+  });
+  const data = await response.json();
+  if (!response.ok) throw new Error(data.message || 'Error al enviar solicitud');
+  return data;
+};
+
+export const resetPassword = async (token, new_password) => {
+  const response = await fetch(`${API_URL}/auth/reset-password`, {
+    method: 'POST',
+    headers: baseHeaders,
+    body: JSON.stringify({ token, new_password }),
+  });
+  const data = await response.json();
+  if (!response.ok) throw new Error(data.message || 'Error al restablecer contraseña');
+  return data;
+};

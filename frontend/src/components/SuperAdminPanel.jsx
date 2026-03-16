@@ -56,6 +56,10 @@ export default function SuperAdminPanel({ onBack }) {
   const [config, setConfig] = useState(null);
   const [configForm, setConfigForm] = useState({});
   const [savingConfig, setSavingConfig] = useState(false);
+  // Reset contraseña admin
+  const [resetModal, setResetModal] = useState(null); // { tenantId, adminEmail }
+  const [resetPwd, setResetPwd] = useState('');
+  const [resetting, setResetting] = useState(false);
 
   // PWA Install logic
   const { isInstallable, handleInstallClick } = usePWAInstall();
@@ -109,6 +113,22 @@ export default function SuperAdminPanel({ onBack }) {
       setMsg(!current ? '🎨 Branding personalizado activado' : '🔒 Branding personalizado desactivado');
       load();
     } catch (e) { setMsg('Error: ' + e.message); }
+  };
+
+  const handleResetAdminPassword = async (e) => {
+    e.preventDefault();
+    if (!resetPwd || resetPwd.length < 6) { setMsg('La contraseña debe tener al menos 6 caracteres.'); return; }
+    setResetting(true);
+    try {
+      const res = await sfetch(`/stores/${resetModal.tenantId}/reset-admin-password`, token, {
+        method: 'PATCH',
+        body: JSON.stringify({ new_password: resetPwd }),
+      });
+      setMsg(`✅ Contraseña del admin "${res.admin_email || resetModal.tenantId}" actualizada correctamente.`);
+      setResetModal(null);
+      setResetPwd('');
+    } catch (e) { setMsg('Error: ' + e.message); }
+    setResetting(false);
   };
 
   const handleCreate = async (e) => {
@@ -386,7 +406,47 @@ export default function SuperAdminPanel({ onBack }) {
                       🔗 Ver sitio
                     </a>
                   )}
+                  {/* Botón reset contraseña admin */}
+                  <button
+                    onClick={() => { setResetModal({ tenantId: s.id, adminEmail: s.admin_email }); setResetPwd(''); setMsg(''); }}
+                    className="text-xs px-3 py-1.5 bg-orange-900/30 hover:bg-orange-900/50 border border-orange-500/30 text-orange-300 rounded-lg font-bold transition"
+                    title="Cambiar contraseña del admin de este comercio"
+                  >
+                    🔑 Resetear pwd admin
+                  </button>
                 </div>
+
+                {/* Modal inline de reset contraseña */}
+                {resetModal?.tenantId === s.id && (
+                  <div className="mt-4 bg-orange-950/30 border border-orange-500/20 rounded-xl p-4">
+                    <p className="text-orange-300 text-xs font-bold mb-3">🔑 Nueva contraseña para el admin {resetModal.adminEmail || s.id}</p>
+                    <form onSubmit={handleResetAdminPassword} className="flex gap-2 flex-wrap">
+                      <input
+                        type="password"
+                        placeholder="Nueva contraseña (mín. 6 caracteres)"
+                        value={resetPwd}
+                        onChange={e => setResetPwd(e.target.value)}
+                        minLength={6}
+                        required
+                        className="flex-1 min-w-[200px] bg-black/40 border border-white/10 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-orange-500"
+                      />
+                      <button
+                        type="submit"
+                        disabled={resetting}
+                        className="px-4 py-2 bg-orange-600 hover:bg-orange-700 disabled:opacity-50 rounded-lg text-white text-xs font-bold transition"
+                      >
+                        {resetting ? 'Guardando...' : '✔ Confirmar'}
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => { setResetModal(null); setResetPwd(''); }}
+                        className="px-3 py-2 bg-white/5 hover:bg-white/10 rounded-lg text-gray-400 text-xs"
+                      >
+                        Cancelar
+                      </button>
+                    </form>
+                  </div>
+                )}
               </div>
             ))}
             {!loading && !stores.length && <p className="text-gray-500 text-sm">No hay comercios registrados.</p>}

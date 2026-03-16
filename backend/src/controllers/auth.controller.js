@@ -1,6 +1,8 @@
 import bcrypt from 'bcrypt';
 import jwt from 'jsonwebtoken';
+import crypto from 'crypto';
 import { query } from '../config/db.js';
+import { sendPasswordResetEmail } from '../utils/mailer.js';
 
 const JWT_SECRET = process.env.JWT_SECRET || 'gastrored_dev_secret_ONLY_LOCAL';
 const TOKEN_EXPIRY = '24h';
@@ -153,5 +155,123 @@ export const googleCallback = async (req, res) => {
         console.error('Error en Google callback:', err);
         const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:5173';
         return res.redirect(`${frontendUrl}?auth_error=true`);
+    }
+};
+
+// ── RECUPERACIÓN DE CONTRASEÑA ─────────────────────────────────────────────
+
+/**
+ * POST /api/auth/forgot-password
+ * Genera un token temporal y envía email de recuperación.
+ * Siempre responde 200 para no revelar si el email existe.
+ */
+export const forgotPassword = async (req, res) => {
+    const { email } = req.body;
+    if (!email) return res.status(400).json({ status: 'error', message: 'Email requerido.' });
+
+    const { tenantId, storeId } = getAuthContext(req);
+
+    try {
+        // Buscar usuario (cualquier rol) en el tenant actual
+        const userQuery = tenantId
+            ? `SELECT id, email, name FROM users WHERE LOWER(email)=LOWER($1) AND (tenant_id=$2 OR store_id=(SELECT id FROM stores WHERE tenant_id=$2 LIMIT 1)) LIMIT 1`
+            : `SELECT id, email, name FROM users WHERE LOWER(email)=LOWER($1) AND store_id=$2 LIMIT 1`;
+        const userRes = await query(userQuery, [email, tenantId || storeId]);
+
+        if (userRes.rows.length) {
+            const user = userRes.rows[0];
+
+            // Generar token aleatorio seguro y su hash para guardar en BD
+            const rawToken = crypto.randomBytes(32).toString('hex');
+            const tokenHash = crypto.createHash('sha256').update(rawToken).digest('hex');
+            const expiresAt = new Date(Date.now() + 60 * 60 * 1000); // 1 hora
+
+            // Invalidar tokens anteriores de este usuario
+            await query('UPDATE password_reset_tokens SET used=true WHERE user_id=$1 AND used=false', [user.id]);
+
+            // Guardar nuevo token
+            await query(
+                'INSERT INTO password_reset_tokens (user_id, token_hash, expires_at) VALUES ($1,$2,$3)',
+                [user.id, tokenHash, expiresAt]
+            );
+
+            // Construir URL de reset
+            const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:5173';
+            const resetUrl = `${frontendUrl}?reset_token=${rawToken}`;
+
+            const brandName = req.tenant?.brand_name || req.store?.brand_name || 'GastroRed';
+
+            const result = await sendPasswordResetEmail({ to: user.email, resetUrl, brandName, rawToken });
+
+            // En modo dev (sin SMTP) devolvemos el token para que se pueda probar
+            if (!result.sent && result.devToken) {
+                return res.json({
+                    status: 'success',
+                    message: 'Si el email existe, recibirás un link de recuperación.',
+                    _dev_token: result.devToken,
+                    _dev_reset_url: resetUrl,
+                });
+            }
+        }
+
+        // Siempre 200 para no revelar si el email existe
+        res.json({ status: 'success', message: 'Si el email existe, recibirás un link de recuperación.' });
+    } catch (error) {
+        console.error('[forgotPassword]', error.message);
+        res.status(500).json({ status: 'error', message: 'Error al procesar la solicitud.' });
+    }
+};
+
+/**
+ * POST /api/auth/reset-password
+ * Valida el token y actualiza la contraseña del usuario.
+ */
+export const resetPassword = async (req, res) => {
+    const { token, new_password } = req.body;
+    if (!token || !new_password) {
+        return res.status(400).json({ status: 'error', message: 'Token y nueva contraseña requeridos.' });
+    }
+    if (new_password.length < 6) {
+        return res.status(400).json({ status: 'error', message: 'La contraseña debe tener al menos 6 caracteres.' });
+    }
+
+    try {
+        const tokenHash = crypto.createHash('sha256').update(token).digest('hex');
+
+        const tokenRes = await query(
+            `SELECT prt.id, prt.user_id, prt.expires_at, prt.used
+             FROM password_reset_tokens prt
+             WHERE prt.token_hash = $1
+             LIMIT 1`,
+            [tokenHash]
+        );
+
+        if (!tokenRes.rows.length) {
+            return res.status(400).json({ status: 'error', message: 'Token inválido o expirado.' });
+        }
+
+        const tokenRow = tokenRes.rows[0];
+
+        if (tokenRow.used) {
+            return res.status(400).json({ status: 'error', message: 'Este link ya fue utilizado. Solicitá uno nuevo.' });
+        }
+
+        if (new Date(tokenRow.expires_at) < new Date()) {
+            return res.status(400).json({ status: 'error', message: 'El link expiró. Solicitá uno nuevo.' });
+        }
+
+        // Hash de la nueva contraseña
+        const password_hash = await bcrypt.hash(new_password, 12);
+
+        // Actualizar contraseña del usuario
+        await query('UPDATE users SET password_hash=$1, updated_at=NOW() WHERE id=$2', [password_hash, tokenRow.user_id]);
+
+        // Marcar token como usado
+        await query('UPDATE password_reset_tokens SET used=true WHERE id=$1', [tokenRow.id]);
+
+        res.json({ status: 'success', message: 'Contraseña actualizada correctamente. Ya podés iniciar sesión.' });
+    } catch (error) {
+        console.error('[resetPassword]', error.message);
+        res.status(500).json({ status: 'error', message: 'Error al restablecer la contraseña.' });
     }
 };

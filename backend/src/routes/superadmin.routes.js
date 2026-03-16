@@ -12,6 +12,7 @@ import {
   getGastroRedConfig,
   updateGastroRedConfig,
   toggleCustomBranding,
+  resetAdminPassword,
 } from '../controllers/superadmin.controller.js';
 
 const router = Router();
@@ -26,6 +27,7 @@ router.get('/stores', listAllStores);
 router.post('/stores', createTenant);
 router.patch('/stores/:id/status', updateStoreStatus);
 router.patch('/stores/:id/plan', updateStorePlan);
+router.patch('/stores/:id/reset-admin-password', resetAdminPassword);
 router.patch('/tenants/:id/branding-toggle', toggleCustomBranding);
 router.get('/plans', getPlanPrices);
 

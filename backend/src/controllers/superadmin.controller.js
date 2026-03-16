@@ -329,3 +329,42 @@ export const toggleCustomBranding = async (req, res) => {
     res.json({ status: 'success', data: result.rows[0] });
   } catch (e) { res.status(500).json({ status: 'error', message: e.message }); }
 };
+
+// ── Reset de contraseña de admin de comercio (desde superadmin) ───────────────
+export const resetAdminPassword = async (req, res) => {
+  const { id } = req.params;  // tenant id (subdomain)
+  const { new_password } = req.body;
+
+  if (!new_password || new_password.length < 6) {
+    return res.status(400).json({ status: 'error', message: 'La nueva contraseña debe tener al menos 6 caracteres.' });
+  }
+
+  try {
+    // Buscar usuario admin de este tenant
+    const userRes = await query(
+      `SELECT u.id, u.email, u.name FROM users u
+       WHERE u.role = 'admin' AND (u.tenant_id = $1 OR u.store_id = (SELECT id FROM stores WHERE tenant_id = $1 LIMIT 1))
+       ORDER BY u.id ASC LIMIT 1`,
+      [id]
+    );
+
+    if (!userRes.rows.length) {
+      return res.status(404).json({ status: 'error', message: 'No se encontró un usuario administrador para este comercio.' });
+    }
+
+    const adminUser = userRes.rows[0];
+    const password_hash = await bcrypt.hash(new_password, 12);
+
+    await query('UPDATE users SET password_hash=$1, updated_at=NOW() WHERE id=$2', [password_hash, adminUser.id]);
+
+    console.log(`[SUPERADMIN] Contraseña reseteada para admin ${adminUser.email} del tenant ${id}`);
+
+    res.json({
+      status: 'success',
+      message: `Contraseña del admin "${adminUser.email}" actualizada correctamente.`,
+      data: { admin_email: adminUser.email, admin_name: adminUser.name },
+    });
+  } catch (e) {
+    res.status(500).json({ status: 'error', message: e.message });
+  }
+};

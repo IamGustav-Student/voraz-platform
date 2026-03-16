@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { getMenu, getPromos, getVideos, getStores, getNews } from './services/api';
+import { getMenu, getPromos, getVideos, getStores, getNews, resetPassword as apiResetPassword } from './services/api';
 import { Helmet } from 'react-helmet-async';
 import { TENANT, formatPrice, loadTenantConfig } from './config/tenant.js';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -57,6 +57,20 @@ function App() {
   const [isAuthOpen, setIsAuthOpen] = useState(false);
   const [isAdminOpen, setIsAdminOpen] = useState(false);
   const [earnedPoints, setEarnedPoints] = useState(0);
+
+  // ── Recuperación de contraseña vía ?reset_token= en la URL ──────────────────
+  const [resetToken, setResetToken] = useState(() => {
+    if (typeof window !== 'undefined') {
+      const params = new URLSearchParams(window.location.search);
+      return params.get('reset_token') || null;
+    }
+    return null;
+  });
+  const [resetNewPwd, setResetNewPwd] = useState('');
+  const [resetNewPwd2, setResetNewPwd2] = useState('');
+  const [resetSubmitting, setResetSubmitting] = useState(false);
+  const [resetMsg, setResetMsg] = useState({ type: '', text: '' });
+  const [resetDone, setResetDone] = useState(false);
 
   useEffect(() => {
     // Si ya sabemos que es el root domain, no hace falta chequear
@@ -713,6 +727,103 @@ function App() {
 
       {/* AUTH MODAL */}
       <AuthModal isOpen={isAuthOpen} onClose={() => setIsAuthOpen(false)} />
+
+      {/* RESET PASSWORD MODAL — se activa con ?reset_token= en la URL */}
+      {resetToken && (
+        <div className="fixed inset-0 z-[200] flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
+          <div className="w-full max-w-md bg-[#1E1E1E] border border-white/10 rounded-2xl shadow-2xl overflow-hidden">
+            <div className="bg-gradient-to-r from-[#E30613] to-[#c0001a] px-6 pt-6 pb-8">
+              <h2 className="text-2xl font-black text-white">Nueva contraseña</h2>
+              <p className="text-white/70 text-sm mt-1">Ingresá y confirmá tu nueva contraseña.</p>
+            </div>
+            <div className="px-6 py-6">
+              {!resetDone ? (
+                <form
+                  onSubmit={async (e) => {
+                    e.preventDefault();
+                    setResetMsg({ type: '', text: '' });
+                    if (resetNewPwd !== resetNewPwd2) {
+                      setResetMsg({ type: 'error', text: 'Las contraseñas no coinciden.' });
+                      return;
+                    }
+                    if (resetNewPwd.length < 6) {
+                      setResetMsg({ type: 'error', text: 'La contraseña debe tener al menos 6 caracteres.' });
+                      return;
+                    }
+                    setResetSubmitting(true);
+                    try {
+                      await apiResetPassword(resetToken, resetNewPwd);
+                      setResetMsg({ type: 'success', text: '\u2705 Contraseña actualizada correctamente. Ya podés iniciar sesión.' });
+                      setResetDone(true);
+                      // Limpiar token de la URL sin recargar la página
+                      const url = new URL(window.location.href);
+                      url.searchParams.delete('reset_token');
+                      window.history.replaceState({}, '', url.toString());
+                    } catch (err) {
+                      setResetMsg({ type: 'error', text: err.message || 'Error al restablecer contraseña.' });
+                    }
+                    setResetSubmitting(false);
+                  }}
+                  className="space-y-4"
+                >
+                  <div>
+                    <label className="block text-xs font-semibold text-white/60 uppercase tracking-wider mb-1">Nueva contraseña</label>
+                    <input
+                      type="password"
+                      placeholder="Mín. 6 caracteres"
+                      value={resetNewPwd}
+                      onChange={e => setResetNewPwd(e.target.value)}
+                      minLength={6}
+                      required
+                      className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-xl text-white placeholder-white/30 focus:outline-none focus:border-red-500 transition"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-semibold text-white/60 uppercase tracking-wider mb-1">Confirmá contraseña</label>
+                    <input
+                      type="password"
+                      placeholder="Repetí la contraseña"
+                      value={resetNewPwd2}
+                      onChange={e => setResetNewPwd2(e.target.value)}
+                      minLength={6}
+                      required
+                      className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-xl text-white placeholder-white/30 focus:outline-none focus:border-red-500 transition"
+                    />
+                  </div>
+                  {resetMsg.text && (
+                    <div className={`rounded-xl px-4 py-3 text-sm ${
+                      resetMsg.type === 'error'
+                        ? 'bg-red-500/10 border border-red-500/30 text-red-400'
+                        : 'bg-green-500/10 border border-green-500/30 text-green-400'
+                    }`}>
+                      {resetMsg.text}
+                    </div>
+                  )}
+                  <button
+                    type="submit"
+                    disabled={resetSubmitting}
+                    className="w-full py-3 font-black text-white rounded-xl bg-red-600 hover:bg-red-700 disabled:opacity-50 transition uppercase tracking-wider"
+                  >
+                    {resetSubmitting ? 'Guardando...' : 'Guardar nueva contraseña'}
+                  </button>
+                </form>
+              ) : (
+                <div className="space-y-4">
+                  <div className="bg-green-500/10 border border-green-500/30 rounded-xl px-4 py-3 text-green-400 text-sm font-bold">
+                    {resetMsg.text}
+                  </div>
+                  <button
+                    onClick={() => { setResetToken(null); setIsAuthOpen(true); }}
+                    className="w-full py-3 font-black text-white rounded-xl bg-red-600 hover:bg-red-700 transition uppercase tracking-wider"
+                  >
+                    Iniciar sesión
+                  </button>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* ADMIN PANEL */}
       {isAdminOpen && <AdminPanel onClose={() => setIsAdminOpen(false)} />}
