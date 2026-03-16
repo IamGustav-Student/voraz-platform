@@ -1338,7 +1338,7 @@ function BrandingSection({ token, onUpgrade }) {
   useEffect(() => {
     if (!token) return;
     adminFetch('/branding', token)
-      .then(d => { if (d.data) setBranding(d.data); setLoaded(true); })
+      .then(d => { if (d) setBranding(d); setLoaded(true); })
       .catch(() => setLoaded(true));
   }, [token]);
 
@@ -1534,8 +1534,8 @@ function SubscriptionSection({ data, token, reload }) {
       <div className="mb-10">
         <h2 className="text-2xl font-black text-white mb-2">Mi Suscripción</h2>
         <div className="flex items-center gap-4 bg-white/5 border border-white/10 rounded-2xl p-5">
-          <div className={`w-12 h-12 rounded-xl flex items-center justify-center text-2xl bg-gradient-to-br ${currentPlan === 'Expert' ? 'from-yellow-500 to-orange-600' : 'from-blue-500 to-indigo-600 shadow-lg shadow-blue-900/20'}`}>
-            {currentPlan === 'Expert' ? '🏆' : '⭐'}
+          <div className={`w-12 h-12 rounded-xl flex items-center justify-center text-2xl bg-gradient-to-br ${currentPlan.toLowerCase().trim() === 'expert' ? 'from-yellow-500 to-orange-600' : 'from-blue-500 to-indigo-600 shadow-lg shadow-blue-900/20'}`}>
+            {currentPlan.toLowerCase().trim() === 'expert' ? '🏆' : '⭐'}
           </div>
           <div>
             <p className="text-xs text-gray-500 uppercase tracking-widest font-bold">Plan Actual</p>
@@ -1552,7 +1552,7 @@ function SubscriptionSection({ data, token, reload }) {
 
       <div className="grid md:grid-cols-2 gap-6">
         {plans.map(p => {
-          const isCurrent = currentPlan === p.type;
+          const isCurrent = currentPlan.toLowerCase().trim() === p.type.toLowerCase().trim();
           const price = data.prices?.[p.type] || {};
           
           return (
