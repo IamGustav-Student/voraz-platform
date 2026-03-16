@@ -3,7 +3,7 @@ import jwt from 'jsonwebtoken';
 import { query } from '../config/db.js';
 
 const JWT_SECRET = process.env.JWT_SECRET || 'gastrored_dev_secret_ONLY_LOCAL';
-const TOKEN_EXPIRY = '30d';
+const TOKEN_EXPIRY = '24h';
 
 const generateToken = (user) =>
     jwt.sign({ id: user.id, email: user.email, name: user.name, role: user.role || 'user', store_id: user.store_id, tenant_id: user.tenant_id }, JWT_SECRET, { expiresIn: TOKEN_EXPIRY });
@@ -48,7 +48,7 @@ export const register = async (req, res) => {
         const existing = await query(dupQuery, [email, tenantId || storeId]);
         if (existing.rows.length) return res.status(409).json({ status: 'error', message: 'El email ya está registrado.' });
 
-        const password_hash = await bcrypt.hash(password, 10);
+        const password_hash = await bcrypt.hash(password, 12);
 
         let result;
         if (tenantId) {

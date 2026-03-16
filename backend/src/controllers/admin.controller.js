@@ -241,11 +241,13 @@ export const uploadImage = async (req, res) => {
       api_key: process.env.CLOUDINARY_API_KEY,
       api_secret: process.env.CLOUDINARY_API_SECRET,
     });
-    const { image_base64, folder } = req.body;
+    const { image_base64 } = req.body;
+    let { folder } = req.body;
+    folder = (folder || 'products').replace(/[^a-zA-Z0-9_\-\/]/g, ''); // Sanitización
     if (!image_base64) return res.status(400).json({ status: 'error', message: 'Se requiere image_base64' });
     const storeId = await getStoreId(req);
     const result = await cloudinary.uploader.upload(image_base64, {
-      folder: `tenants/${storeId}/${folder || 'products'}`,
+      folder: `tenants/${storeId}/${folder}`,
       resource_type: 'image',
     });
     res.json({ status: 'success', data: { url: result.secure_url, public_id: result.public_id } });

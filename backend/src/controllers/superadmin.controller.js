@@ -37,7 +37,7 @@ export const superadminLogin = async (req, res) => {
     const token = jwt.sign(
       { id: admin.id, email: admin.email, name: admin.name, role: 'superadmin' },
       SUPERADMIN_SECRET,
-      { expiresIn: '7d' }
+      { expiresIn: '24h' }
     );
     res.json({ status: 'success', data: { token, admin: { id: admin.id, email: admin.email, name: admin.name } } });
   } catch (e) { res.status(500).json({ status: 'error', message: e.message }); }
