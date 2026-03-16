@@ -517,21 +517,19 @@ function App() {
               </motion.button>
             )}
 
-            {!isInstalled && (
-              <motion.button
-                whileTap={{ scale: 0.93 }}
-                onClick={() => setIsCartOpen(true)}
-                className="relative flex items-center space-x-2 bg-brand-primary hover:bg-brand-primary-hover text-white px-4 py-2 rounded-xl font-bold text-sm transition"
-              >
-                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z" /></svg>
-                <span>Pedido</span>
-                {itemCount > 0 && (
-                  <span className="absolute -top-2 -right-2 bg-brand-secondary text-black text-xs font-black w-5 h-5 rounded-full flex items-center justify-center shadow">
-                    {itemCount}
-                  </span>
-                )}
-              </motion.button>
-            )}
+          <motion.button
+              whileTap={{ scale: 0.93 }}
+              onClick={() => setIsCartOpen(true)}
+              className="relative flex items-center space-x-2 bg-brand-primary hover:bg-brand-primary-hover text-white px-4 py-2 rounded-xl font-bold text-sm transition"
+            >
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z" /></svg>
+              <span>Pedido</span>
+              {itemCount > 0 && (
+                <span className="absolute -top-2 -right-2 bg-brand-secondary text-black text-xs font-black w-5 h-5 rounded-full flex items-center justify-center shadow">
+                  {itemCount}
+                </span>
+              )}
+            </motion.button>
           </div>
         </div>
       </header>
@@ -632,7 +630,7 @@ function App() {
           </div>
           <BottomNavItem icon="map" label="Spots" active={currentView === 'locations'} onClick={() => setCurrentView('locations')} />
           {isInstalled ? (
-            <BottomNavItem icon="cart" label="Pedido" active={isCartOpen} onClick={() => setIsCartOpen(true)} count={itemCount} />
+            <BottomNavItem icon="film" label="Videos" active={currentView === 'videos'} onClick={() => setCurrentView('videos')} />
           ) : (
             <BottomNavItem icon="bike" label="Dely" active={currentView === 'delivery'} onClick={() => setCurrentView('delivery')} />
           )}
@@ -753,6 +751,7 @@ const BottomNavItem = ({ icon, label, active, onClick, count }) => {
     if (icon === 'cart') return <path d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" />;
     if (icon === 'map') return <path d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0zM15 11a3 3 0 11-6 0 3 3 0 016 0z" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" />;
     if (icon === 'bike') return <path d="M13 10V3L4 14h7v7l9-11h-7z" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" />;
+    if (icon === 'film') return <><rect x="2" y="6" width="20" height="12" rx="2" ry="2" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" /><line x1="2" y1="12" x2="22" y2="12" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" /><line x1="12" y1="6" x2="12" y2="18" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" /></>;
     return null;
   };
   return (

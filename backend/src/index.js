@@ -249,4 +249,5 @@ app.listen(PORT, async () => {
     await runMigration('phase25_loyalty_fix.sql');
     await runMigration('phase26_welcome_bonus.sql');
     await runMigration('phase27_promos.sql');
+    await runMigration('phase28_loyalty_fix.sql');    // Fidelización: fix CHECK constraint, sync tenant_id_fk, default points
 });

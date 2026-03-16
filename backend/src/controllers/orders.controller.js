@@ -31,10 +31,13 @@ export const createOrder = async (req, res) => {
     try {
         await client.query('BEGIN');
 
-        // 1. Obtener configuración del Tenant (Bloqueo preventivo de settings no es necesario, pero leemos valor fresco)
+        // 1. Obtener configuración de fidelización — búsqueda robusta por texto (compatibilidad multi-tenant)
         const loyaltyRes = await client.query(
-            'SELECT loyalty_enabled, points_redeem_value FROM tenant_settings WHERE tenant_id_fk = $1',
-            [tenantId]
+            `SELECT loyalty_enabled, points_redeem_value
+             FROM tenant_settings
+             WHERE tenant_id_fk::text = $1::text OR tenant_id::text = $1::text
+             LIMIT 1`,
+            [String(tenantId)]
         );
         const loyalty = loyaltyRes.rows[0] || { loyalty_enabled: false, points_redeem_value: 0 };
         const pointsRedeemValue = parseFloat(loyalty.points_redeem_value) || 0;
