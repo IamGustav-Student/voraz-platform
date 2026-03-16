@@ -34,7 +34,7 @@ function App() {
   const { itemCount, dispatch } = useCart();
   const { user } = useAuth();
   useBranding(); // Inyecta CSS vars dinámicas desde la BD al montar
-  const { isInstallable, handleInstallClick } = usePWAInstall();
+  const { isInstallable, isInstalled, handleInstallClick } = usePWAInstall();
 
   // ── Detección de landing GastroRed ───────────────────────────────────────
   const [showLanding, setShowLanding] = useState(isGastroRedRootDomain());
@@ -517,19 +517,21 @@ function App() {
               </motion.button>
             )}
 
-            <motion.button
-              whileTap={{ scale: 0.93 }}
-              onClick={() => setIsCartOpen(true)}
-              className="relative flex items-center space-x-2 bg-brand-primary hover:bg-brand-primary-hover text-white px-4 py-2 rounded-xl font-bold text-sm transition"
-            >
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z" /></svg>
-              <span>Pedido</span>
-              {itemCount > 0 && (
-                <span className="absolute -top-2 -right-2 bg-brand-secondary text-black text-xs font-black w-5 h-5 rounded-full flex items-center justify-center shadow">
-                  {itemCount}
-                </span>
-              )}
-            </motion.button>
+            {!isInstalled && (
+              <motion.button
+                whileTap={{ scale: 0.93 }}
+                onClick={() => setIsCartOpen(true)}
+                className="relative flex items-center space-x-2 bg-brand-primary hover:bg-brand-primary-hover text-white px-4 py-2 rounded-xl font-bold text-sm transition"
+              >
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z" /></svg>
+                <span>Pedido</span>
+                {itemCount > 0 && (
+                  <span className="absolute -top-2 -right-2 bg-brand-secondary text-black text-xs font-black w-5 h-5 rounded-full flex items-center justify-center shadow">
+                    {itemCount}
+                  </span>
+                )}
+              </motion.button>
+            )}
           </div>
         </div>
       </header>
@@ -560,17 +562,19 @@ function App() {
               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
             </motion.button>
           )}
-          <motion.button whileTap={{ scale: 0.9 }}
-            onClick={() => setIsCartOpen(true)}
-            className="relative p-2 rounded-xl bg-brand-primary text-white"
-          >
-            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z" /></svg>
-            {itemCount > 0 && (
-              <span className="absolute -top-1 -right-1 bg-brand-secondary text-black text-[10px] font-black w-4 h-4 rounded-full flex items-center justify-center">
-                {itemCount}
-              </span>
-            )}
-          </motion.button>
+          {!isInstalled && (
+            <motion.button whileTap={{ scale: 0.9 }}
+              onClick={() => setIsCartOpen(true)}
+              className="relative p-2 rounded-xl bg-brand-primary text-white"
+            >
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z" /></svg>
+              {itemCount > 0 && (
+                <span className="absolute -top-1 -right-1 bg-brand-secondary text-black text-[10px] font-black w-4 h-4 rounded-full flex items-center justify-center">
+                  {itemCount}
+                </span>
+              )}
+            </motion.button>
+          )}
         </div>
       </header>
 
@@ -627,7 +631,11 @@ function App() {
             </motion.button>
           </div>
           <BottomNavItem icon="map" label="Spots" active={currentView === 'locations'} onClick={() => setCurrentView('locations')} />
-          <BottomNavItem icon="bike" label="Dely" active={currentView === 'delivery'} onClick={() => setCurrentView('delivery')} />
+          {isInstalled ? (
+            <BottomNavItem icon="cart" label="Pedido" active={isCartOpen} onClick={() => setIsCartOpen(true)} count={itemCount} />
+          ) : (
+            <BottomNavItem icon="bike" label="Dely" active={currentView === 'delivery'} onClick={() => setCurrentView('delivery')} />
+          )}
         </div>
       </nav>
 
@@ -737,11 +745,12 @@ const NavButtonPC = ({ active, onClick, image, label }) => (
   </button>
 );
 
-const BottomNavItem = ({ icon, label, active, onClick }) => {
+const BottomNavItem = ({ icon, label, active, onClick, count }) => {
   const getIcon = () => {
     if (icon === 'home') return <path d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" />;
     if (icon === 'users') return <path d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" />;
     if (icon === 'gift') return <path d="M20 12V8H4v4m16 0v8H4v-8m16 0H4m12-4V4H8v4m8 0H8" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" />;
+    if (icon === 'cart') return <path d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" />;
     if (icon === 'map') return <path d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0zM15 11a3 3 0 11-6 0 3 3 0 016 0z" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" />;
     if (icon === 'bike') return <path d="M13 10V3L4 14h7v7l9-11h-7z" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" />;
     return null;
@@ -753,6 +762,11 @@ const BottomNavItem = ({ icon, label, active, onClick }) => {
         className="transition-colors duration-300"
       >
         <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">{getIcon()}</svg>
+        {count > 0 && (
+          <span className="absolute -top-1 -right-1 bg-brand-secondary text-black text-[8px] font-black w-3.5 h-3.5 rounded-full flex items-center justify-center">
+            {count}
+          </span>
+        )}
       </motion.div>
       <span className={`text-[9px] font-bold uppercase mt-1 ${active ? 'text-white' : 'text-gray-600'}`}>{label}</span>
       {active && <motion.div layoutId="activeDot" className="absolute -bottom-1 w-1 h-1 bg-voraz-yellow rounded-full" />}
