@@ -196,6 +196,19 @@ export const getTenantSettings = async () => {
   }
 };
 
+export const getMPConfig = async () => {
+  try {
+    const response = await fetch(`${API_URL}/payments/public-key`, { headers: baseHeaders });
+    if (!response.ok) return { configured: false };
+    const data = await response.json();
+    // demo_mode: true significa que NO hay credenciales configuradas
+    return { configured: !data.data?.demo_mode, sandbox: data.data?.sandbox };
+  } catch {
+    return { configured: false };
+  }
+};
+
+
 export const validateCoupon = async (payload) => {
   try {
     const response = await fetch(`${API_URL}/coupons/validate`, {

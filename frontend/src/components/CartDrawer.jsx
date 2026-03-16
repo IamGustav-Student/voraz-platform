@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useCart } from '../context/CartContext';
 import { useAuth } from '../context/AuthContext';
-import { createOrder, createPaymentPreference, validateCoupon, getTenantSettings } from '../services/api';
+import { createOrder, createPaymentPreference, validateCoupon, getTenantSettings, getMPConfig } from '../services/api';
 
 const STEPS = { CART: 'cart', CHECKOUT: 'checkout', PROCESSING: 'processing' };
 // Loyalty constants removed as they are now dynamic from tenant settings
@@ -15,6 +15,7 @@ const CartDrawer = ({ isOpen, onClose, stores, onOrderCreated, onOpenAuth }) => 
     const [orderType, setOrderType] = useState('delivery');
     const [paymentMethod, setPaymentMethod] = useState('mercadopago');
     const [cashOnDeliveryEnabled, setCashOnDeliveryEnabled] = useState(true);
+    const [mpConfigured, setMpConfigured] = useState(null); // null = cargando, true/false = resultado
     const [form, setForm] = useState({ name: '', phone: '', address: '', store_id: '', notes: '' });
     const [loyaltyConfig, setLoyaltyConfig] = useState({ enabled: false, value: 0 });
     const [pointsToRedeem, setPointsToRedeem] = useState(0);
@@ -33,6 +34,11 @@ const CartDrawer = ({ isOpen, onClose, stores, onOrderCreated, onOpenAuth }) => 
                 enabled: !!s.loyalty_enabled,
                 value: s.points_redeem_value || 0
             });
+        });
+        getMPConfig().then(mp => {
+            setMpConfigured(mp.configured);
+            // Si MP no está configurado, cambiar el método de pago por defecto a efectivo
+            if (!mp.configured) setPaymentMethod('cash');
         });
     }, []);
 
@@ -275,12 +281,22 @@ const CartDrawer = ({ isOpen, onClose, stores, onOrderCreated, onOpenAuth }) => 
                                     <div>
                                         <label className="text-xs font-bold text-gray-400 uppercase tracking-wider block mb-2">¿Cómo querés pagar?</label>
                                         <div className={`grid gap-3 ${cashOnDeliveryEnabled ? 'grid-cols-2' : 'grid-cols-1'}`}>
+                                            {/* MercadoPago */}
                                             <button
-                                                onClick={() => setPaymentMethod('mercadopago')}
-                                                className={`py-3 px-4 rounded-xl font-bold text-sm border transition flex flex-col items-center gap-1 ${paymentMethod === 'mercadopago' ? 'bg-blue-600 border-blue-500 text-white' : 'bg-white/5 border-white/10 text-gray-400 hover:text-white'}`}
+                                                onClick={() => mpConfigured !== false && setPaymentMethod('mercadopago')}
+                                                disabled={mpConfigured === false}
+                                                title={mpConfigured === false ? 'MercadoPago no está configurado' : ''}
+                                                className={`py-3 px-4 rounded-xl font-bold text-sm border transition flex flex-col items-center gap-1 ${
+                                                    mpConfigured === false
+                                                        ? 'bg-white/5 border-white/5 text-gray-600 cursor-not-allowed opacity-40'
+                                                        : paymentMethod === 'mercadopago'
+                                                            ? 'bg-blue-600 border-blue-500 text-white'
+                                                            : 'bg-white/5 border-white/10 text-gray-400 hover:text-white'
+                                                }`}
                                             >
                                                 <span className="text-lg">💳</span>
                                                 <span>MercadoPago</span>
+                                                {mpConfigured === false && <span className="text-[9px] text-red-400 font-bold">No disponible</span>}
                                             </button>
                                             {cashOnDeliveryEnabled && (
                                                 <button
@@ -292,6 +308,11 @@ const CartDrawer = ({ isOpen, onClose, stores, onOrderCreated, onOpenAuth }) => 
                                                 </button>
                                             )}
                                         </div>
+                                        {mpConfigured === false && (
+                                            <p className="mt-2 text-xs text-amber-400 font-bold bg-amber-900/20 border border-amber-500/30 rounded-xl px-4 py-2">
+                                                ⚠️ Este comercio aún no configuró MercadoPago. Solo podés pagar con efectivo.
+                                            </p>
+                                        )}
                                         {isCash && (
                                             <div className="mt-2 flex items-start gap-2 bg-green-900/20 border border-green-500/30 rounded-xl px-4 py-3">
                                                 <span className="text-green-400 text-lg flex-shrink-0">💵</span>
@@ -381,7 +402,14 @@ const CartDrawer = ({ isOpen, onClose, stores, onOrderCreated, onOpenAuth }) => 
                                 ) : (
                                     <motion.button whileTap={{ scale: 0.97 }}
                                         onClick={handleCheckout}
-                                        className={`w-full py-4 rounded-xl font-black uppercase tracking-wide text-sm flex items-center justify-between px-6 transition shadow-lg ${isCash ? 'bg-green-600 hover:bg-green-700 text-white' : 'bg-primary hover:opacity-90 text-white'}`}
+                                        disabled={paymentMethod === 'mercadopago' && mpConfigured === false}
+                                        className={`w-full py-4 rounded-xl font-black uppercase tracking-wide text-sm flex items-center justify-between px-6 transition shadow-lg ${
+                                            paymentMethod === 'mercadopago' && mpConfigured === false
+                                                ? 'bg-gray-700 text-gray-500 cursor-not-allowed'
+                                                : isCash
+                                                    ? 'bg-green-600 hover:bg-green-700 text-white'
+                                                    : 'bg-primary hover:opacity-90 text-white'
+                                        }`}
                                     >
                                         <span>{isCash ? '✅ Confirmar Pedido' : '💳 Confirmar y Pagar'}</span>
                                         <span>${fmt(finalTotal)}</span>
