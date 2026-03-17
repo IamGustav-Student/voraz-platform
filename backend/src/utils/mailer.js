@@ -1,78 +1,30 @@
 /**
- * Mailer — wrapper de nodemailer configurable via env vars.
+ * Mailer — usa Resend (HTTP API) para envío de emails.
+ * No SMTP, no problemas de IPv6 en Railway.
  *
- * Variables de entorno SMTP:
- *   SMTP_HOST    e.g. smtp.gmail.com
- *   SMTP_PORT    e.g. 587
- *   SMTP_USER    e.g. mi-cuenta@gmail.com
- *   SMTP_PASS    e.g. app password de Gmail / key de Resend etc.
- *   SMTP_FROM    e.g. "GastroRed <noreply@gastrored.com.ar>"
+ * Variable de entorno requerida:
+ *   RESEND_API_KEY   → se obtiene en resend.com (gratis, 3000 emails/mes)
  *
- * Si no hay config, en LOCAL/DEV imprime el link en consola y lo devuelve
- * para poder probarlo sin necesidad de SMTP real.
+ * Variable opcional (para el remitente):
+ *   SMTP_FROM        → e.g. "GastroRed <contacto@programadorgs.com.ar>"
+ *                      (requiere dominio verificado en Resend)
+ *                      Si no está configurado, usa el dominio de onboarding de Resend.
+ *
+ * Modo desarrollo (sin RESEND_API_KEY):
+ *   Imprime el link en consola para poder probar sin configurar nada.
  */
 
-import nodemailer from 'nodemailer';
-import dns from 'dns';
+import { Resend } from 'resend';
 
-/**
- * dnsLookupIPv4: fuerza la resolución IPv4 en nodemailer.
- * Necesario en Railway: aunque ponemos family:4, nodemailer v8 delega esto
- * al DNS nativo del SO, que en Railway a veces devuelve IPv6 primero.
- * Al inyectar esta función en el transporter, el socket TCP siempre
- * se abre contra la IP IPv4 correcta.
- */
-const dnsLookupIPv4 = (hostname, callback) => {
-  dns.lookup(hostname, { family: 4 }, callback);
-};
+let resendClient = null;
 
-const isSmtpConfigured = () =>
-  !!(process.env.SMTP_HOST && process.env.SMTP_USER && process.env.SMTP_PASS);
-
-let transporter = null;
-
-const getTransporter = () => {
-  if (!transporter && isSmtpConfigured()) {
-    const host = process.env.SMTP_HOST;
-    const user = process.env.SMTP_USER;
-    const port = parseInt(process.env.SMTP_PORT || '465');
-    const isGmailHost = host.toLowerCase().includes('gmail.com');
-
-    // Configuración base
-    const config = {
-      host: host,
-      port: port,
-      secure: port === 465, // true para 465, false para otros (como 587 con STARTTLS)
-      auth: {
-        user: user,
-        pass: process.env.SMTP_PASS,
-      },
-      // Forzar IPv4 — en nodemailer v8 hay que inyectar dnsLookup además de family:4
-      // porque la opción `family` sola no siempre se propaga al socket TCP en Railway.
-      family: 4,
-      dnsLookup: dnsLookupIPv4,
-      // Timeouts esenciales para Railway
-      connectionTimeout: 10000, 
-      greetingTimeout: 10000,   
-      socketTimeout: 15000,     
-      tls: {
-        // No falla por certificados mal configurados o subdominios
-        rejectUnauthorized: false
-      }
-    };
-
-    /**
-     * NOTA PARA GOOGLE WORKSPACE / GMAIL:
-     * Si usamos host: 'smtp.gmail.com' y port: 465, la configuración explícita es más robusta
-     * que el shortcut service: 'gmail' (que a veces ignora el puerto o falla con dominios customs).
-     * Solo usamos el shortcut si NO hay host configurado explícitamente pero sí usuario de gmail.
-     */
-    
-    console.log(`[MAILER] Inicializando transporter para: ${host}:${port} (${config.secure ? 'SSL' : 'TLS/STARTTLS'})`);
-    
-    transporter = nodemailer.createTransport(config);
+const getClient = () => {
+  if (!resendClient) {
+    const apiKey = process.env.RESEND_API_KEY;
+    if (!apiKey) return null;
+    resendClient = new Resend(apiKey);
   }
-  return transporter;
+  return resendClient;
 };
 
 /**
@@ -80,22 +32,24 @@ const getTransporter = () => {
  * @returns {{ sent: boolean, devToken?: string }}
  */
 export const sendPasswordResetEmail = async ({ to, resetUrl, brandName = 'GastroRed', rawToken = null }) => {
-  const t = getTransporter();
+  const client = getClient();
 
-  if (!t) {
-    // Modo desarrollo: logueamos el link y lo devolvemos para el frontend
-    console.log('\n[MAILER DEV] Simulación de email (SMTP no configurado):');
+  if (!client) {
+    // Modo desarrollo: sin API key, logueamos el link en consola
+    console.log('\n[MAILER DEV] Simulación de email (RESEND_API_KEY no configurado):');
     console.log(`  → Para: ${to}`);
     console.log(`  → Link: ${resetUrl}\n`);
     return { sent: false, devToken: rawToken };
   }
 
-  const from = process.env.SMTP_FROM || `"${brandName}" <noreply@gastrored.com.ar>`;
+  // El remitente: si el dominio está verificado en Resend, usa SMTP_FROM.
+  // Si no, Resend rechaza el envío desde dominios no verificados excepto resend.dev.
+  const from = process.env.SMTP_FROM || `${brandName} <onboarding@resend.dev>`;
 
   try {
-    await t.sendMail({
+    const { data, error } = await resendClient.emails.send({
       from,
-      to,
+      to: [to],
       subject: `Restablecé tu contraseña — ${brandName}`,
       html: `
         <!DOCTYPE html>
@@ -145,10 +99,17 @@ export const sendPasswordResetEmail = async ({ to, resetUrl, brandName = 'Gastro
       `,
       text: `Restablecé tu contraseña en: ${resetUrl}\nEste link expira en 1 hora.`,
     });
+
+    if (error) {
+      console.error(`[MAILER ERROR] Resend devolvió error para ${to}:`, error);
+      throw new Error(error.message || 'Error al enviar email via Resend');
+    }
+
+    console.log(`[MAILER] Email enviado correctamente a ${to}. ID: ${data?.id}`);
     return { sent: true };
+
   } catch (error) {
     console.error(`[MAILER ERROR] Falló el envío a ${to}:`, error.message);
-    // IMPORTANTE: Lanzamos el error para que el controller lo maneje
     throw error;
   }
 };
