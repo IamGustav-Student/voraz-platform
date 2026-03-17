@@ -13,6 +13,18 @@
  */
 
 import nodemailer from 'nodemailer';
+import dns from 'dns';
+
+/**
+ * dnsLookupIPv4: fuerza la resolución IPv4 en nodemailer.
+ * Necesario en Railway: aunque ponemos family:4, nodemailer v8 delega esto
+ * al DNS nativo del SO, que en Railway a veces devuelve IPv6 primero.
+ * Al inyectar esta función en el transporter, el socket TCP siempre
+ * se abre contra la IP IPv4 correcta.
+ */
+const dnsLookupIPv4 = (hostname, callback) => {
+  dns.lookup(hostname, { family: 4 }, callback);
+};
 
 const isSmtpConfigured = () =>
   !!(process.env.SMTP_HOST && process.env.SMTP_USER && process.env.SMTP_PASS);
@@ -35,8 +47,10 @@ const getTransporter = () => {
         user: user,
         pass: process.env.SMTP_PASS,
       },
-      // Forzar IPv4 para evitar errores ENETUNREACH en entornos sin IPv6 (como Railway a veces)
+      // Forzar IPv4 — en nodemailer v8 hay que inyectar dnsLookup además de family:4
+      // porque la opción `family` sola no siempre se propaga al socket TCP en Railway.
       family: 4,
+      dnsLookup: dnsLookupIPv4,
       // Timeouts esenciales para Railway
       connectionTimeout: 10000, 
       greetingTimeout: 10000,   
