@@ -21,21 +21,36 @@ let transporter = null;
 
 const getTransporter = () => {
   if (!transporter && isSmtpConfigured()) {
-    const port = parseInt(process.env.SMTP_PORT || '587');
-    
-    transporter = nodemailer.createTransport({
+    const isGmail = process.env.SMTP_HOST.includes('gmail.com');
+    const port = parseInt(process.env.SMTP_PORT || '465'); // Cambiamos default a 465 (más estable en cloud)
+
+    const config = {
       host: process.env.SMTP_HOST,
       port: port,
-      secure: port === 465, // true para 465, false para otros (587 usa STARTTLS)
+      secure: port === 465,
       auth: {
         user: process.env.SMTP_USER,
         pass: process.env.SMTP_PASS,
       },
-      // Timeouts para evitar hangs en producción (Railway)
-      connectionTimeout: 10000, // 10 segundos para conectar
-      greetingTimeout: 10000,   // 10 segundos para el saludo SMTP
-      socketTimeout: 15000,     // 15 segundos de inactividad
-    });
+      // Timeouts esenciales para Railway
+      connectionTimeout: 10000, 
+      greetingTimeout: 10000,   
+      socketTimeout: 15000,     
+      tls: {
+        // No falla por certificados mal configurados en el servidor de Railway
+        rejectUnauthorized: false
+      }
+    };
+
+    // Si es Gmail, usamos la configuración optimizada interna de nodemailer
+    if (isGmail) {
+      delete config.host;
+      delete config.port;
+      delete config.secure;
+      config.service = 'gmail';
+    }
+
+    transporter = nodemailer.createTransport(config);
   }
   return transporter;
 };
