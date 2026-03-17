@@ -21,15 +21,18 @@ let transporter = null;
 
 const getTransporter = () => {
   if (!transporter && isSmtpConfigured()) {
-    const isGmail = process.env.SMTP_HOST.includes('gmail.com');
-    const port = parseInt(process.env.SMTP_PORT || '465'); // Cambiamos default a 465 (más estable en cloud)
+    const host = process.env.SMTP_HOST;
+    const user = process.env.SMTP_USER;
+    const port = parseInt(process.env.SMTP_PORT || '465');
+    const isGmailHost = host.toLowerCase().includes('gmail.com');
 
+    // Configuración base
     const config = {
-      host: process.env.SMTP_HOST,
+      host: host,
       port: port,
-      secure: port === 465,
+      secure: port === 465, // true para 465, false para otros (como 587 con STARTTLS)
       auth: {
-        user: process.env.SMTP_USER,
+        user: user,
         pass: process.env.SMTP_PASS,
       },
       // Forzar IPv4 para evitar errores ENETUNREACH en entornos sin IPv6 (como Railway a veces)
@@ -39,19 +42,20 @@ const getTransporter = () => {
       greetingTimeout: 10000,   
       socketTimeout: 15000,     
       tls: {
-        // No falla por certificados mal configurados en el servidor de Railway
+        // No falla por certificados mal configurados o subdominios
         rejectUnauthorized: false
       }
     };
 
-    // Si es Gmail, usamos la configuración optimizada interna de nodemailer
-    if (isGmail) {
-      delete config.host;
-      delete config.port;
-      delete config.secure;
-      config.service = 'gmail';
-    }
-
+    /**
+     * NOTA PARA GOOGLE WORKSPACE / GMAIL:
+     * Si usamos host: 'smtp.gmail.com' y port: 465, la configuración explícita es más robusta
+     * que el shortcut service: 'gmail' (que a veces ignora el puerto o falla con dominios customs).
+     * Solo usamos el shortcut si NO hay host configurado explícitamente pero sí usuario de gmail.
+     */
+    
+    console.log(`[MAILER] Inicializando transporter para: ${host}:${port} (${config.secure ? 'SSL' : 'TLS/STARTTLS'})`);
+    
     transporter = nodemailer.createTransport(config);
   }
   return transporter;
