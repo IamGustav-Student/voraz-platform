@@ -32,6 +32,8 @@ const getTransporter = () => {
         user: process.env.SMTP_USER,
         pass: process.env.SMTP_PASS,
       },
+      // Forzar IPv4 para evitar errores ENETUNREACH en entornos sin IPv6 (como Railway a veces)
+      family: 4,
       // Timeouts esenciales para Railway
       connectionTimeout: 10000, 
       greetingTimeout: 10000,   
