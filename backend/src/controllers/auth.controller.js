@@ -203,22 +203,27 @@ export const forgotPassword = async (req, res) => {
 
             const result = await sendPasswordResetEmail({ to: user.email, resetUrl, brandName, rawToken });
 
-            // En modo dev (sin SMTP) devolvemos el token para que se pueda probar
-            if (!result.sent && result.devToken) {
-                return res.json({
-                    status: 'success',
-                    message: 'Si el email existe, recibirás un link de recuperación.',
-                    _dev_token: result.devToken,
-                    _dev_reset_url: resetUrl,
-                });
-            }
+            // En modo dev (sin SMTP) el email no se envía, pero el link ya se logueó en consoles
+            // No devolvemos el token en el JSON para máxima seguridad en producción
         }
 
         // Siempre 200 para no revelar si el email existe
-        res.json({ status: 'success', message: 'Si el email existe, recibirás un link de recuperación.' });
+        return res.json({ 
+            status: 'success', 
+            message: 'Si el correo está registrado, recibirás un link de recuperación en breve. Revisá también tu carpeta de spam.' 
+        });
     } catch (error) {
-        console.error('[forgotPassword]', error.message);
-        res.status(500).json({ status: 'error', message: 'Error al procesar la solicitud.' });
+        console.error('[forgotPassword Error]:', error.message);
+        
+        // Si el error es específicamente de conexión (timeout o rechazado), informamos al usuario
+        if (error.code === 'ECONNREFUSED' || error.code === 'ETIMEDOUT') {
+            return res.status(500).json({ 
+                status: 'error', 
+                message: 'Error de conexión con el servidor de correos. Por favor contactá a soporte o intentá más tarde.' 
+            });
+        }
+
+        res.status(500).json({ status: 'error', message: 'Error interno al procesar la solicitud.' });
     }
 };
 

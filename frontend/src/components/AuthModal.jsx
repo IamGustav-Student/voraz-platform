@@ -76,21 +76,9 @@ const AuthModal = ({ isOpen, onClose }) => {
           </div>
           <div className="px-6 py-6 space-y-4">
             <p className="text-white/70 text-sm">{forgotMsg}</p>
-            {forgotDevUrl && (
-              <div className="bg-yellow-900/20 border border-yellow-500/30 rounded-xl px-4 py-3">
-                <p className="text-yellow-400 text-xs font-bold mb-1">🛠 Modo dev (sin SMTP)</p>
-                <a
-                  href={forgotDevUrl}
-                  className="text-yellow-300 text-xs font-mono break-all underline"
-                  onClick={handleClose}
-                >
-                  {forgotDevUrl}
-                </a>
-              </div>
-            )}
             <button
               onClick={() => { setMode('login'); setForgotMsg(''); }}
-              className="w-full py-2.5 text-sm font-bold text-white/60 hover:text-white transition"
+              className="w-full py-2.5 text-sm font-bold text-white/10 hover:text-white transition"
             >
               ← Volver al login
             </button>
