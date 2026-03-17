@@ -12,6 +12,7 @@ const authLimiter = rateLimit({
     message: { status: 'error', message: 'Demasiados intentos. Por favor esperá 15 minutos.' },
     standardHeaders: true,
     legacyHeaders: false,
+    skip: (req) => req.method === 'OPTIONS', // ignorar preflight CORS
 });
 
 // Rate limit específico para forgot password — más permisivo que login
@@ -21,6 +22,7 @@ const forgotLimiter = rateLimit({
     message: { status: 'error', message: 'Demasiadas solicitudes. Esperá 1 hora.' },
     standardHeaders: true,
     legacyHeaders: false,
+    skip: (req) => req.method === 'OPTIONS', // ignorar preflight CORS
 });
 
 router.post('/register', authLimiter, register);

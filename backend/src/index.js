@@ -41,7 +41,8 @@ const globalLimiter = rateLimit({
     message: { status: 'error', message: 'Demasiadas peticiones. Intentá de nuevo más tarde.' },
     standardHeaders: true,
     legacyHeaders: false,
-    skip: (req) => req.path.startsWith('/api/superadmin'), // superadmin no tiene límite por IP
+    // Saltar preflight CORS (OPTIONS) y superadmin — los OPTIONS no son requests reales del usuario
+    skip: (req) => req.method === 'OPTIONS' || req.path.startsWith('/api/superadmin'),
 });
 app.use('/api/', globalLimiter);
 
