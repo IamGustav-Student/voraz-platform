@@ -146,9 +146,9 @@ export default function AdminPanel({ onClose }) {
     return () => clearTimeout(t);
   }, [toast]);
 
-  const load = useCallback(async (sec) => {
+  const load = useCallback(async (sec, isBackground = false) => {
     if (!token) return;
-    setLoading(true); setError('');
+    if (!isBackground) { setLoading(true); setError(''); }
     try {
       const map = {
         Dashboard: '/stats',
@@ -176,11 +176,23 @@ export default function AdminPanel({ onClose }) {
         const result = await adminFetch(path, token);
         setData(prev => ({ ...prev, [sec]: result }));
       }
-    } catch (e) { setError(e.message); }
-    setLoading(false);
+    } catch (e) { if (!isBackground) setError(e.message); }
+    if (!isBackground) setLoading(false);
   }, [token]);
 
   useEffect(() => { load(section); }, [section, load]);
+
+  useEffect(() => {
+    let interval;
+    if (section === 'Pedidos') {
+      interval = setInterval(() => {
+        load('Pedidos', true);
+      }, 15000); // Poll every 15 seconds
+    }
+    return () => {
+      if (interval) clearInterval(interval);
+    };
+  }, [section, load]);
 
   const [menuOpen, setMenuOpen] = useState(false);
 
