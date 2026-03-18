@@ -528,11 +528,16 @@ export const handleSubscriptionWebhook = async (req, res) => {
 // ── Status de suscripción (por store_id físico, busca tenant relacionado) ────────
 export const getSubscriptionStatus = async (req, res) => {
   const { store_id } = req.params;
+
+  if (!store_id || isNaN(parseInt(store_id))) {
+    return res.status(400).json({ status: 'error', message: 'store_id inválido o no numérico.' });
+  }
+
   try {
     const config = await getConfig();
     const prices = getPrices(config);
     // Buscar desde el store físico → su tenant
-    const storeRes = await query('SELECT tenant_id FROM stores WHERE id = $1', [store_id]);
+    const storeRes = await query('SELECT tenant_id FROM stores WHERE id = $1', [parseInt(store_id)]);
     const tenantId = storeRes.rows[0]?.tenant_id || store_id;
     const result = await query(
       'SELECT id, subdomain, plan_type, subscription_period, subscription_expires_at, status FROM tenants WHERE id = $1',
