@@ -488,14 +488,37 @@ export const handleSubscriptionWebhook = async (req, res) => {
     }
 
     if (tenantId) {
-      const tenantRes = await query('SELECT subscription_expires_at, status FROM tenants WHERE id = $1', [tenantId]);
+      const tenantRes = await query('SELECT subscription_expires_at, status, plan_type FROM tenants WHERE id = $1', [tenantId]);
       if (tenantRes.rows.length) {
         const t = tenantRes.rows[0];
-        // Si el tenant está activo y su expiración es a futuro, sumamos a esa fecha
+        // Si el tenant está activo y su expiración es a futuro
         if (t.status === 'active' && t.subscription_expires_at) {
           const currentExpires = new Date(t.subscription_expires_at);
           if (currentExpires > expires) {
-            expires = new Date(currentExpires.getTime());
+            // Lógica de prorrateo si cambia de plan
+            if (t.plan_type && t.plan_type !== planType) {
+              const remainingMs = currentExpires.getTime() - expires.getTime();
+              const remainingDays = remainingMs / (1000 * 60 * 60 * 24);
+              
+              const prices = getPrices(config);
+              const oldPrice = prices[t.plan_type]?.monthly || 0;
+              const newPrice = prices[planType]?.monthly || 1; // Evitar div por cero
+
+              if (oldPrice > 0 && newPrice > 0) {
+                const oldDaily = oldPrice / 30;
+                const newDaily = newPrice / 30;
+                const remainingValue = remainingDays * oldDaily;
+                const convertedDays = remainingValue / newDaily;
+                
+                expires = new Date(expires.getTime() + convertedDays * 24 * 60 * 60 * 1000);
+                console.log(`[Upgrade] Tenant ${tenantId} converted ${remainingDays.toFixed(1)} days of ${t.plan_type} into ${convertedDays.toFixed(1)} days of ${planType}`);
+              } else {
+                expires = new Date(currentExpires.getTime());
+              }
+            } else {
+              // Mismo plan, mantenemos la fecha para sumarle encima
+              expires = new Date(currentExpires.getTime());
+            }
           }
         }
       }
@@ -740,6 +763,18 @@ export const createUpgradeCheckout = async (req, res) => {
 
     const result = await preferenceClient.create({ body: preferenceBody });
     
+    // Buscar store_id para el payment
+    const storeRes = await query('SELECT id FROM stores WHERE tenant_id = $1 LIMIT 1', [tenantId]);
+    const storeId = storeRes.rows[0]?.id;
+
+    if (storeId) {
+      await query(
+        `INSERT INTO subscription_payments (store_id, tenant_id, mp_payment_id, amount, plan_type, period, status)
+         VALUES ($1, $2, $3, $4, $5, $6, 'pending')`,
+        [storeId, tenantId, result.id, amount, plan_type, period]
+      );
+    }
+
     res.json({
       status: 'success',
       data: {

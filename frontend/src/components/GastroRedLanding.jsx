@@ -270,15 +270,22 @@ function CheckoutModal({ plan, onClose }) {
                 </div>
 
                 {!isTrial && (
-                    <div className="flex gap-2 p-1 mb-6 bg-white/5 rounded-xl">
-                        <button onClick={() => setMode('new')}
-                            className={`flex-1 py-1.5 rounded-lg text-sm font-bold transition ${mode === 'new' ? 'bg-white/20 text-white' : 'text-gray-400 hover:text-white'}`}>
-                            Comercio Nuevo
-                        </button>
-                        <button onClick={() => setMode('renew')}
-                            className={`flex-1 py-1.5 rounded-lg text-sm font-bold transition ${mode === 'renew' ? 'bg-white/20 text-white' : 'text-gray-400 hover:text-white'}`}>
-                            Renovar Existente
-                        </button>
+                    <div className="flex flex-col gap-2 mb-6">
+                        <div className="flex gap-2 p-1 bg-white/5 rounded-xl">
+                            <button type="button" onClick={() => setMode('new')}
+                                className={`flex-1 py-1.5 rounded-lg text-sm font-bold transition ${mode === 'new' ? 'bg-white/20 text-white' : 'text-gray-400 hover:text-white'}`}>
+                                Comercio Nuevo
+                            </button>
+                            <button type="button" onClick={() => setMode('renew')}
+                                className={`flex-1 py-1.5 rounded-lg text-sm font-bold transition ${mode === 'renew' ? 'bg-white/20 text-white' : 'text-gray-400 hover:text-white'}`}>
+                                Ya tengo cuenta / Upgrade
+                            </button>
+                        </div>
+                        {mode === 'renew' && (
+                            <p className="text-[11px] text-gray-500 text-center px-4">
+                                Si estás activo y elegís un plan diferente, el saldo de tus días restantes se convertirá <strong>automática y equitativamente</strong> en días del nuevo plan.
+                            </p>
+                        )}
                     </div>
                 )}
 
