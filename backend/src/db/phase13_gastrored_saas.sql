@@ -85,6 +85,15 @@ CREATE TABLE IF NOT EXISTS subscription_payments (
 -- 8. Vincular tenant_settings con store_id (para queries por store_id numérico)
 ALTER TABLE tenant_settings ADD COLUMN IF NOT EXISTS store_id INT REFERENCES stores(id);
 UPDATE tenant_settings SET store_id = 1 WHERE store_id IS NULL;
+
+-- Limpiar duplicados antes de crear el índice único (Legacy fix for Railway)
+DELETE FROM tenant_settings 
+WHERE id NOT IN (
+  SELECT MIN(id) 
+  FROM tenant_settings 
+  GROUP BY store_id
+) AND store_id IS NOT NULL;
+
 CREATE UNIQUE INDEX IF NOT EXISTS idx_tenant_settings_store_id ON tenant_settings(store_id);
 
 -- 9. Superadmin inicial de GastroRed (se inserta solo si no existe ninguno)
