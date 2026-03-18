@@ -172,7 +172,7 @@ function App() {
 
   const fmt = (n) => formatPrice(n);
 
-  const MenuView = () => {
+  const renderMenuView = () => {
     const categories = ['Todas', ...new Set(products.map(p => p.category))];
     const filteredProducts = activeCategory === 'Todas' ? products : products.filter(p => p.category === activeCategory);
     const featuredProducts = products.filter(p => p.badge).slice(0, 5);
@@ -180,7 +180,7 @@ function App() {
     const menuDisplay = groupByCategory(filteredProducts);
 
     return (
-      <motion.div initial="initial" animate="in" exit="out" variants={pageVariants} transition={pageTransition} className="pt-2 pb-28 md:pb-10">
+      <motion.div key="menu" initial="initial" animate="in" exit="out" variants={pageVariants} transition={pageTransition} className="pt-2 pb-28 md:pb-10">
         <Helmet><title>Menú | {TENANT.brandName}</title></Helmet>
 
         <div className="md:hidden mb-6 pl-4">
@@ -269,8 +269,8 @@ function App() {
     );
   };
 
-  const PromosView = () => (
-    <motion.div initial="initial" animate="in" exit="out" variants={pageVariants} transition={pageTransition} className="container mx-auto px-4 py-8 pb-32">
+  const renderPromosView = () => (
+    <motion.div key="promos" initial="initial" animate="in" exit="out" variants={pageVariants} transition={pageTransition} className="container mx-auto px-4 py-8 pb-32">
       <Helmet><title>Promos | {TENANT.brandName}</title></Helmet>
       <div className="text-center mb-8">
         <h2 className="text-3xl md:text-5xl font-black uppercase italic mb-2">
@@ -323,8 +323,8 @@ function App() {
 
   const [selectedVideo, setSelectedVideo] = useState(null);
 
-  const VideosView = () => (
-    <motion.div initial="initial" animate="in" exit="out" variants={pageVariants} transition={pageTransition} className="container mx-auto px-4 py-8 pb-32">
+  const renderVideosView = () => (
+    <motion.div key="videos" initial="initial" animate="in" exit="out" variants={pageVariants} transition={pageTransition} className="container mx-auto px-4 py-8 pb-32">
       <Helmet><title>Live | {TENANT.brandName}</title></Helmet>
       <div className="text-center mb-8"><h2 className="text-3xl md:text-5xl font-black uppercase italic mb-2">{TENANT.brandName} <span className="text-brand-primary">Live</span></h2></div>
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -381,8 +381,8 @@ function App() {
     </motion.div>
   );
 
-  const LocationsView = () => (
-    <motion.div initial="initial" animate="in" exit="out" variants={pageVariants} transition={pageTransition} className="container mx-auto px-4 py-8 pb-32">
+  const renderLocationsView = () => (
+    <motion.div key="locations" initial="initial" animate="in" exit="out" variants={pageVariants} transition={pageTransition} className="container mx-auto px-4 py-8 pb-32">
       <Helmet><title>Locales | {TENANT.brandName}</title></Helmet>
       <div className="pt-4"></div>
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
@@ -444,8 +444,8 @@ function App() {
   );
 
 
-  const DeliveryView = () => (
-    <motion.div initial="initial" animate="in" exit="out" variants={pageVariants} transition={pageTransition} className="container mx-auto px-4 py-8 pb-32">
+  const renderDeliveryView = () => (
+    <motion.div key="delivery" initial="initial" animate="in" exit="out" variants={pageVariants} transition={pageTransition} className="container mx-auto px-4 py-8 pb-32">
       <Helmet><title>Delivery | {TENANT.brandName}</title></Helmet>
       <div className="text-center mb-8"><h2 className="text-3xl md:text-5xl font-black uppercase italic mb-2">Delivery <span className="text-brand-primary">Express</span></h2></div>
       <div className="max-w-4xl mx-auto grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -463,8 +463,8 @@ function App() {
     </motion.div>
   );
 
-  const BrandWorldView = () => (
-    <motion.div initial="initial" animate="in" exit="out" variants={pageVariants} transition={pageTransition} className="container mx-auto px-4 py-8 pb-32">
+  const renderBrandWorldView = () => (
+    <motion.div key="brandworld" initial="initial" animate="in" exit="out" variants={pageVariants} transition={pageTransition} className="container mx-auto px-4 py-8 pb-32">
       <Helmet><title>Mundo | {TENANT.brandName}</title></Helmet>
       <div className="text-center mb-8"><h2 className="text-3xl md:text-5xl font-black uppercase italic mb-2">Mundo <span className="text-brand-secondary">{TENANT.brandName}</span></h2></div>
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
@@ -598,13 +598,13 @@ function App() {
             </motion.div>
           ) : !error ? (
             <>
-              {currentView === 'menu' && <MenuView key="menu" />}
-              {currentView === 'promos' && <PromosView key="promos" />}
-              {currentView === 'videos' && <VideosView key="videos" />}
-              {currentView === 'locations' && <LocationsView key="locations" />}
-              {currentView === 'delivery' && <DeliveryView key="delivery" />}
-              {currentView === 'brandworld' && <BrandWorldView key="brandworld" />}
-              {currentView === 'vorazburger' && <BrandWorldView key="vorazburger" />}
+              {currentView === 'menu' && renderMenuView()}
+              {currentView === 'promos' && renderPromosView()}
+              {currentView === 'videos' && renderVideosView()}
+              {currentView === 'locations' && renderLocationsView()}
+              {currentView === 'delivery' && renderDeliveryView()}
+              {currentView === 'brandworld' && renderBrandWorldView()}
+              {currentView === 'vorazburger' && renderBrandWorldView()}
               {currentView === 'tracking' && activeOrderId && (
                 <OrderTracking 
                   key="tracking" 

@@ -4,8 +4,8 @@ import { applyBrandTheme } from '../config/tenant';
 const API_URL = (import.meta.env.VITE_API_URL || 'http://localhost:3000/api').trim();
 
 const DEFAULTS = {
-  primary_color:   '#ef4444',
-  secondary_color: '#1f2937',
+  primary_color:   '#E30613',
+  secondary_color: '#F59E0B',
   font_family:     'Inter, system-ui, sans-serif',
 };
 
@@ -36,8 +36,6 @@ export const useBranding = () => {
   });
 
   useEffect(() => {
-    // Aplicar defaults inmediatamente para evitar flash
-    applyToRoot(DEFAULTS);
 
     fetch(`${API_URL}/settings`, {
       headers: {
