@@ -172,6 +172,7 @@ function CheckoutModal({ plan, onClose }) {
         slogan: '', subscription_period: 'monthly'
     };
     const [form, setForm] = useState(EMPTY);
+    const [mode, setMode] = useState('new'); // 'new' | 'renew'
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState('');
     const [success, setSuccess] = useState(null);
@@ -194,7 +195,8 @@ function CheckoutModal({ plan, onClose }) {
                 if (!res.ok) throw new Error(data.message);
                 setSuccess(data.data);
             } else {
-                const res = await fetch(`${API_URL}/subscriptions/checkout-public`, {
+                const endpoint = mode === 'renew' ? '/subscriptions/renew-checkout' : '/subscriptions/checkout-public';
+                const res = await fetch(`${API_URL}${endpoint}`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
@@ -267,6 +269,19 @@ function CheckoutModal({ plan, onClose }) {
                     </button>
                 </div>
 
+                {!isTrial && (
+                    <div className="flex gap-2 p-1 mb-6 bg-white/5 rounded-xl">
+                        <button onClick={() => setMode('new')}
+                            className={`flex-1 py-1.5 rounded-lg text-sm font-bold transition ${mode === 'new' ? 'bg-white/20 text-white' : 'text-gray-400 hover:text-white'}`}>
+                            Comercio Nuevo
+                        </button>
+                        <button onClick={() => setMode('renew')}
+                            className={`flex-1 py-1.5 rounded-lg text-sm font-bold transition ${mode === 'renew' ? 'bg-white/20 text-white' : 'text-gray-400 hover:text-white'}`}>
+                            Renovar Existente
+                        </button>
+                    </div>
+                )}
+
                 <form onSubmit={handleSubmit} className="space-y-4">
                     {/* Período (solo para planes pagos) */}
                     {!isTrial && (
@@ -284,36 +299,40 @@ function CheckoutModal({ plan, onClose }) {
                         </div>
                     )}
 
-                    <input placeholder="Nombre del restaurante *" value={form.name}
-                        onChange={e => set('name', e.target.value)} required
-                        className="w-full px-4 py-3 text-sm text-white border bg-black/30 border-white/10 rounded-xl focus:outline-none focus:border-red-500" />
+                    {mode === 'new' && (
+                        <input placeholder="Nombre del restaurante *" value={form.name}
+                            onChange={e => set('name', e.target.value)} required={mode === 'new'}
+                            className="w-full px-4 py-3 text-sm text-white border bg-black/30 border-white/10 rounded-xl focus:outline-none focus:border-red-500" />
+                    )}
 
                     <div>
                         <input placeholder="Subdomain * (ej: miburguer)" value={form.subdomain}
                             onChange={e => set('subdomain', e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, ''))} required
                             className="w-full px-4 py-3 text-sm text-white border bg-black/30 border-white/10 rounded-xl focus:outline-none focus:border-red-500" />
-                        {cleanSub && (
+                        {cleanSub && mode === 'new' && (
                             <p className="mt-1.5 text-xs text-red-500 font-mono">
-                                Tu carta: <strong>{cleanSub}.{GASTRORED_DOMAIN}</strong>
+                                Tu carta estará en: <strong>{cleanSub}.{GASTRORED_DOMAIN}</strong>
                             </p>
                         )}
                     </div>
 
-                    <input placeholder="Email del dueño *" type="email" value={form.admin_email}
+                    <input placeholder={mode === 'renew' ? "Email con el que ingresás al panel *" : "Email del dueño *"} type="email" value={form.admin_email}
                         onChange={e => set('admin_email', e.target.value)} required
                         className="w-full px-4 py-3 text-sm text-white border bg-black/30 border-white/10 rounded-xl focus:outline-none focus:border-red-500" />
 
                     {/* Credenciales de acceso al panel */}
                     <div className="p-4 space-y-3 border bg-white/5 border-white/10 rounded-xl">
-                        <p className="text-xs font-bold text-red-500">🔑 Credenciales para el panel de administración</p>
-                        <input placeholder="Tu nombre *" value={form.admin_name}
-                            onChange={e => set('admin_name', e.target.value)} required
-                            className="w-full bg-black/30 border border-white/10 rounded-xl px-4 py-2.5 text-white text-sm focus:outline-none focus:border-red-500" />
-                        <input type="password" placeholder="Contraseña para ingresar al panel (mín. 6 caracteres) *"
+                        <p className="text-xs font-bold text-red-500">{mode === 'renew' ? '🔑 Verificá tu identidad' : '🔑 Credenciales para el panel de administración'}</p>
+                        {mode === 'new' && (
+                            <input placeholder="Tu nombre *" value={form.admin_name}
+                                onChange={e => set('admin_name', e.target.value)} required={mode === 'new'}
+                                className="w-full bg-black/30 border border-white/10 rounded-xl px-4 py-2.5 text-white text-sm focus:outline-none focus:border-red-500" />
+                        )}
+                        <input type="password" placeholder={mode === 'renew' ? "Contraseña de tu cuenta admin *" : "Contraseña para ingresar al panel (mín. 6 caracteres) *"}
                             value={form.admin_password}
-                            onChange={e => set('admin_password', e.target.value)} required minLength={6}
+                            onChange={e => set('admin_password', e.target.value)} required minLength={mode === 'new' ? 6 : undefined}
                             className="w-full bg-black/30 border border-white/10 rounded-xl px-4 py-2.5 text-white text-sm focus:outline-none focus:border-red-500" />
-                        <p className="text-gray-600 text-[11px]">Con estas credenciales vas a poder acceder al panel /admin de tu comercio.</p>
+                        <p className="text-gray-600 text-[11px]">{mode === 'renew' ? 'Necesitamos verificar que sos el dueño para permitir la renovación.' : 'Con estas credenciales vas a poder acceder al panel /admin de tu comercio.'}</p>
                     </div>
 
                     {error && (

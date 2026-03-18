@@ -260,6 +260,110 @@ export const createPublicCheckout = async (req, res) => {
   }
 };
 
+// ── Renovar checkout (comercio existente, desde la landing) ───────────────────
+export const createRenewCheckout = async (req, res) => {
+  const { subdomain, plan_type, subscription_period, admin_email, admin_password } = req.body;
+
+  if (!subdomain || !plan_type || !admin_email || !admin_password)
+    return res.status(400).json({ status: 'error', message: 'subdomain, plan_type, admin_email y admin_password son requeridos.' });
+    
+  if (!['Full Digital', 'Expert'].includes(plan_type))
+    return res.status(400).json({ status: 'error', message: 'Plan inválido.' });
+
+  const cleanSub = cleanSubdomain(subdomain);
+
+  try {
+    const config = await getConfig();
+    const mpToken = getMpToken(config);
+
+    if (!mpToken)
+      return res.status(503).json({ status: 'error', message: 'El sistema de pagos aún no está configurado. Contactá a GastroRed.' });
+
+    // 1. Verificar si el tenant existe
+    const existing = await query('SELECT id, name, brand_name, status FROM tenants WHERE subdomain = $1', [cleanSub]);
+    if (!existing.rows.length)
+      return res.status(404).json({ status: 'error', message: 'El comercio no fue encontrado. Verificá el subdominio.' });
+
+    const tenant = existing.rows[0];
+
+    // 2. Verificar credenciales del administrador del comercio
+    const adminCheck = await query('SELECT id, password_hash FROM users WHERE email = $1 AND tenant_id = $2 AND role = $3', [admin_email.trim(), cleanSub, 'admin']);
+    if (!adminCheck.rows.length)
+      return res.status(401).json({ status: 'error', message: 'Las credenciales no coinciden con las del administrador del comercio.' });
+
+    const adminUser = adminCheck.rows[0];
+    const valid = await bcrypt.compare(admin_password, adminUser.password_hash);
+    if (!valid)
+      return res.status(401).json({ status: 'error', message: 'Contraseña incorrecta para renovar este comercio.' });
+
+    // 3. Obtener el local físico principal
+    const storeResult = await query('SELECT id FROM stores WHERE tenant_id = $1 ORDER BY id ASC LIMIT 1', [cleanSub]);
+    if (!storeResult.rows.length)
+      return res.status(500).json({ status: 'error', message: 'Error interno: El comercio no tiene un local físico asignado.' });
+      
+    const storeId = storeResult.rows[0].id;
+
+    // 4. Preparar MercadoPago
+    const prices = getPrices(config);
+    const period = subscription_period || 'monthly';
+    const amount = prices[plan_type][period] || prices[plan_type].monthly;
+    const periodLabel = period === 'annual' ? 'anual' : 'mensual';
+
+    const sandbox = config.mp_sandbox_mode === 'true';
+    const mp = new MercadoPagoConfig({ accessToken: mpToken });
+    const preferenceClient = new Preference(mp);
+
+    const backendUrl = config.backend_url || process.env.BACKEND_URL || 'https://voraz-platform-production.up.railway.app';
+    const frontendUrl = config.frontend_url || process.env.GASTRORED_FRONTEND_URL || 'https://gastrored.com.ar';
+
+    const preferenceBody = {
+      items: [{
+        id: `plan_${plan_type.replace(/\s/g, '_').toLowerCase()}_${period}`,
+        title: `GastroRed — ${tenant.brand_name || tenant.name}: Renovación Plan ${plan_type} (${periodLabel})`,
+        quantity: 1,
+        unit_price: amount,
+        currency_id: 'ARS',
+      }],
+      payer: { email: admin_email },
+      external_reference: `tenant_${cleanSub}_${plan_type.replace(/\s/g, '_')}_${period}`,
+      statement_descriptor: 'GASTRORED',
+      notification_url: `${backendUrl}/api/subscriptions/webhook`,
+      back_urls: {
+        success: `${frontendUrl}?sub=renew_success&store=${storeId}&tenant=${cleanSub}`,
+        failure: `${frontendUrl}?sub=renew_failure&store=${storeId}&tenant=${cleanSub}`,
+        pending: `${frontendUrl}?sub=renew_pending&store=${storeId}&tenant=${cleanSub}`,
+      },
+      auto_return: 'approved',
+    };
+
+    const preference = await preferenceClient.create({ body: preferenceBody });
+
+    await query(
+      `INSERT INTO subscription_payments (store_id, tenant_id, mp_payment_id, amount, plan_type, period, status)
+       VALUES ($1, $2, $3, $4, $5, $6, 'pending')`,
+      [storeId, cleanSub, preference.id, amount, plan_type, period]
+    );
+
+    res.status(200).json({
+      status: 'success',
+      data: {
+        tenant_id: cleanSub,
+        store_id: storeId,
+        subdomain: cleanSub,
+        plan_type,
+        period,
+        amount,
+        init_point: sandbox ? preference.sandbox_init_point : preference.init_point,
+        sandbox_init_point: preference.sandbox_init_point,
+        preference_id: preference.id,
+      },
+    });
+  } catch (e) {
+    console.error('Renew checkout error:', e.message);
+    res.status(500).json({ status: 'error', message: e.message });
+  }
+};
+
 // ── Obtener Planes Públicos (para la landing) ────────────────────────────────
 export const getPublicPlans = async (req, res) => {
   try {
@@ -365,7 +469,7 @@ export const handleSubscriptionWebhook = async (req, res) => {
     const tenantMatch = ref.match(/^tenant_([a-z0-9-]+)_(.+)_(monthly|annual)$/);
     const storeMatch = ref.match(/^store_(\d+)_(.+)_(monthly|annual)$/);
 
-    const expires = new Date();
+    let expires = new Date();
     let tenantId = null;
     let planType, period;
 
@@ -381,6 +485,20 @@ export const handleSubscriptionWebhook = async (req, res) => {
       tenantId = sp.rows[0]?.tenant_id || null;
     } else {
       return res.sendStatus(200);
+    }
+
+    if (tenantId) {
+      const tenantRes = await query('SELECT subscription_expires_at, status FROM tenants WHERE id = $1', [tenantId]);
+      if (tenantRes.rows.length) {
+        const t = tenantRes.rows[0];
+        // Si el tenant está activo y su expiración es a futuro, sumamos a esa fecha
+        if (t.status === 'active' && t.subscription_expires_at) {
+          const currentExpires = new Date(t.subscription_expires_at);
+          if (currentExpires > expires) {
+            expires = new Date(currentExpires.getTime());
+          }
+        }
+      }
     }
 
     expires.setDate(expires.getDate() + (period === 'annual' ? 365 : 30));

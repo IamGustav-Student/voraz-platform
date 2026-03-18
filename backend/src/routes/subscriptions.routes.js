@@ -2,6 +2,7 @@ import { Router } from 'express';
 import {
   createSubscriptionCheckout,
   createPublicCheckout,
+  createRenewCheckout,
   createTrialTenant,
   handleSubscriptionWebhook,
   getSubscriptionStatus,
@@ -16,6 +17,7 @@ const router = Router();
 router.post('/webhook', handleSubscriptionWebhook);
 router.post('/trial', createTrialTenant);                         // 7 días gratis
 router.post('/checkout-public', createPublicCheckout);            // desde la landing
+router.post('/renew-checkout', createRenewCheckout);              // renovar comercio inactivo
 router.post('/activate-sandbox', activateSandboxStore);           // activación manual sandbox
 router.get('/plans', getPublicPlans);                             // planes dinámicos para la landing
 
