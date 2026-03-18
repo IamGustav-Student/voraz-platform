@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { QRCodeCanvas } from 'qrcode.react';
+// No Recharts imports needed - Using Premium SVG for build stability
 import { useAuth } from '../context/AuthContext';
 import { adminFetch, patchOrdersPaused } from '../services/api';
 
@@ -334,26 +335,307 @@ export default function AdminPanel({ onClose }) {
   );
 }
 
-// ── Dashboard ────────────────────────────────────────────────────────────────
+// ── Dashboard Components ─────────────────────────────────────────────────────
+
+function DashboardHero({ subscription }) {
+  const [timeLeft, setTimeLeft] = useState({ days: 0, hours: 0, minutes: 0, seconds: 0 });
+  
+  useEffect(() => {
+    if (!subscription?.expires_at) return;
+    
+    const target = new Date(subscription.expires_at).getTime();
+    
+    const interval = setInterval(() => {
+      const now = new Date().getTime();
+      const distance = target - now;
+      
+      if (distance < 0) {
+        setTimeLeft({ days: 0, hours: 0, minutes: 0, seconds: 0 });
+        clearInterval(interval);
+      } else {
+        setTimeLeft({
+          days: Math.floor(distance / (1000 * 60 * 60 * 24)),
+          hours: Math.floor((distance % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60)),
+          minutes: Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60)),
+          seconds: Math.floor((distance % (1000 * 60)) / 1000),
+        });
+      }
+    }, 1000);
+    
+    return () => clearInterval(interval);
+  }, [subscription?.expires_at]);
+
+  const isExpert = subscription?.plan?.toLowerCase().includes('expert');
+  const expiryDate = subscription?.expires_at ? new Date(subscription.expires_at).toLocaleDateString('es-AR') : 'Sin vencimiento';
+  
+  const primaryColor = subscription?.primary_color || '#E30613';
+
+  return (
+    <div className={`relative overflow-hidden rounded-3xl p-8 mb-8 border border-white/10 shadow-2xl transition-all duration-500 bg-black`}
+         style={{ 
+           background: `linear-gradient(135deg, ${primaryColor}22 0%, #000 60%, #000 100%)`,
+           boxShadow: `0 25px 50px -12px ${primaryColor}11`
+         }}>
+      {/* Background Decor */}
+      <div className="absolute top-0 right-0 -translate-y-1/2 translate-x-1/4 w-64 h-64 rounded-full blur-3xl pointer-events-none opacity-20"
+           style={{ backgroundColor: primaryColor }} />
+      
+      <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-8">
+        <div>
+          <div className="flex items-center gap-3 mb-2">
+             <span className={`px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest text-white`}
+                   style={{ backgroundColor: primaryColor }}>
+               Plan {subscription?.plan || 'Standard'}
+             </span>
+             <span className="text-xs text-gray-500 font-bold">Vence: {expiryDate}</span>
+          </div>
+          <h2 className="text-3xl md:text-4xl font-black text-white mb-2">
+            ¡Hola, {subscription?.brand_name || 'Comercio'}!
+          </h2>
+          <p className="text-gray-400 max-w-md">
+            Tu tienda está funcionando al 100%. Seguí potenciando tus ventas con las métricas de hoy.
+          </p>
+        </div>
+
+        {subscription?.expires_at && (
+          <div className="bg-white/5 backdrop-blur-md border border-white/10 rounded-2xl p-4 md:px-8 text-center min-w-[240px]">
+            <p className="text-[10px] text-gray-400 font-black uppercase tracking-tighter mb-3">Tu suscripción expira en:</p>
+            <div className="flex justify-center gap-4">
+              {[
+                { val: timeLeft.days, lab: 'DÍAS' },
+                { val: timeLeft.hours, lab: 'HS' },
+                { val: timeLeft.minutes, lab: 'MIN' },
+                { val: timeLeft.seconds, lab: 'SEG' }
+              ].map(t => (
+                <div key={t.lab}>
+                  <p className="text-2xl font-black text-white leading-none">{String(t.val).padStart(2, '0')}</p>
+                  <p className="text-[8px] text-gray-500 font-bold mt-1">{t.lab}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+function ChartTooltip({ active, label, value, x, y, type = 'amount' }) {
+  if (!active) return null;
+  return (
+    <div 
+      className="absolute z-[100] bg-[#1a1a1a] border border-white/10 p-3 rounded-xl shadow-2xl pointer-events-none -translate-x-1/2 -translate-y-[calc(100%+10px)] transition-all duration-200"
+      style={{ left: x, top: y }}
+    >
+      <p className="text-gray-400 text-[10px] font-black uppercase mb-1">{label}</p>
+      <p className="text-white text-sm font-black whitespace-nowrap">
+        {type === 'amount' ? `$${value.toLocaleString('es-AR')}` : `${value} pedidos`}
+      </p>
+    </div>
+  );
+}
+
+function SimpleAreaChart({ data }) {
+  if (!data?.length) return null;
+  const max = Math.max(...data.map(d => d.amount), 1);
+  const points = data.map((d, i) => ({
+    x: (i / (data.length - 1)) * 100,
+    y: 100 - (d.amount / max) * 100,
+    ...d
+  }));
+
+  const pathData = `M 0 100 ` + points.map(p => `L ${p.x} ${p.y}`).join(' ') + ` L 100 100 Z`;
+  const lineData = points.map((p, i) => (i === 0 ? `M` : `L`) + ` ${p.x} ${p.y}`).join(' ');
+
+  const [hovered, setHovered] = useState(null);
+
+  return (
+    <div className="relative w-full h-full group/chart pt-4">
+      <svg viewBox="0 0 100 100" preserveAspectRatio="none" className="w-full h-full overflow-visible">
+        <defs>
+          <linearGradient id="gradRevenue" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stopColor="#facc15" stopOpacity="0.4" />
+            <stop offset="100%" stopColor="#facc15" stopOpacity="0" />
+          </linearGradient>
+        </defs>
+        <path d={pathData} fill="url(#gradRevenue)" />
+        <path d={lineData} fill="none" stroke="#facc15" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+        
+        {points.map((p, i) => (
+          <rect
+            key={i}
+            x={p.x - 2} y="0" width="4" height="100"
+            fill="transparent"
+            className="cursor-pointer"
+            onMouseEnter={(e) => {
+              const rect = e.currentTarget.parentElement.getBoundingClientRect();
+              setHovered({ ...p, screenX: (p.x / 100) * rect.width, screenY: (p.y / 100) * rect.height });
+            }}
+            onMouseLeave={() => setHovered(null)}
+          />
+        ))}
+      </svg>
+      {hovered && (
+        <ChartTooltip 
+          active={true} 
+          label={hovered.day_label} 
+          value={hovered.amount} 
+          x={hovered.screenX} 
+          y={hovered.screenY} 
+        />
+      )}
+      <div className="flex justify-between mt-2 pt-2 border-t border-white/5">
+        <span className="text-[8px] text-gray-600 font-bold">{data[0].day_label}</span>
+        <span className="text-[8px] text-gray-600 font-bold">{data[data.length-1].day_label}</span>
+      </div>
+    </div>
+  );
+}
+
+function SimpleBarChart({ data }) {
+  if (!data?.length) return null;
+  const max = Math.max(...data.map(d => d.count), 1);
+  const [hovered, setHovered] = useState(null);
+
+  return (
+    <div className="relative w-full h-full flex flex-col pt-4">
+      <div className="flex-1 flex items-end gap-2 group/chart">
+        {data.map((d, i) => {
+          const height = (d.count / max) * 100;
+          return (
+            <div 
+              key={i} 
+              className="flex-1 bg-blue-500/20 hover:bg-blue-500 rounded-t-lg transition-all relative cursor-pointer"
+              style={{ height: `${Math.max(height, 5)}%` }}
+              onMouseEnter={(e) => {
+                const rect = e.currentTarget.getBoundingClientRect();
+                const parent = e.currentTarget.offsetParent.getBoundingClientRect();
+                setHovered({ ...d, x: rect.left - parent.left + rect.width / 2, y: rect.top - parent.top });
+              }}
+              onMouseLeave={() => setHovered(null)}
+            >
+              <div className="absolute inset-0 bg-blue-400 opacity-0 hover:opacity-10 rounded-t-lg transition-opacity" />
+            </div>
+          );
+        })}
+      </div>
+      {hovered && (
+        <ChartTooltip 
+          active={true} 
+          label={hovered.week_label} 
+          value={hovered.count} 
+          type="count"
+          x={hovered.x} 
+          y={hovered.y} 
+        />
+      )}
+      <div className="flex justify-between mt-2 pt-2 border-t border-white/5">
+        <span className="text-[8px] text-gray-600 font-bold">{data[0].week_label}</span>
+        <span className="text-[8px] text-gray-600 font-bold">{data[data.length-1].week_label}</span>
+      </div>
+    </div>
+  );
+}
+
 function DashboardSection({ data }) {
   if (!data) return <p className="text-gray-500">Cargando...</p>;
+  
   const cards = [
-    { label: 'Productos activos', value: data.products, color: 'text-green-400' },
-    { label: 'Pedidos totales', value: data.orders, color: 'text-blue-400' },
-    { label: 'Ingresos', value: `$${(data.revenue || 0).toLocaleString('es-AR')}`, color: 'text-yellow-400' },
-    { label: 'Usuarios', value: data.users, color: 'text-purple-400' },
-    { label: 'Puntos canjeados', value: data.redeemedPoints || 0, color: 'text-red-400' },
+    { label: 'Ingresos (Total)', value: `$${(data.revenue || 0).toLocaleString('es-AR')}`, color: 'text-yellow-400', icon: '💰' },
+    { label: 'Pedidos Totales', value: data.orders, color: 'text-blue-400', icon: '🛍️' },
+    { label: 'Clientes Registrados', value: data.users, color: 'text-purple-400', icon: '👥' },
+    { label: 'Puntos Circulando', value: data.assignedPoints || 0, color: 'text-orange-400', icon: '✨' },
+    { label: 'Puntos Canjeados', value: data.redeemedPoints || 0, color: 'text-red-400', icon: '🎟️' },
+    { label: 'Productos Activos', value: data.products, color: 'text-green-400', icon: '📦' },
   ];
+
   return (
-    <div>
-      <h2 className="text-2xl font-bold mb-6">Dashboard</h2>
-      <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+    <div className="animate-in fade-in slide-in-from-bottom-4 duration-500">
+      
+      {/* 1. Hero Banner Countdown */}
+      <DashboardHero subscription={data.subscription} />
+
+      {/* 2. Top Stats Cards */}
+      <div className="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4 mb-8">
         {cards.map(c => (
-          <div key={c.label} className="bg-white/5 rounded-xl p-5 border border-white/10">
-            <p className="text-gray-400 text-sm mb-1">{c.label}</p>
-            <p className={`text-3xl font-bold ${c.color}`}>{c.value ?? '—'}</p>
+          <div key={c.label} className="bg-white/5 rounded-2xl p-5 border border-white/10 group hover:border-white/20 transition-all">
+            <div className="flex items-center justify-between mb-2">
+              <span className="text-lg opacity-80 group-hover:scale-110 transition-transform">{c.icon}</span>
+              <span className="w-1.5 h-1.5 rounded-full bg-white/20" />
+            </div>
+            <p className="text-gray-500 text-[10px] font-black uppercase tracking-wider mb-1 truncate">{c.label}</p>
+            <p className={`text-xl font-black truncate ${c.color}`}>{c.value ?? '—'}</p>
           </div>
         ))}
+      </div>
+
+      <div className="grid lg:grid-cols-2 gap-8 mb-8">
+        {/* 3. Gráfica de Ingresos Diarios */}
+        <div className="bg-white/5 rounded-3xl p-6 border border-white/10 h-[350px] flex flex-col">
+          <div className="flex items-center justify-between mb-6">
+            <h3 className="font-black text-white flex items-center gap-2">
+              <span className="text-yellow-500">📈</span> Ingresos Diarios
+            </h3>
+            <span className="text-xs text-gray-500 font-bold">Últimos 14 días</span>
+          </div>
+          <div className="flex-1 min-h-0 w-full overflow-hidden">
+            <SimpleAreaChart data={data.dailyRevenue} />
+          </div>
+        </div>
+
+        {/* 4. Gráfica de Pedidos Semanales */}
+        <div className="bg-white/5 rounded-3xl p-6 border border-white/10 h-[350px] flex flex-col">
+          <div className="flex items-center justify-between mb-6">
+            <h3 className="font-black text-white flex items-center gap-2">
+              <span className="text-blue-500">📊</span> Pedidos por Semana
+            </h3>
+            <span className="text-xs text-gray-500 font-bold">Mensual</span>
+          </div>
+          <div className="flex-1 min-h-0 w-full overflow-hidden">
+            <SimpleBarChart data={data.weeklyOrders} />
+          </div>
+        </div>
+      </div>
+
+      {/* 5. Best Sellers & Loyalty Insight */}
+      <div className="grid lg:grid-cols-3 gap-8">
+        <div className="lg:col-span-2 bg-white/5 rounded-3xl p-6 border border-white/10">
+          <h3 className="font-black text-white flex items-center gap-2 mb-6 text-sm">
+            <span className="text-red-500">🔥</span> Top Productos (Más Vendidos)
+          </h3>
+          <div className="space-y-4">
+            {data.bestSellers && data.bestSellers.map((item, i) => (
+              <div key={item.product_name} className="flex items-center gap-4 bg-white/5 px-4 py-3 rounded-2xl border border-white/5 group hover:border-red-500/30 transition-all">
+                <span className="text-gray-600 font-black text-lg italic w-6">#{i+1}</span>
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-black text-white truncate">{item.product_name}</p>
+                  <p className="text-[10px] text-gray-500 font-bold uppercase">{item.total_qty} unidades vendidas</p>
+                </div>
+                <div className="text-right">
+                  <p className="text-sm font-black text-green-400">${parseFloat(item.total_amount).toLocaleString('es-AR')}</p>
+                </div>
+              </div>
+            ))}
+            {!data.bestSellers?.length && <p className="text-gray-500 text-sm italic">Aún no hay ventas registradas.</p>}
+          </div>
+        </div>
+
+        <div className="bg-gradient-to-br from-purple-900/40 via-black to-black rounded-3xl p-6 border border-white/10 flex flex-col justify-center items-center text-center">
+          <div className="w-16 h-16 bg-purple-500/20 rounded-full flex items-center justify-center text-3xl mb-4 border border-purple-500/20">
+            ✨
+          </div>
+          <h3 className="font-black text-white mb-2">Fidelización Voraz</h3>
+          <p className="text-xs text-gray-400 mb-6 leading-relaxed">
+            Tenés un total de <strong>{data.assignedPoints} puntos</strong> repartidos entre tus clientes. ¡Lanzá promociones para que los canjeen!
+          </p>
+          <div className="w-full bg-white/5 rounded-2xl p-4 border border-white/5">
+            <p className="text-[10px] text-gray-500 font-black uppercase mb-1 tracking-tighter">Retorno Inmediato</p>
+            <p className="text-xl font-black text-purple-400">
+               {data.orders > 0 ? ((data.users / data.orders) * 100).toFixed(1) : 0}% 
+            </p>
+            <p className="text-[8px] text-gray-600 font-bold">Tasa de recurrencia estimada</p>
+          </div>
+        </div>
       </div>
     </div>
   );

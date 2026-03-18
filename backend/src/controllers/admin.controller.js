@@ -258,23 +258,110 @@ export const uploadImage = async (req, res) => {
 export const getDashboardStats = async (req, res) => {
   try {
     const storeId = await getStoreId(req);
-    const [products, orders, users, loyalty] = await Promise.all([
-      query('SELECT COUNT(*) FROM products WHERE store_id=$1 AND is_active=true', [storeId]),
-      query("SELECT COUNT(*), COALESCE(SUM(total),0) as revenue FROM orders WHERE store_id=$1 AND status != 'cancelled'", [storeId]),
-      query('SELECT COUNT(*) FROM users WHERE store_id=$1', [storeId]),
-      query("SELECT COALESCE(SUM(points_redeemed),0) as total_redeemed FROM orders WHERE store_id=$1 AND status != 'cancelled'", [storeId]),
+    const tenantId = getTenantId(req);
+
+    const [
+      basicStats,
+      weeklyOrders,
+      dailyRevenue,
+      bestSellers,
+      tenantInfo,
+      loyaltyConfig
+    ] = await Promise.all([
+      // 1. Estadísticas básicas (Cards)
+      query(`
+        SELECT 
+          (SELECT COUNT(*) FROM products WHERE store_id=$1 AND is_active=true) as products_count,
+          (SELECT COUNT(*) FROM orders WHERE store_id=$1 AND status != 'cancelled') as orders_count,
+          (SELECT COALESCE(SUM(total),0) FROM orders WHERE store_id=$1 AND status != 'cancelled') as total_revenue,
+          (SELECT COUNT(*) FROM users WHERE store_id=$1) as users_count,
+          (SELECT COALESCE(SUM(points_redeemed),0) FROM orders WHERE store_id=$1 AND status != 'cancelled') as points_redeemed
+      `, [storeId]),
+
+      // 2. Pedidos mensuales por semana (últimas 4 semanas)
+      query(`
+        SELECT 
+          to_char(DATE_TRUNC('week', created_at), 'DD/MM') as week_label,
+          COUNT(*) as count
+        FROM orders 
+        WHERE store_id = $1 AND created_at >= NOW() - INTERVAL '30 days'
+        GROUP BY DATE_TRUNC('week', created_at)
+        ORDER BY DATE_TRUNC('week', created_at) ASC
+      `, [storeId]),
+
+      // 3. Ingresos diarios (últimos 14 días)
+      query(`
+        SELECT 
+          to_char(created_at, 'DD/MM') as day_label,
+          COALESCE(SUM(total), 0) as amount
+        FROM orders 
+        WHERE store_id = $1 AND status != 'cancelled' AND created_at >= NOW() - INTERVAL '14 days'
+        GROUP BY to_char(created_at, 'DD/MM'), DATE_TRUNC('day', created_at)
+        ORDER BY DATE_TRUNC('day', created_at) ASC
+      `, [storeId]),
+
+      // 4. Productos más vendidos (Top 5)
+      query(`
+        SELECT 
+          product_name,
+          SUM(quantity) as total_qty,
+          SUM(subtotal) as total_amount
+        FROM order_items oi
+        JOIN orders o ON oi.order_id = o.id
+        WHERE o.store_id = $1 AND o.status != 'cancelled'
+        GROUP BY product_name
+        ORDER BY total_qty DESC
+        LIMIT 5
+      `, [storeId]),
+
+      // 5. Info de suscripción para el Hero Banner
+      query(`
+        SELECT id, plan_type, subscription_expires_at, brand_name, status,
+               brand_color_primary, brand_color_secondary
+        FROM tenants WHERE id::text = $1::text
+      `, [String(tenantId)]),
+
+      // 6. Config de puntos (para saber total asignados)
+      query(`
+        SELECT COALESCE(SUM(points_earned), 0) as total_assigned
+        FROM orders WHERE store_id = $1 AND status != 'cancelled'
+      `, [storeId])
     ]);
+
+    const basic = basicStats.rows[0];
+    const tenant = tenantInfo.rows[0] || {};
+
     res.json({
       status: 'success',
       data: {
-        products: parseInt(products.rows[0].count),
-        orders: parseInt(orders.rows[0].count),
-        revenue: parseFloat(orders.rows[0].revenue),
-        users: parseInt(users.rows[0].count),
-        redeemedPoints: parseInt(loyalty.rows[0].total_redeemed),
+        // Cards
+        products: parseInt(basic.products_count),
+        orders: parseInt(basic.orders_count),
+        revenue: parseFloat(basic.total_revenue),
+        users: parseInt(basic.users_count),
+        redeemedPoints: parseInt(basic.points_redeemed),
+        assignedPoints: parseInt(loyaltyConfig.rows[0]?.total_assigned || 0),
+
+        // Charts
+        weeklyOrders: weeklyOrders.rows,
+        dailyRevenue: dailyRevenue.rows,
+        bestSellers: bestSellers.rows,
+
+        // Subscription Hero
+        subscription: {
+           plan: tenant.plan_type || 'Full Digital',
+           expires_at: tenant.subscription_expires_at,
+           status: tenant.status,
+           brand_name: tenant.brand_name,
+           primary_color: tenant.brand_color_primary,
+           secondary_color: tenant.brand_color_secondary
+        }
       }
     });
-  } catch (e) { res.status(500).json({ status: 'error', message: e.message }); }
+  } catch (e) { 
+    console.error('getDashboardStats Error:', e);
+    res.status(500).json({ status: 'error', message: e.message }); 
+  }
 };
 
 // ── LOCALES (sucursales físicas del tenant) ─────────────────────────────

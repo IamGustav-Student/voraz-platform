@@ -214,11 +214,36 @@ app.use('/api/admin', tenantMiddleware, adminRoutes);
 // ── Migraciones ───────────────────────────────────────────────────────────────
 const runMigration = async (sqlFile) => {
     try {
-        const sql = fs.readFileSync(path.join(__dirname, 'db', sqlFile), 'utf8');
+        // 1. Asegurar que existe la tabla de control de migraciones
+        await query(`CREATE TABLE IF NOT EXISTS system_migrations (
+            id SERIAL PRIMARY KEY,
+            name VARCHAR(255) UNIQUE NOT NULL,
+            executed_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        )`);
+
+        // 2. Verificar si ya se ejecutó
+        const check = await query('SELECT 1 FROM system_migrations WHERE name = $1', [sqlFile]);
+        if (check.rows.length > 0) {
+            // Ya ejecutada, no hacer nada
+            return;
+        }
+
+        // 3. Leer y ejecutar
+        const sqlPath = path.join(__dirname, 'db', sqlFile);
+        if (!fs.existsSync(sqlPath)) {
+            console.warn(`⚠️  Archivo de migración no encontrado: ${sqlFile}`);
+            return;
+        }
+
+        const sql = fs.readFileSync(sqlPath, 'utf8');
         await query(sql);
-        console.log(`✅ Migración ejecutada: ${sqlFile}`);
+        
+        // 4. Registrar éxito
+        await query('INSERT INTO system_migrations (name) VALUES ($1)', [sqlFile]);
+        console.log(`✅ Migración ejecutada y registrada: ${sqlFile}`);
     } catch (error) {
-        console.error(`⚠️  Error en migración ${sqlFile}:`, error?.message || String(error));
+        console.error(`🔴 Error crítico en migración ${sqlFile}:`, error?.message || String(error));
+        // No lanzamos error para que el servidor pueda intentar arrancar, pero queda el log
     }
 };
 
