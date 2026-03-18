@@ -145,6 +145,18 @@ export default function SuperAdminPanel({ onBack }) {
     setCreating(false);
   };
 
+  const handleDeleteTenant = async (id, name) => {
+    if (!window.confirm(`⚠️ ADVERTENCIA ⚠️\n\n¿Estás seguro que deseas ELIMINAR COMPLETAMENTE el comercio "${name}"?\nEsta acción es irreversible.`)) {
+      return;
+    }
+    setMsg('Eliminando comercio...');
+    try {
+      await sfetch(`/stores/${id}`, token, { method: 'DELETE' });
+      setMsg(`✅ Comercio "${name}" eliminado correctamente.`);
+      load();
+    } catch (e) { setMsg('Error: ' + e.message); }
+  };
+
   const loadConfig = async () => {
     try {
       const res = await fetch(`${API_URL}/superadmin/config`, {
@@ -413,6 +425,14 @@ export default function SuperAdminPanel({ onBack }) {
                     title="Cambiar contraseña del admin de este comercio"
                   >
                     🔑 Resetear pwd admin
+                  </button>
+                  {/* Botón eliminar comercio */}
+                  <button
+                    onClick={() => handleDeleteTenant(s.id, s.brand_name || s.name)}
+                    className="text-xs px-3 py-1.5 bg-red-900/30 hover:bg-red-600 border border-red-500/30 text-red-300 hover:text-white rounded-lg font-bold transition"
+                    title="Eliminar este comercio completamente"
+                  >
+                    🗑️ Eliminar
                   </button>
                 </div>
 
