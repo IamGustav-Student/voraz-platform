@@ -204,7 +204,7 @@ function App() {
               {categories.map((cat) => (
                 <button key={cat} onClick={() => setActiveCategory(cat)}
                   className={`px-4 py-1.5 rounded-full font-bold text-xs md:text-sm uppercase tracking-wide transition-all whitespace-nowrap active:scale-95
-                    ${activeCategory === cat ? 'bg-primary text-white shadow-lg' : 'bg-voraz-gray text-gray-400 hover:text-white border border-white/5'}`}>
+                    ${activeCategory === cat ? 'bg-primary text-white shadow-lg' : 'bg-brand-surface text-gray-400 hover:text-white border border-white/5'}`}>
                   {cat}
                 </button>
               ))}
@@ -229,7 +229,7 @@ function App() {
                       whileTap={outOfStock ? undefined : { scale: 0.98 }}
                       key={product.id}
                       onClick={() => !outOfStock && setSelectedProduct(product)}
-                      className={`bg-voraz-gray rounded-xl overflow-hidden shadow-xl group relative flex md:block h-28 md:h-auto border border-white/5 ${outOfStock ? 'opacity-75 cursor-not-allowed' : 'cursor-pointer'}`}
+                      className={`bg-brand-surface rounded-xl overflow-hidden shadow-xl group relative flex md:block h-28 md:h-auto border border-white/5 ${outOfStock ? 'opacity-75 cursor-not-allowed' : 'cursor-pointer'}`}
                     >
                       {product.badge && <div className={`absolute top-0 left-0 md:top-3 md:left-3 z-10 px-2 py-0.5 rounded-br-lg md:rounded text-[9px] font-black uppercase ${getBadgeColor(product.badge)}`}>{product.badge}</div>}
                       {outOfStock && <div className="absolute top-0 right-0 md:top-3 md:right-3 z-10 px-2 py-0.5 rounded-bl-lg md:rounded text-[9px] font-black uppercase bg-red-600 text-white">Agotado</div>}
@@ -287,7 +287,7 @@ function App() {
               const product = products.find(pr => pr.id === p.product_id);
               if (product) setSelectedProduct(product);
             }}
-            className="group bg-voraz-gray border border-white/5 rounded-3xl overflow-hidden shadow-2xl relative cursor-pointer"
+            className="group bg-brand-surface border border-brand-primary/20 rounded-3xl overflow-hidden shadow-2xl relative cursor-pointer"
           >
             <div className="h-48 relative">
               <img src={p.image_url || '/images/placeholder_promo.jpg'} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" alt={p.title} />
@@ -391,7 +391,7 @@ function App() {
             `https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(store.address)}`;
           const deliveryUrl = store.delivery_link;
           return (
-            <motion.div whileHover={{ y: -5 }} key={store.id} className="bg-voraz-gray rounded-2xl overflow-hidden shadow-xl border border-white/5">
+            <motion.div whileHover={{ y: -5 }} key={store.id} className="bg-brand-surface rounded-2xl overflow-hidden shadow-xl border border-brand-primary/20">
               <div className="h-40 relative">
                 <img src={store.image_url} className="w-full h-full object-cover" />
                 <div className="absolute bottom-0 left-0 w-full p-4 bg-gradient-to-t from-black to-transparent">
@@ -400,7 +400,7 @@ function App() {
               </div>
               <div className="p-5">
                 <p className="text-gray-300 text-sm mb-4 flex items-start gap-2">
-                  <svg className="w-4 h-4 mt-0.5 text-brand-primary flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
+                  <svg className="w-4 h-4 mt-0.5 text-brand-secondary flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
                   {store.address}
                 </p>
                 {store.phone && (
@@ -424,7 +424,7 @@ function App() {
                       href={deliveryUrl}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="flex items-center justify-center gap-1.5 bg-brand-primary text-white py-2.5 rounded-lg text-xs font-bold hover:opacity-90 active:opacity-80 transition-opacity"
+                      className="flex items-center justify-center gap-1.5 bg-brand-secondary text-black py-2.5 rounded-lg text-xs font-bold hover:opacity-90 active:opacity-80 transition-opacity"
                     >
                       <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 10V3L4 14h7v7l9-11h-7z" /></svg>
                       Delivery
@@ -450,13 +450,13 @@ function App() {
       <div className="text-center mb-8"><h2 className="text-3xl md:text-5xl font-black uppercase italic mb-2">Delivery <span className="text-brand-primary">Express</span></h2></div>
       <div className="max-w-4xl mx-auto grid grid-cols-1 md:grid-cols-2 gap-4">
         {stores.map((store) => (
-          <motion.a whileTap={{ scale: 0.98 }} key={store.id} href={store.delivery_link} target="_blank" className="flex items-center p-4 bg-voraz-gray rounded-xl border border-white/5 hover:border-primary transition group">
+          <motion.a whileTap={{ scale: 0.98 }} key={store.id} href={store.delivery_link} target="_blank" className="flex items-center p-4 bg-brand-surface rounded-xl border border-white/5 hover:border-brand-primary transition group">
             <img src={store.image_url} className="w-14 h-14 rounded-full object-cover border-2 border-white/10 mr-4" />
             <div className="flex-grow">
               <h3 className="text-lg font-bold text-white group-hover:text-primary">{store.name}</h3>
               <p className="text-gray-400 text-xs">{store.address}</p>
             </div>
-            <div className="bg-primary text-white p-2 rounded-full"><svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg></div>
+            <div className="bg-brand-secondary text-black p-2 rounded-full"><svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg></div>
           </motion.a>
         ))}
       </div>
@@ -469,12 +469,12 @@ function App() {
       <div className="text-center mb-8"><h2 className="text-3xl md:text-5xl font-black uppercase italic mb-2">Mundo <span className="text-brand-secondary">{TENANT.brandName}</span></h2></div>
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         {news.map((item) => (
-          <motion.article whileHover={{ y: -5 }} key={item.id} className="bg-voraz-gray rounded-xl overflow-hidden border border-white/5 shadow-xl">
+          <motion.article whileHover={{ y: -5 }} key={item.id} className="bg-brand-surface rounded-xl overflow-hidden border border-brand/20 border-brand-primary/20 shadow-xl">
             <div className="h-40 relative"><img src={item.image_url} className="w-full h-full object-cover" /><div className="absolute top-3 right-3 bg-black/70 px-2 py-1 rounded text-[10px] font-bold border border-white/10">{new Date(item.date).toLocaleDateString()}</div></div>
             <div className="p-4">
               <h3 className="text-lg font-black text-white mb-2 leading-tight">{item.title}</h3>
               <p className="text-gray-400 text-xs line-clamp-3 mb-4">{item.content}</p>
-              <button className="text-primary font-bold uppercase text-xs hover:underline">Leer más</button>
+              <button className="text-brand-secondary font-bold uppercase text-xs hover:underline">Leer más</button>
             </div>
           </motion.article>
         ))}
@@ -507,7 +507,7 @@ function App() {
             <motion.button
               whileTap={{ scale: 0.93 }}
               onClick={() => user ? setCurrentView('club') : setIsAuthOpen(true)}
-              className="flex items-center space-x-2 bg-white/5 hover:bg-white/10 border border-white/10 text-white px-3 py-2 rounded-xl text-sm font-bold transition"
+              className="flex items-center space-x-2 bg-brand-secondary/10 hover:bg-brand-secondary/20 border border-brand-secondary/20 text-brand-secondary px-3 py-2 rounded-xl text-sm font-bold transition"
             >
               {user?.avatar_url
                 ? <img src={user.avatar_url} className="w-6 h-6 rounded-full object-cover" alt="" />
@@ -522,7 +522,7 @@ function App() {
               <motion.button
                 whileTap={{ scale: 0.93 }}
                 onClick={() => setIsAdminOpen(true)}
-                className="flex items-center space-x-1 bg-yellow-500/10 hover:bg-yellow-500/20 border border-yellow-500/30 text-yellow-400 px-3 py-2 rounded-xl text-sm font-bold transition"
+                className="flex items-center space-x-1 bg-brand-secondary/10 hover:bg-brand-secondary/20 border border-brand-secondary/30 text-brand-secondary px-3 py-2 rounded-xl text-sm font-bold transition"
                 title="Panel Admin"
               >
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
@@ -533,7 +533,7 @@ function App() {
           <motion.button
               whileTap={{ scale: 0.93 }}
               onClick={() => setIsCartOpen(true)}
-              className="relative flex items-center space-x-2 bg-brand-primary hover:bg-brand-primary-hover text-white px-4 py-2 rounded-xl font-bold text-sm transition"
+              className="relative flex items-center space-x-2 bg-brand-secondary hover:opacity-90 text-black px-4 py-2 rounded-xl font-bold text-sm transition"
             >
               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z" /></svg>
               <span>Pedido</span>
@@ -551,12 +551,12 @@ function App() {
       <header className="md:hidden sticky top-0 z-40 bg-[#121212] border-b border-white/10 h-14 flex items-center justify-between px-4 shadow-xl">
         <div className="flex items-center space-x-2">
           {TENANT.logo && <img src={TENANT.logo} className="h-8 object-contain" alt={TENANT.brandName} />}
-          <span className="text-xl font-black uppercase italic text-brand-primary">{TENANT.brandName}</span>
+          <span className="text-xl font-black uppercase italic text-brand-secondary">{TENANT.brandName}</span>
         </div>
         <div className="flex items-center space-x-2">
           <motion.button whileTap={{ scale: 0.9 }}
             onClick={() => user ? setCurrentView('club') : setIsAuthOpen(true)}
-            className="relative p-2 rounded-xl bg-white/5 border border-white/10 text-white"
+            className="relative p-2 rounded-xl bg-brand-secondary/10 border border-brand-secondary/20 text-brand-secondary"
           >
             {user?.avatar_url
               ? <img src={user.avatar_url} className="w-5 h-5 rounded-full object-cover" alt="" />
@@ -567,7 +567,7 @@ function App() {
           {user && (user.role === 'admin' || user.role === 'manager') && (
             <motion.button whileTap={{ scale: 0.9 }}
               onClick={() => setIsAdminOpen(true)}
-              className="relative p-2 rounded-xl bg-yellow-500/20 border border-yellow-500/40 text-yellow-400"
+              className="relative p-2 rounded-xl bg-brand-secondary/20 border border-brand-secondary/40 text-brand-secondary"
               title="Panel Admin"
             >
               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
@@ -575,7 +575,7 @@ function App() {
           )}
           <motion.button whileTap={{ scale: 0.9 }}
             onClick={() => setIsCartOpen(true)}
-            className="relative p-2 rounded-xl bg-brand-primary text-white"
+            className="relative p-2 rounded-xl bg-brand-secondary text-black"
           >
             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z" /></svg>
             {itemCount > 0 && (
@@ -635,7 +635,7 @@ function App() {
             <motion.button
               whileTap={{ scale: 0.9 }}
               onClick={() => setCurrentView('vorazburger')}
-              className={`w-14 h-14 rounded-full flex items-center justify-center shadow-lg border-4 border-black ${currentView === 'vorazburger' ? 'bg-brand-secondary text-black' : 'bg-brand-primary text-white'}`}>
+              className={`w-14 h-14 rounded-full flex items-center justify-center shadow-lg border-4 border-black ${currentView === 'vorazburger' ? 'bg-brand-secondary text-black' : 'bg-brand-secondary/20 text-brand-secondary'}`}>
               <span className="font-black text-xs">{TENANT.brandName[0]}</span>
             </motion.button>
           </div>
@@ -658,7 +658,7 @@ function App() {
           >
             <motion.div
               initial={{ y: "100%" }} animate={{ y: 0 }} exit={{ y: "100%" }} transition={{ type: "spring", damping: 25, stiffness: 500 }}
-              className="bg-voraz-gray w-full md:max-w-4xl h-[85vh] md:h-auto rounded-t-[30px] md:rounded-2xl overflow-hidden shadow-2xl flex flex-col md:flex-row relative border-t md:border border-white/10"
+              className="bg-brand-surface w-full md:max-w-4xl h-[85vh] md:h-auto rounded-t-[30px] md:rounded-2xl overflow-hidden shadow-2xl flex flex-col md:flex-row relative border-t md:border border-white/10"
               onClick={e => e.stopPropagation()}
             >
               <button onClick={() => setSelectedProduct(null)} className="absolute top-4 right-4 z-20 bg-black/50 text-white p-2 rounded-full hover:bg-primary transition backdrop-blur-md">
@@ -666,7 +666,7 @@ function App() {
               </button>
               <div className="h-[35vh] md:h-auto md:w-1/2 relative flex-shrink-0">
                 <img src={selectedProduct.image_url} className="w-full h-full object-cover" />
-                <div className="md:hidden absolute inset-0 bg-gradient-to-t from-voraz-gray to-transparent"></div>
+                <div className="md:hidden absolute inset-0 bg-gradient-to-t from-brand-surface to-transparent"></div>
               </div>
               <div className="flex-grow p-6 md:p-10 flex flex-col justify-between overflow-y-auto">
                 <div>
@@ -829,7 +829,7 @@ function App() {
 }
 
 const SkeletonCard = () => (
-  <div className="bg-voraz-gray rounded-xl overflow-hidden border border-white/5 h-28 md:h-auto flex md:block animate-pulse">
+  <div className="bg-brand-surface rounded-xl overflow-hidden border border-white/5 h-28 md:h-auto flex md:block animate-pulse">
     <div className="w-28 md:w-full h-full md:h-48 bg-white/5"></div>
     <div className="p-3 md:p-4 flex-grow flex flex-col justify-between">
       <div>
@@ -865,7 +865,7 @@ const BottomNavItem = ({ icon, label, active, onClick, count }) => {
   return (
     <button onClick={onClick} className="flex flex-col items-center justify-center w-12 group relative">
       <motion.div
-        animate={active ? { y: -5, color: '#F2C94C' } : { y: 0, color: '#6B7280' }}
+        animate={active ? { y: -5, color: 'var(--brand-secondary)' } : { y: 0, color: '#6B7280' }}
         className="transition-colors duration-300"
       >
         <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">{getIcon()}</svg>

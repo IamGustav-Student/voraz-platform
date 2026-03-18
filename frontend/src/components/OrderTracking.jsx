@@ -192,7 +192,7 @@ const OrderTracking = ({ orderId, earnedPoints = 0, onBack }) => {
                         </div>
                     ))}
                     {order.points_discount > 0 && (
-                        <div className="flex justify-between text-sm text-voraz-yellow">
+                        <div className="flex justify-between text-sm text-brand-secondary">
                             <span className="font-bold">Descuento puntos ({order.points_redeemed} pts)</span>
                             <span className="font-bold">-${fmt(order.points_discount)}</span>
                         </div>
