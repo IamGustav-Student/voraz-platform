@@ -31,16 +31,21 @@ export const createOrder = async (req, res) => {
     try {
         await client.query('BEGIN');
 
-        // 1. Obtener configuración de fidelización — búsqueda robusta por texto (compatibilidad multi-tenant)
         const loyaltyRes = await client.query(
-            `SELECT loyalty_enabled, points_redeem_value
+            `SELECT loyalty_enabled, points_redeem_value, orders_paused
              FROM tenant_settings
              WHERE tenant_id_fk::text = $1::text OR tenant_id::text = $1::text
              LIMIT 1`,
             [String(tenantId)]
         );
-        const loyalty = loyaltyRes.rows[0] || { loyalty_enabled: false, points_redeem_value: 0 };
-        const pointsRedeemValue = parseFloat(loyalty.points_redeem_value) || 0;
+        const settings = loyaltyRes.rows[0] || { loyalty_enabled: false, points_redeem_value: 0, orders_paused: false };
+        
+        // REFUERZO DE SEGURIDAD: Validar si el comercio está pausado
+        if (settings.orders_paused) {
+            throw new Error('Lo sentimos, el comercio no está aceptando nuevos pedidos en este momento.');
+        }
+
+        const pointsRedeemValue = parseFloat(settings.points_redeem_value) || 0;
 
         // 2. Bloqueo y obtención de productos frescos (Anti-concurrencia de stock y precios)
         const productIds = [...new Set(items.map((i) => i.product_id))];
@@ -66,7 +71,7 @@ export const createOrder = async (req, res) => {
             if (product.stock < qty) throw new Error(`Stock insuficiente para ${item.product_name || 'producto'}.`);
             
             calculatedSubtotal += parseFloat(product.price) * qty;
-            if (loyalty.loyalty_enabled) {
+            if (settings.loyalty_enabled) {
                 totalPointsEarned += (parseInt(product.points_earned, 10) || 0) * qty;
             }
             qtyByProduct[item.product_id] = (qtyByProduct[item.product_id] || 0) + qty;
@@ -76,7 +81,7 @@ export const createOrder = async (req, res) => {
         let pointsDiscount = 0;
         let actualPointsRedeemed = 0;
 
-        if (user_id && requestedPoints > 0 && loyalty.loyalty_enabled && pointsRedeemValue > 0) {
+        if (user_id && requestedPoints > 0 && settings.loyalty_enabled && pointsRedeemValue > 0) {
             const userRes = await client.query('SELECT points FROM users WHERE id = $1 FOR UPDATE', [user_id]);
             if (userRes.rows.length === 0) throw new Error('Usuario no encontrado.');
             
@@ -135,7 +140,7 @@ export const createOrder = async (req, res) => {
 
         // 7. Acreditar puntos de forma INMEDIATA para pedidos en efectivo
         // (Para MercadoPago, se acreditan al confirmar el pago via webhook)
-        if (resolvedPaymentMethod === 'cash' && user_id && totalPointsEarned > 0 && loyalty.loyalty_enabled) {
+        if (resolvedPaymentMethod === 'cash' && user_id && totalPointsEarned > 0 && settings.loyalty_enabled) {
             await client.query('UPDATE users SET points = points + $1 WHERE id = $2', [totalPointsEarned, user_id]);
             await client.query(
                 `INSERT INTO points_history (user_id, order_id, points, type, description) VALUES ($1,$2,$3,'earned',$4)`,
