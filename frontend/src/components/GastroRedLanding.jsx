@@ -499,6 +499,7 @@ const FALLBACK_PLANS = [
             { text: 'Subdominio + Dominio propio' },
             { text: 'MercadoPago integrado' },
             { text: 'Código QR de carta', disabled: true },
+            { text: 'Branding personalizado' },
             { text: 'Soporte L-V 9 a 20hs por email' },
         ],
     },

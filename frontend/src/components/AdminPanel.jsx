@@ -1398,7 +1398,8 @@ function BrandingSection({ token, onUpgrade }) {
   const [msg, setMsg] = useState('');
   const [loaded, setLoaded] = useState(false);
 
-  const enabled = branding.plan_type?.toLowerCase().trim() === 'expert';
+  const plan = branding.plan_type?.toLowerCase().trim();
+  const enabled = plan === 'expert' || plan === 'full digital';
 
   useEffect(() => {
     if (!token) return;

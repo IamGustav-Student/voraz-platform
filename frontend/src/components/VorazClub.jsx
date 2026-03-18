@@ -44,7 +44,7 @@ const VorazClub = ({ onBack, onOpenAuth }) => {
         return (
             <div className="flex flex-col items-center justify-center min-h-[60vh] px-6 text-center pb-32">
                 <div className="text-7xl mb-4">⭐</div>
-                <h2 className="text-3xl font-black text-white uppercase mb-2">Voraz <span className="text-voraz-yellow">Club</span></h2>
+                <h2 className="text-3xl font-black text-white uppercase mb-2"><span className="text-voraz-yellow">Club</span></h2>
                 <p className="text-gray-400 text-sm mb-8 max-w-xs">Iniciá sesión para ver tus puntos, historial de pedidos y beneficios exclusivos.</p>
                 <motion.button
                     whileTap={{ scale: 0.95 }}
@@ -81,7 +81,7 @@ const VorazClub = ({ onBack, onOpenAuth }) => {
                     <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 19l-7-7 7-7" /></svg>
                 </button>
                 <div className="flex-grow">
-                    <h2 className="text-2xl font-black text-white uppercase">Voraz <span className="text-voraz-yellow">Club</span></h2>
+                    <h2 className="text-2xl font-black text-white uppercase"><span className="text-voraz-yellow">Club</span></h2>
                     <p className="text-gray-500 text-xs">Hola, {user.name.split(' ')[0]} 👋</p>
                 </div>
                 <button onClick={() => { logout(); onBack(); }} className="text-gray-500 hover:text-red-400 text-xs font-bold uppercase transition p-2">Salir</button>
