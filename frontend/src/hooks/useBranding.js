@@ -9,23 +9,7 @@ const DEFAULTS = {
   font_family:     'Inter, system-ui, sans-serif',
 };
 
-const applyToRoot = (branding) => {
-  const root = document.documentElement;
-  const primary   = branding.primary_color   || DEFAULTS.primary_color;
-  const secondary = branding.secondary_color || DEFAULTS.secondary_color;
 
-  root.style.setProperty('--primary-color',   primary);
-  root.style.setProperty('--secondary-color', secondary);
-  // Sincronizar también las variables brand-* para Tailwind bg-brand-primary etc.
-  root.style.setProperty('--brand-primary',         primary);
-  root.style.setProperty('--brand-primary-hover',   primary);
-  root.style.setProperty('--brand-secondary',       secondary);
-
-  if (branding.font_family) {
-    root.style.setProperty('--font-family', branding.font_family);
-    root.style.setProperty('font-family',   branding.font_family);
-  }
-};
 
 export const useBranding = () => {
   const [branding, setBranding] = useState({
@@ -48,7 +32,9 @@ export const useBranding = () => {
         if (!data?.data) return;
         const b = data.data;
 
-        // Fallback robusto para colores y logo
+        // Sincronizar con el objeto global TENANT y CSS variables
+        applyBrandTheme(b);
+
         const finalBranding = {
           ...DEFAULTS,
           ...b,
@@ -58,23 +44,19 @@ export const useBranding = () => {
           font_family:     b.font_family     || DEFAULTS.font_family,
         };
 
-        if (b.custom_branding_enabled) {
-          applyToRoot(finalBranding);
-        } else {
-          // Si no está habilitado custom branding, forzar colores GastroRed
-          applyToRoot({
-            ...finalBranding,
-            primary_color:   '#E30613',
-            secondary_color: '#F2C94C',
-          });
-        }
-
-        // Actualizar título de la pestaña
-        if (b.brand_name) {
-          document.title = b.brand_name;
-        }
-
         // ── Generar Manifiesto PWA Dinámico ──────────────────────────────────
+        
+        const host = window.location.hostname.toLowerCase();
+        const gastroRootEnv = (import.meta.env.VITE_GASTRORED_ROOT_DOMAIN || '').toLowerCase();
+        const isGastroRedRoot = host === 'gastrored.com.ar' || host === 'www.gastrored.com.ar' || (gastroRootEnv && host === gastroRootEnv);
+        
+        const rawIcon = (b.custom_branding_enabled && (b.logo_url || b.brand_logo_url))
+            ? (b.logo_url || b.brand_logo_url)
+            : (!b.custom_branding_enabled && isGastroRedRoot ? '/vite.svg' : '/images/logo_voraz.jpg');
+
+        const isSvg = rawIcon.endsWith('.svg');
+        const iconType = isSvg ? 'image/svg+xml' : (rawIcon.endsWith('.png') ? 'image/png' : 'image/jpeg');
+
         const manifestData = {
           name: b.brand_name || 'GastroRed',
           short_name: b.brand_name || 'GastroRed',
@@ -82,17 +64,17 @@ export const useBranding = () => {
           start_url: '/',
           display: 'standalone',
           background_color: '#000000',
-          theme_color: b.primary_color || b.brand_color_primary || '#E30613',
+          theme_color: (b.custom_branding_enabled ? (b.primary_color || b.brand_color_primary) : null) || '#E30613',
           icons: [
             {
-              src: b.logo_url || b.brand_logo_url || '/images/logo_voraz.jpg',
-              sizes: '192x192',
-              type: 'image/jpeg'
+              src: rawIcon,
+              sizes: isSvg ? 'any' : '192x192',
+              type: iconType
             },
             {
-              src: b.logo_url || b.brand_logo_url || '/images/logo_voraz.jpg',
-              sizes: '512x512',
-              type: 'image/jpeg'
+              src: rawIcon,
+              sizes: isSvg ? 'any' : '512x512',
+              type: iconType
             }
           ]
         };
@@ -100,9 +82,6 @@ export const useBranding = () => {
         const manifestUrl = URL.createObjectURL(blob);
         const manifestLink = document.getElementById('app-manifest');
         if (manifestLink) manifestLink.href = manifestUrl;
-
-        // Sincronizar con el objeto global TENANT
-        applyBrandTheme(b);
 
         setBranding({ ...finalBranding, loaded: true });
       })

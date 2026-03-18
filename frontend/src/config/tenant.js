@@ -37,6 +37,17 @@ let _tenant = {
   },
 };
 
+const hexToRgb = (hex) => {
+  if (!hex || typeof hex !== 'string' || !hex.startsWith('#')) return '0, 0, 0';
+  let c = hex.replace('#', '');
+  if (c.length === 3) c = c.split('').map(x => x + x).join('');
+  const r = parseInt(c.substring(0, 2), 16);
+  const g = parseInt(c.substring(2, 4), 16);
+  const b = parseInt(c.substring(4, 6), 16);
+  if (isNaN(r)) return '0, 0, 0';
+  return `${r}, ${g}, ${b}`;
+};
+
 /** Aplica los colores del tenant como CSS custom properties en :root */
 export function applyBrandTheme(settings) {
   if (!settings) return;
@@ -54,19 +65,21 @@ export function applyBrandTheme(settings) {
     logo = settings.logo_url || settings.brand_logo_url || logo;
     fontFam = settings.font_family || null;
   } else {
-    // If disabled, we fallback to default OR if gastrored still wants to use the primary colors defined in tenants
-    // The prompt says "Asegurá que si no hay colores definidos, se usen los colores por defecto de GastroRed."
-    // and "Si custom_branding_enabled es false... mostrar mensaje."
     primary = '#E30613';    // Default GastroRed
-    secondary = '#F2C94C';  // Default GastroRed
-    logo = null;
+    secondary = '#F59E0B';  // Default GastroRed
+    logo = '/vite.svg';     // GastroRed root app logo
   }
+
+  const primaryHover = adjustColor(primary, -20);
 
   root.style.setProperty('--primary-color', primary);
   root.style.setProperty('--secondary-color', secondary);
-  root.style.setProperty('--color-brand-primary', primary);
-  root.style.setProperty('--color-brand-secondary', secondary);
-  root.style.setProperty('--color-brand-primary-hover', adjustColor(primary, -20));
+  root.style.setProperty('--brand-primary', primary);
+  root.style.setProperty('--brand-secondary', secondary);
+  root.style.setProperty('--brand-primary-hover', primaryHover);
+  
+  root.style.setProperty('--brand-primary-rgb', hexToRgb(primary));
+  root.style.setProperty('--brand-secondary-rgb', hexToRgb(secondary));
 
   if (fontFam) {
     root.style.setProperty('--font-family', fontFam);
