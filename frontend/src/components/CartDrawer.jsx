@@ -185,7 +185,7 @@ const CartDrawer = ({ isOpen, onClose, stores, onOrderCreated, onOpenAuth }) => 
                                                         <img src={item.image_url} alt={item.product_name} className="w-14 h-14 rounded-lg object-cover flex-shrink-0 mr-3" />
                                                         <div className="flex-grow min-w-0">
                                                             <p className="text-white font-bold text-sm truncate">{item.product_name}</p>
-                                                            <p className="text-voraz-yellow font-black text-sm">${fmt(item.product_price)}</p>
+                                                            <p className="text-brand-secondary font-black text-sm">${fmt(item.product_price)}</p>
                                                         </div>
                                                         <div className="flex items-center space-x-2 ml-3 flex-shrink-0">
                                                             <button onClick={() => handleQty(item.product_id, item.quantity - 1)} className="w-7 h-7 rounded-full bg-white/10 hover:bg-primary text-white font-bold text-sm flex items-center justify-center transition">-</button>
@@ -200,9 +200,9 @@ const CartDrawer = ({ isOpen, onClose, stores, onOrderCreated, onOpenAuth }) => 
 
                                             {/* Canjear puntos */}
                                             {loyaltyConfig.enabled && user && user.points >= POINTS_BLOCK && (
-                                                <div className="mb-4 bg-voraz-yellow/10 border border-voraz-yellow/20 rounded-xl p-4">
+                                                <div className="mb-4 bg-brand-secondary/10 border border-brand-secondary/20 rounded-xl p-4">
                                                     <div className="flex items-center justify-between mb-2">
-                                                        <p className="text-voraz-yellow font-bold text-sm">⭐ Canjear puntos</p>
+                                                        <p className="text-brand-secondary font-bold text-sm">⭐ Canjear puntos</p>
                                                         <p className="text-white text-xs font-bold">{user.points} pts disponibles</p>
                                                     </div>
                                                     <div className="flex flex-col gap-3">
@@ -210,7 +210,7 @@ const CartDrawer = ({ isOpen, onClose, stores, onOrderCreated, onOpenAuth }) => 
                                                             <select
                                                                 value={pointsToRedeem}
                                                                 onChange={(e) => setPointsToRedeem(parseInt(e.target.value))}
-                                                                className="w-full bg-[#1a1a1a] border border-voraz-yellow/30 rounded-xl px-4 py-3 text-white text-sm font-bold focus:outline-none appearance-none"
+                                                                className="w-full bg-[#1a1a1a] border border-brand-secondary/30 rounded-xl px-4 py-3 text-white text-sm font-bold focus:outline-none appearance-none"
                                                             >
                                                                 <option value={0}>No canjear puntos</option>
                                                                 {Array.from({ length: maxRedeemableBlocks }, (_, i) => (i + 1) * POINTS_BLOCK).map(pts => (
@@ -219,7 +219,7 @@ const CartDrawer = ({ isOpen, onClose, stores, onOrderCreated, onOpenAuth }) => 
                                                                     </option>
                                                                 ))}
                                                             </select>
-                                                            <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-voraz-yellow">
+                                                            <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-brand-secondary">
                                                                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" /></svg>
                                                             </div>
                                                         </div>
@@ -242,7 +242,7 @@ const CartDrawer = ({ isOpen, onClose, stores, onOrderCreated, onOpenAuth }) => 
                                                 )}
                                                 <div className="border-t border-white/10 pt-2 flex justify-between font-black">
                                                     <span className="text-white uppercase text-sm">Total</span>
-                                                    <span className="text-voraz-yellow text-lg">${fmt(finalTotal)}</span>
+                                                    <span className="text-brand-secondary text-lg">${fmt(finalTotal)}</span>
                                                 </div>
                                                 {estimatedPoints > 0 && (
                                                     <p className="text-green-400 text-[10px] text-right">+{estimatedPoints} pts al completar el pedido</p>
@@ -253,7 +253,7 @@ const CartDrawer = ({ isOpen, onClose, stores, onOrderCreated, onOpenAuth }) => 
                                             {!user && (
                                                 <button
                                                     onClick={() => { handleClose(); onOpenAuth(); }}
-                                                    className="w-full mt-3 py-2.5 rounded-xl border border-voraz-yellow/30 text-voraz-yellow text-xs font-bold uppercase tracking-wide hover:bg-voraz-yellow/10 transition"
+                                                    className="w-full mt-3 py-2.5 rounded-xl border border-brand-secondary/30 text-brand-secondary text-xs font-bold uppercase tracking-wide hover:bg-brand-secondary/10 transition"
                                                 >
                                                     ⭐ Iniciá sesión para ganar {estimatedPoints} puntos
                                                 </button>
@@ -371,7 +371,7 @@ const CartDrawer = ({ isOpen, onClose, stores, onOrderCreated, onOpenAuth }) => 
                                         ))}
                                         <div className="border-t border-white/10 pt-2 mt-2 flex justify-between">
                                             <span className="text-white font-black uppercase text-sm">Total</span>
-                                            <span className="text-voraz-yellow font-black">${fmt(finalTotal)}</span>
+                                            <span className="text-brand-secondary font-black">${fmt(finalTotal)}</span>
                                         </div>
                                     </div>
                                 </div>

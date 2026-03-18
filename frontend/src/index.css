@@ -9,10 +9,16 @@
 
   --brand-primary: var(--primary-color);
   --brand-primary-hover: #C40510;
+  --brand-primary-rgb: 227, 6, 19;
   --brand-secondary: var(--secondary-color);
+  --brand-secondary-rgb: 245, 158, 11;
   --brand-bg: #0A0A0A;        /* Negro profundo premium */
   --brand-surface: #141414;   /* Gris oscuro para tarjetas */
   --brand-text: #F5F5F5;
+}
+
+.border-brand {
+  border-color: rgba(var(--brand-primary-rgb), 0.2);
 }
 
 body {

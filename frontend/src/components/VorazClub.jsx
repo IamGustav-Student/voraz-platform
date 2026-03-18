@@ -12,7 +12,7 @@ const typeConfig = {
     earned:   { label: 'Ganados',   color: 'text-green-400',  bg: 'bg-green-500/10',  sign: '+' },
     redeemed: { label: 'Canjeados', color: 'text-red-400',    bg: 'bg-red-500/10',    sign: '' },
     refund:   { label: 'Devuelto',  color: 'text-blue-400',   bg: 'bg-blue-500/10',   sign: '+' },
-    bonus:    { label: 'Bonus',     color: 'text-voraz-yellow', bg: 'bg-yellow-500/10', sign: '+' },
+    bonus:    { label: 'Bonus',     color: 'text-brand-secondary', bg: 'bg-brand-secondary/10', sign: '+' },
 };
 
 const VorazClub = ({ onBack, onOpenAuth }) => {
@@ -44,12 +44,12 @@ const VorazClub = ({ onBack, onOpenAuth }) => {
         return (
             <div className="flex flex-col items-center justify-center min-h-[60vh] px-6 text-center pb-32">
                 <div className="text-7xl mb-4">⭐</div>
-                <h2 className="text-3xl font-black text-white uppercase mb-2"><span className="text-voraz-yellow">Club</span></h2>
+                <h2 className="text-3xl font-black text-white uppercase mb-2"><span className="text-brand-secondary">Club</span></h2>
                 <p className="text-gray-400 text-sm mb-8 max-w-xs">Iniciá sesión para ver tus puntos, historial de pedidos y beneficios exclusivos.</p>
                 <motion.button
                     whileTap={{ scale: 0.95 }}
                     onClick={onOpenAuth}
-                    className="bg-voraz-red text-white px-8 py-4 rounded-xl font-black uppercase tracking-wide text-sm shadow-lg hover:bg-red-700 transition"
+                    className="bg-brand-primary text-white px-8 py-4 rounded-xl font-black uppercase tracking-wide text-sm shadow-lg hover:opacity-90 transition"
                 >
                     Ingresar / Registrarse
                 </motion.button>
@@ -81,21 +81,21 @@ const VorazClub = ({ onBack, onOpenAuth }) => {
                     <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 19l-7-7 7-7" /></svg>
                 </button>
                 <div className="flex-grow">
-                    <h2 className="text-2xl font-black text-white uppercase"><span className="text-voraz-yellow">Club</span></h2>
+                    <h2 className="text-2xl font-black text-white uppercase"><span className="text-brand-secondary">Club</span></h2>
                     <p className="text-gray-500 text-xs">Hola, {user.name.split(' ')[0]} 👋</p>
                 </div>
                 <button onClick={() => { logout(); onBack(); }} className="text-gray-500 hover:text-red-400 text-xs font-bold uppercase transition p-2">Salir</button>
             </div>
 
             {/* Tarjeta de puntos */}
-            <div className="relative bg-gradient-to-br from-voraz-red via-red-800 to-black rounded-2xl p-6 mb-6 overflow-hidden shadow-2xl border border-red-900/50">
+            <div className="relative bg-gradient-to-br from-brand-primary via-black/50 to-black rounded-2xl p-6 mb-6 overflow-hidden shadow-2xl border border-white/5">
                 <div className="absolute top-0 right-0 w-40 h-40 bg-white/5 rounded-full -translate-y-10 translate-x-10"></div>
                 <div className="absolute bottom-0 left-0 w-24 h-24 bg-black/20 rounded-full translate-y-8 -translate-x-8"></div>
                 <div className="relative">
                     <p className="text-white/60 text-xs uppercase tracking-widest font-bold mb-1">Tu saldo</p>
                     <div className="flex items-end space-x-2 mb-3">
                         <span className="text-5xl font-black text-white">{pointsData.points}</span>
-                        <span className="text-voraz-yellow font-bold text-lg mb-1">pts</span>
+                        <span className="text-brand-secondary font-bold text-lg mb-1">pts</span>
                     </div>
                     <div className="flex items-center space-x-2">
                         <div className={`w-2 h-2 rounded-full ${canRedeem ? 'bg-green-400' : 'bg-gray-500'}`}></div>
@@ -107,7 +107,7 @@ const VorazClub = ({ onBack, onOpenAuth }) => {
                     </div>
                     <div className="mt-3 bg-black/20 rounded-full h-1.5">
                         <div
-                            className="bg-voraz-yellow h-1.5 rounded-full transition-all"
+                            className="bg-brand-secondary h-1.5 rounded-full transition-all"
                             style={{ width: `${Math.min(100, (pointsData.points % POINTS_BLOCK) / POINTS_BLOCK * 100)}%` }}
                         ></div>
                     </div>
@@ -136,7 +136,7 @@ const VorazClub = ({ onBack, onOpenAuth }) => {
                     <button
                         key={key}
                         onClick={() => setActiveTab(key)}
-                        className={`flex-1 py-2.5 rounded-lg text-xs font-bold uppercase tracking-wide transition ${activeTab === key ? 'bg-voraz-red text-white shadow' : 'text-gray-500 hover:text-white'}`}
+                        className={`flex-1 py-2.5 rounded-lg text-xs font-bold uppercase tracking-wide transition ${activeTab === key ? 'bg-brand-primary text-white shadow' : 'text-gray-500 hover:text-white'}`}
                     >
                         {label}
                     </button>
@@ -191,7 +191,7 @@ const VorazClub = ({ onBack, onOpenAuth }) => {
                             <div className="flex justify-between items-center">
                                 <p className="text-gray-400 text-xs capitalize">{order.order_type === 'delivery' ? '🛵 Delivery' : '🏪 Retiro'}</p>
                                 <div className="text-right">
-                                    <p className="text-voraz-yellow font-black text-sm">{fmt(order.total)}</p>
+                                    <p className="text-brand-secondary font-black text-sm">{fmt(order.total)}</p>
                                     {order.points_earned > 0 && <p className="text-[9px] text-green-400">+{order.points_earned} pts</p>}
                                 </div>
                             </div>

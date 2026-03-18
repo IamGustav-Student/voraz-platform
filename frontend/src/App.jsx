@@ -146,9 +146,9 @@ function App() {
     switch (badge?.toUpperCase()) {
       case 'NUEVO': return 'bg-green-500 text-white shadow-[0_0_10px_rgba(34,197,94,0.4)]';
       case 'PICANTE': return 'bg-red-600 text-white shadow-[0_0_10px_rgba(220,38,38,0.4)]';
-      case 'BEST SELLER': return 'bg-voraz-yellow text-voraz-black shadow-[0_0_10px_rgba(242,201,76,0.4)]';
-      case 'ÍCONO': return 'bg-voraz-yellow text-voraz-black shadow-[0_0_10px_rgba(242,201,76,0.4)]';
-      case 'TOP': return 'bg-voraz-yellow text-voraz-black shadow-[0_0_10px_rgba(242,201,76,0.4)]';
+      case 'BEST SELLER': return 'bg-brand-secondary text-black shadow-[0_0_10px_rgba(var(--brand-secondary-rgb),0.4)]';
+      case 'ÍCONO': return 'bg-brand-secondary text-black shadow-[0_0_10px_rgba(var(--brand-secondary-rgb),0.4)]';
+      case 'TOP': return 'bg-brand-secondary text-black shadow-[0_0_10px_rgba(var(--brand-secondary-rgb),0.4)]';
       case 'CLÁSICO': return 'bg-gray-600 text-white';
       case 'COLLAB': return 'bg-purple-600 text-white shadow-[0_0_10px_rgba(147,51,234,0.4)]';
       case 'COSCU': return 'bg-purple-600 text-white shadow-[0_0_10px_rgba(147,51,234,0.4)]';
@@ -191,7 +191,7 @@ function App() {
                 <img src={product.image_url} className="w-full h-full object-cover brightness-75" />
                 <div className="absolute bottom-0 left-0 p-3 w-full bg-gradient-to-t from-black to-transparent">
                   <div className="text-white font-bold leading-none mb-1 text-sm">{product.name}</div>
-                  <div className="text-voraz-yellow text-xs font-bold">{fmt(product.price)}</div>
+                  <div className="text-brand-secondary text-xs font-bold">{fmt(product.price)}</div>
                 </div>
               </motion.div>
             ))}
@@ -243,7 +243,7 @@ function App() {
                         </div>
                         <div className="flex justify-between items-end mt-1 md:mt-4">
                           <div className="flex flex-col">
-                            <div className="text-voraz-yellow font-black text-sm md:text-base">{fmt(product.price)}</div>
+                            <div className="text-brand-secondary font-black text-sm md:text-base">{fmt(product.price)}</div>
                             {TENANT.loyaltyEnabled && product.points_earned > 0 && (
                               <div className="text-green-400 text-[9px] font-bold italic">+{product.points_earned} pts</div>
                             )}
@@ -635,7 +635,7 @@ function App() {
             <motion.button
               whileTap={{ scale: 0.9 }}
               onClick={() => setCurrentView('vorazburger')}
-              className={`w-14 h-14 rounded-full flex items-center justify-center shadow-lg border-4 border-voraz-black ${currentView === 'vorazburger' ? 'bg-voraz-yellow text-black' : 'bg-primary text-white'}`}>
+              className={`w-14 h-14 rounded-full flex items-center justify-center shadow-lg border-4 border-black ${currentView === 'vorazburger' ? 'bg-brand-secondary text-black' : 'bg-brand-primary text-white'}`}>
               <span className="font-black text-xs">{TENANT.brandName[0]}</span>
             </motion.button>
           </div>
@@ -670,7 +670,7 @@ function App() {
               </div>
               <div className="flex-grow p-6 md:p-10 flex flex-col justify-between overflow-y-auto">
                 <div>
-                  <div className="text-voraz-yellow font-bold text-xs uppercase tracking-widest mb-2">{selectedProduct.category}</div>
+                  <div className="text-brand-secondary font-bold text-xs uppercase tracking-widest mb-2">{selectedProduct.category}</div>
                   <h2 className="text-3xl md:text-4xl font-black text-white leading-none mb-4">{selectedProduct.name}</h2>
                   <p className="text-gray-300 text-sm md:text-lg font-light leading-relaxed mb-6">{selectedProduct.description}</p>
                   <div className="flex flex-wrap gap-2 mb-6">
@@ -844,10 +844,10 @@ const SkeletonCard = () => (
 
 const NavButtonPC = ({ active, onClick, image, label }) => (
   <button onClick={onClick} className={`flex flex-col items-center justify-center p-2 rounded-xl transition-all group ${active ? 'bg-white/5 -translate-y-1' : 'hover:bg-white/5'}`}>
-    <div className={`w-10 h-10 rounded-full overflow-hidden border-2 mb-1 transition-all ${active ? 'border-voraz-yellow scale-110 shadow-lg' : 'border-transparent opacity-80'}`}>
+    <div className={`w-10 h-10 rounded-full overflow-hidden border-2 mb-1 transition-all ${active ? 'border-brand-secondary scale-110 shadow-lg' : 'border-transparent opacity-80'}`}>
       <img src={image} alt={label} className="w-full h-full object-cover" />
     </div>
-    <span className={`text-[10px] font-bold uppercase tracking-wider ${active ? 'text-voraz-yellow' : 'text-gray-500'}`}>{label}</span>
+    <span className={`text-[10px] font-bold uppercase tracking-wider ${active ? 'text-brand-secondary' : 'text-gray-500'}`}>{label}</span>
   </button>
 );
 
@@ -876,7 +876,7 @@ const BottomNavItem = ({ icon, label, active, onClick, count }) => {
         )}
       </motion.div>
       <span className={`text-[9px] font-bold uppercase mt-1 ${active ? 'text-white' : 'text-gray-600'}`}>{label}</span>
-      {active && <motion.div layoutId="activeDot" className="absolute -bottom-1 w-1 h-1 bg-voraz-yellow rounded-full" />}
+      {active && <motion.div layoutId="activeDot" className="absolute -bottom-1 w-1 h-1 bg-brand-secondary rounded-full" />}
     </button>
   );
 };

@@ -55,7 +55,7 @@ const OrderTracking = ({ orderId, earnedPoints = 0, onBack }) => {
     if (loading) {
         return (
             <div className="flex flex-col items-center justify-center py-20">
-                <div className="w-12 h-12 border-4 border-voraz-red border-t-transparent rounded-full animate-spin mb-4"></div>
+                <div className="w-12 h-12 border-4 border-brand-primary border-t-transparent rounded-full animate-spin mb-4"></div>
                 <p className="text-gray-400">Cargando pedido...</p>
             </div>
         );
@@ -81,14 +81,14 @@ const OrderTracking = ({ orderId, earnedPoints = 0, onBack }) => {
                     <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 19l-7-7 7-7"/></svg>
                 </button>
                 <div>
-                    <h2 className="text-2xl font-black text-white uppercase">Pedido <span className="text-voraz-yellow">#{order.id}</span></h2>
+                    <h2 className="text-2xl font-black text-white uppercase">Pedido <span className="text-brand-secondary">#{order.id}</span></h2>
                     <p className="text-gray-500 text-xs">Se actualiza automáticamente</p>
                 </div>
             </div>
 
             {/* Estado grande */}
             {!isCancelled ? (
-                <div className="bg-voraz-gray rounded-2xl p-6 mb-6 text-center border border-white/5 shadow-xl">
+                <div className="bg-[#1a1a1a] rounded-2xl p-6 mb-6 text-center border border-white/5 shadow-xl">
                     <motion.div
                         key={order.status}
                         initial={{ scale: 0.5, opacity: 0 }} animate={{ scale: 1, opacity: 1 }}
@@ -110,7 +110,7 @@ const OrderTracking = ({ orderId, earnedPoints = 0, onBack }) => {
                         </div>
                     )}
                     {order.status === 'delivered' && (
-                        <p className="text-voraz-yellow font-bold">¡Gracias por elegir Voraz!</p>
+                        <p className="text-brand-secondary font-bold">¡Gracias por elegirnos!</p>
                     )}
 
                     {/* Mensaje de Puntos (Fase 2) */}
@@ -118,20 +118,20 @@ const OrderTracking = ({ orderId, earnedPoints = 0, onBack }) => {
                         <motion.div 
                             initial={{ opacity: 0, scale: 0.9 }}
                             animate={{ opacity: 1, scale: 1 }}
-                            className="mt-6 p-4 rounded-xl bg-gradient-to-r from-voraz-red/20 to-voraz-yellow/10 border border-voraz-yellow/20"
+                            className="mt-6 p-4 rounded-xl bg-gradient-to-r from-brand-primary/20 to-brand-secondary/10 border border-brand-secondary/20"
                         >
                             <div className="flex items-center justify-center gap-2 mb-1">
                                 <span className="text-xl">⭐</span>
                                 <p className="text-white font-bold text-sm">¡Ganaste puntos!</p>
                             </div>
-                            <p className="text-voraz-yellow text-2xl font-black">{earnedPoints} pts</p>
+                            <p className="text-brand-secondary text-2xl font-black">{earnedPoints} pts</p>
                             <p className="text-[10px] text-gray-500 uppercase font-bold mt-1 tracking-widest">
                                 Se acreditarán cuando el pedido sea entregado
                             </p>
                             
                             {!order.user_id && (
                                 <div className="mt-3 pt-3 border-t border-white/5">
-                                    <p className="text-gray-400 text-[10px] mb-2">Para no perderlos, registrate en Voraz Club</p>
+                                    <p className="text-gray-400 text-[10px] mb-2">Para no perderlos, registrate en nuestro Club</p>
                                     <button 
                                         onClick={() => window.location.reload()} // Esto forzará el AuthModal vía persistencia o similar, o simplemente invita a registrarse
                                         className="bg-white/10 hover:bg-white/20 text-white text-[9px] font-black py-1.5 px-3 rounded-lg uppercase transition"
@@ -153,11 +153,11 @@ const OrderTracking = ({ orderId, earnedPoints = 0, onBack }) => {
                                     const current = info.step === currentStep;
                                     return (
                                         <div key={s} className="flex flex-col items-center flex-1">
-                                            <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm transition-all ${current ? 'bg-voraz-red shadow-lg scale-110' : active ? 'bg-voraz-red/50' : 'bg-white/10'}`}>
+                                            <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm transition-all ${current ? 'bg-brand-primary shadow-lg scale-110' : active ? 'bg-brand-primary/50' : 'bg-white/10'}`}>
                                                 {active ? info.icon : <span className="text-gray-600 text-xs">{idx + 1}</span>}
                                             </div>
                                             {idx < steps.length - 1 && (
-                                                <div className={`h-0.5 w-full mt-4 -mb-4 transition-all ${active ? 'bg-voraz-red/50' : 'bg-white/10'}`}></div>
+                                                <div className={`h-0.5 w-full mt-4 -mb-4 transition-all ${active ? 'bg-brand-primary/50' : 'bg-white/10'}`}></div>
                                             )}
                                         </div>
                                     );
@@ -174,7 +174,7 @@ const OrderTracking = ({ orderId, earnedPoints = 0, onBack }) => {
             )}
 
             {/* Info del pedido */}
-            <div className="bg-voraz-gray rounded-2xl p-5 mb-4 border border-white/5">
+            <div className="bg-[#1a1a1a] rounded-2xl p-5 mb-4 border border-white/5">
                 <div className="mb-6 bg-blue-500/10 border border-blue-500/20 rounded-2xl p-4 flex items-center space-x-3">
                     <span className="text-2xl">⏳</span>
                     <div>
@@ -200,12 +200,12 @@ const OrderTracking = ({ orderId, earnedPoints = 0, onBack }) => {
                 </div>
                 <div className="border-t border-white/10 pt-3 flex justify-between">
                     <span className="text-white font-black uppercase text-sm">Total</span>
-                    <span className="text-voraz-yellow font-black">${fmt(order.total)}</span>
+                    <span className="text-brand-secondary font-black">${fmt(order.total)}</span>
                 </div>
             </div>
 
             {/* Info contacto/envío */}
-            <div className="bg-voraz-gray rounded-2xl p-5 border border-white/5 space-y-2">
+            <div className="bg-[#1a1a1a] rounded-2xl p-5 border border-white/5 space-y-2">
                 <div className="flex justify-between text-sm">
                     <span className="text-gray-400">Tipo</span>
                     <span className="text-white font-bold capitalize">{order.order_type === 'delivery' ? '🛵 Delivery' : '🏪 Retiro en local'}</span>
