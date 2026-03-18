@@ -209,6 +209,18 @@ const AuthModal = ({ isOpen, onClose }) => {
             {error && (
               <div className="bg-red-500/10 border border-red-500/30 rounded-xl px-4 py-3">
                 <p className="text-red-400 text-sm">{error}</p>
+                {(error.toLowerCase().includes('venció') || error.toLowerCase().includes('vencida')) && (
+                  <div className="mt-3 text-center">
+                    <a
+                      href={`https://${import.meta.env.VITE_GASTRORED_DOMAIN || 'gastrored.com.ar'}/#planes`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-block bg-brand-primary hover:bg-brand-primary-hover text-white font-bold py-2 px-4 rounded-lg text-xs uppercase tracking-wider transition"
+                    >
+                      Ver planes de suscripción
+                    </a>
+                  </div>
+                )}
               </div>
             )}
 
