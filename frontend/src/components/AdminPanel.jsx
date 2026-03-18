@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { QRCodeCanvas } from 'qrcode.react';
 import { useAuth } from '../context/AuthContext';
-import { adminFetch } from '../services/api';
+import { adminFetch, patchOrdersPaused } from '../services/api';
 
 // ── Skeletons de carga (Tailwind) para tablas ─────────────────────────────────
 function TableRowSkeleton({ cols = 4 }) {
@@ -297,7 +297,7 @@ export default function AdminPanel({ onClose }) {
               {section === 'Fidelización' && <LoyaltySection items={data.Fidelización || {}} token={token} />}
               {section === 'Videos'      && <VideosSection token={token} />}
               {section === 'Noticias'    && <NewsSection token={token} />}
-              {section === 'Pedidos'     && <OrdersSection items={data.Pedidos || []} token={token} reload={() => load('Pedidos')} />}
+              {section === 'Pedidos'     && <OrdersSection items={data.Pedidos || []} token={token} reload={() => load('Pedidos')} mpData={data.MercadoPago} />}
               {section === 'MercadoPago' && <MercadoPagoSection data={data.MercadoPago} token={token} reload={() => load('MercadoPago')} />}
               {section === 'Branding'    && <BrandingSection token={token} onUpgrade={() => setSection('Suscripción')} />}
               {section === 'Menú QR'     && <QRSection token={token} onUpgrade={() => setSection('Suscripción')} />}
@@ -1062,9 +1062,31 @@ const STATUS_LABELS = {
 
 const PENDING_STATUSES = ['pending', 'confirmed', 'preparing', 'ready'];
 
-function OrdersSection({ items, token, reload }) {
+function OrdersSection({ items, token, reload, mpData }) {
   const [updating, setUpdating] = useState(null);
   const [msg, setMsg] = useState('');
+  const [ordersPaused, setOrdersPaused] = useState(mpData?.orders_paused ?? false);
+  const [pauseLoading, setPauseLoading] = useState(false);
+
+  // Sincronizar si cambia mpData desde afuera
+  useEffect(() => {
+    if (mpData && typeof mpData.orders_paused === 'boolean') {
+      setOrdersPaused(mpData.orders_paused);
+    }
+  }, [mpData]);
+
+  const togglePause = async () => {
+    setPauseLoading(true);
+    try {
+      await patchOrdersPaused(!ordersPaused, token);
+      setOrdersPaused(p => !p);
+      setMsg(!ordersPaused ? '🔴 Pedidos pausados. Los clientes no podrán realizar nuevos pedidos.' : '✅ Pedidos activados. El comercio acepta nuevos pedidos.');
+      setTimeout(() => setMsg(''), 4000);
+    } catch (e) {
+      setMsg('Error: ' + e.message);
+    }
+    setPauseLoading(false);
+  };
 
   const markDelivered = async (id) => {
     setUpdating(id); setMsg('');
@@ -1080,8 +1102,43 @@ function OrdersSection({ items, token, reload }) {
 
   return (
     <div>
-      <h2 className="text-2xl font-bold mb-6">Pedidos</h2>
-      {msg && <div className="bg-red-900/50 text-red-300 px-4 py-2 rounded-lg mb-4 text-sm">{msg}</div>}
+      <h2 className="text-2xl font-bold mb-4">Pedidos</h2>
+
+      {/* ── Toggle pausa de pedidos ── */}
+      <div className={`mb-6 rounded-2xl p-5 border flex flex-col sm:flex-row items-start sm:items-center gap-4 transition-all ${
+        ordersPaused
+          ? 'bg-red-950/40 border-red-500/40'
+          : 'bg-green-950/30 border-green-500/30'
+      }`}>
+        <div className="flex items-center gap-3 flex-1">
+          <div className={`w-3 h-3 rounded-full flex-shrink-0 ${ordersPaused ? 'bg-red-500 animate-pulse' : 'bg-green-400'}`} />
+          <div>
+            <p className={`font-bold text-sm ${ordersPaused ? 'text-red-300' : 'text-green-300'}`}>
+              {ordersPaused ? '🔴 Pedidos pausados — los clientes no pueden pedir' : '🟢 Aceptando pedidos'}
+            </p>
+            <p className="text-xs text-gray-500 mt-0.5">
+              {ordersPaused
+                ? 'Activá para volver a recibir pedidos cuando estés listo.'
+                : 'Pausá si estás saturado de trabajo o cerrado temporalmente.'}
+            </p>
+          </div>
+        </div>
+        <button
+          onClick={togglePause}
+          disabled={pauseLoading}
+          className={`flex-shrink-0 px-6 py-2.5 rounded-xl font-black text-sm uppercase tracking-wide transition-all disabled:opacity-50 ${
+            ordersPaused
+              ? 'bg-green-600 hover:bg-green-500 text-white shadow-lg shadow-green-900/30'
+              : 'bg-red-600 hover:bg-red-500 text-white shadow-lg shadow-red-900/30'
+          }`}
+        >
+          {pauseLoading ? '...' : ordersPaused ? '✅ Reactivar pedidos' : '🔴 Pausar pedidos'}
+        </button>
+      </div>
+
+      {msg && <div className={`mb-4 px-4 py-2 rounded-lg text-sm font-bold ${
+        msg.startsWith('Error') ? 'bg-red-900/50 text-red-300' : 'bg-blue-900/30 text-blue-300'
+      }`}>{msg}</div>}
 
       {pending.length > 0 && (
         <>
@@ -1636,7 +1693,7 @@ function SubscriptionSection({ data, token, reload }) {
 
       <div className="mt-12 bg-gray-900/50 border border-white/5 rounded-2xl p-6 text-center">
         <p className="text-sm text-gray-500 mb-2">¿Necesitás ayuda con tu suscripción o factura?</p>
-        <a href="mailto:soporte@gastrored.com.ar" className="text-blue-400 font-bold hover:underline">Contactar a Soporte 📩</a>
+        <a href="mailto:contacto@programadorgs.com.ar" className="text-blue-400 font-bold hover:underline">Contactar a Soporte 📩</a>
       </div>
     </div>
   );

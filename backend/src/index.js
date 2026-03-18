@@ -160,7 +160,7 @@ app.get('/api/settings', tenantMiddleware, async (req, res) => {
     const tenantId = getTenantId(req);
     try {
         const result = await query(
-            `SELECT t.id, ts.cash_on_delivery, t.brand_name, t.brand_color_primary, t.brand_color_secondary,
+            `SELECT t.id, ts.cash_on_delivery, ts.orders_paused, t.brand_name, t.brand_color_primary, t.brand_color_secondary,
                     t.brand_logo_url, t.slogan, t.plan_type, t.subdomain,
                     ts.primary_color, ts.secondary_color, ts.font_family, ts.logo_url, ts.custom_branding_enabled,
                     ts.loyalty_enabled, ts.points_redeem_value
@@ -175,6 +175,7 @@ app.get('/api/settings', tenantMiddleware, async (req, res) => {
             data: {
                 id: cfg.id || tenantId,
                 cash_on_delivery: cfg.cash_on_delivery !== false,
+                orders_paused: !!cfg.orders_paused,
                 brand_name: cfg.brand_name || 'GastroRed',
                 brand_color_primary: cfg.brand_color_primary || '#E30613',
                 brand_color_secondary: cfg.brand_color_secondary || '#1A1A1A',
@@ -192,7 +193,7 @@ app.get('/api/settings', tenantMiddleware, async (req, res) => {
             }
         });
     } catch {
-        res.json({ status: 'success', data: { cash_on_delivery: true, brand_name: 'GastroRed' } });
+        res.json({ status: 'success', data: { cash_on_delivery: true, orders_paused: false, brand_name: 'GastroRed' } });
     }
 });
 
@@ -252,4 +253,5 @@ app.listen(PORT, async () => {
     await runMigration('phase27_promos.sql');
     await runMigration('phase28_loyalty_fix.sql');    // Fidelización: fix CHECK constraint, sync tenant_id_fk, default points
     await runMigration('phase29_password_reset.sql');  // Password reset tokens table
+    await runMigration('phase30_orders_paused.sql');    // Pausa de recepción de pedidos por comercio
 });

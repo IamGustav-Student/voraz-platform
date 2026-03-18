@@ -188,12 +188,23 @@ export const adminFetch = async (path, token, options = {}) => {
 export const getTenantSettings = async () => {
   try {
     const response = await fetch(`${API_URL}/settings`, { headers: baseHeaders });
-    if (!response.ok) return { cash_on_delivery: true };
+    if (!response.ok) return { cash_on_delivery: true, orders_paused: false };
     const data = await response.json();
-    return data.data || { cash_on_delivery: true };
+    return data.data || { cash_on_delivery: true, orders_paused: false };
   } catch {
-    return { cash_on_delivery: true };
+    return { cash_on_delivery: true, orders_paused: false };
   }
+};
+
+export const patchOrdersPaused = async (paused, token) => {
+  const res = await fetch(`${API_URL}/admin/orders-pause`, {
+    method: 'PATCH',
+    headers: { ...baseHeaders, Authorization: `Bearer ${token}` },
+    body: JSON.stringify({ paused }),
+  });
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.message || 'Error al cambiar el estado de pedidos');
+  return data;
 };
 
 export const getMPConfig = async () => {

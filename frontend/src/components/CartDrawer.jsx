@@ -18,6 +18,7 @@ const CartDrawer = ({ isOpen, onClose, stores, onOrderCreated, onOpenAuth }) => 
     const [mpConfigured, setMpConfigured] = useState(null); // null = cargando, true/false = resultado
     const [form, setForm] = useState({ name: '', phone: '', address: '', store_id: '', notes: '' });
     const [loyaltyConfig, setLoyaltyConfig] = useState({ enabled: false, value: 0 });
+    const [ordersPaused, setOrdersPaused] = useState(false);
     const [pointsToRedeem, setPointsToRedeem] = useState(0);
     const [error, setError] = useState('');
 
@@ -30,6 +31,7 @@ const CartDrawer = ({ isOpen, onClose, stores, onOrderCreated, onOpenAuth }) => 
     useEffect(() => {
         getTenantSettings().then(s => {
             setCashOnDeliveryEnabled(s.cash_on_delivery !== false);
+            setOrdersPaused(!!s.orders_paused);
             setLoyaltyConfig({
                 enabled: !!s.loyalty_enabled,
                 value: s.points_redeem_value || 0
@@ -391,14 +393,31 @@ const CartDrawer = ({ isOpen, onClose, stores, onOrderCreated, onOpenAuth }) => 
                         {step !== STEPS.PROCESSING && (
                             <div className="px-6 py-5 border-t border-white/10 flex-shrink-0">
                                 {step === STEPS.CART ? (
-                                    <motion.button whileTap={{ scale: 0.97 }}
-                                        onClick={() => items.length > 0 && setStep(STEPS.CHECKOUT)}
-                                        disabled={items.length === 0}
-                                        className={`w-full py-4 rounded-xl font-black uppercase tracking-wide text-sm flex items-center justify-between px-6 transition ${items.length > 0 ? 'bg-primary text-white shadow-lg hover:opacity-90' : 'bg-white/5 text-gray-600 cursor-not-allowed'}`}
-                                    >
-                                        <span>Continuar</span>
-                                        <span>${fmt(finalTotal)}</span>
-                                    </motion.button>
+                                    <>
+                                        {ordersPaused && (
+                                            <div className="mb-3 flex items-start gap-3 bg-red-900/30 border border-red-500/40 rounded-xl px-4 py-3">
+                                                <span className="text-red-400 text-xl flex-shrink-0">🔴</span>
+                                                <p className="text-red-300 text-sm font-bold">
+                                                    Este comercio no está aceptando nuevos pedidos en este momento.
+                                                    <br /><span className="text-red-400 font-normal text-xs">Intentá más tarde o contactá al comercio.</span>
+                                                </p>
+                                            </div>
+                                        )}
+                                        <motion.button whileTap={{ scale: 0.97 }}
+                                            onClick={() => items.length > 0 && !ordersPaused && setStep(STEPS.CHECKOUT)}
+                                            disabled={items.length === 0 || ordersPaused}
+                                            className={`w-full py-4 rounded-xl font-black uppercase tracking-wide text-sm flex items-center justify-between px-6 transition ${
+                                                ordersPaused
+                                                    ? 'bg-red-900/30 border border-red-500/30 text-red-400 cursor-not-allowed'
+                                                    : items.length > 0
+                                                        ? 'bg-primary text-white shadow-lg hover:opacity-90'
+                                                        : 'bg-white/5 text-gray-600 cursor-not-allowed'
+                                            }`}
+                                        >
+                                            <span>{ordersPaused ? '🔴 Pedidos pausados' : 'Continuar'}</span>
+                                            {!ordersPaused && <span>${fmt(finalTotal)}</span>}
+                                        </motion.button>
+                                    </>
                                 ) : (
                                     <motion.button whileTap={{ scale: 0.97 }}
                                         onClick={handleCheckout}

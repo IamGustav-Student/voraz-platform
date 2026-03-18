@@ -442,7 +442,7 @@ function PostPaymentScreen({ storeId, subResult, onContinue }) {
             </p>
             <p className="font-mono text-xs text-gray-600">store_id: {storeId}</p>
             <div className="flex flex-col w-full max-w-sm gap-3">
-                <a href={`mailto:hola@${GASTRORED_DOMAIN}?subject=Activación%20store%20${storeId}`}
+                <a href={`mailto:contacto@programadorgs.com.ar?subject=Activación%20store%20${storeId}`}
                     className="w-full py-3 text-sm font-bold text-center text-white bg-white/10 hover:bg-white/20 rounded-xl">
                     Contactar soporte 📩
                 </a>
@@ -527,6 +527,10 @@ export default function GastroRedLanding() {
     const [plans, setPlans] = useState(FALLBACK_PLANS);
     const [loadingPlans, setLoadingPlans] = useState(true);
     const [postPayment, setPostPayment] = useState(null); // abre pantalla post-pago
+
+    // Extraer días de trial dinámicos desde los planes cargados de la API
+    const trialPlan = plans.find(p => p.plan_type === 'Trial');
+    const trialDaysLabel = trialPlan?.period || '7 días';
 
     // Cargar planes dinámicos
     useEffect(() => {
@@ -684,7 +688,7 @@ export default function GastroRedLanding() {
                         <div className="flex flex-col justify-center gap-4 sm:flex-row">
                             <a href="#planes"
                                 className="inline-flex items-center justify-center gap-2 px-8 py-4 text-lg font-black text-white transition-all bg-red-600 shadow-2xl hover:bg-red-500 rounded-xl shadow-red-900/50 hover:shadow-red-900/70 hover:-translate-y-1">
-                                Probá gratis 7 días
+                                Probá gratis {trialDaysLabel}
                                 <span>→</span>
                             </a>
                             <a href="#como-funciona"
@@ -923,18 +927,18 @@ export default function GastroRedLanding() {
                                 <span className="text-red-500">tu restaurante?</span>
                             </h2>
                             <p className="max-w-xl mx-auto mb-8 text-lg text-gray-300">
-                                Arrancá con 7 días gratis. Sin técnicos, sin complicaciones, sin letra chica.
+                                Arrancá con {trialDaysLabel} gratis. Sin técnicos, sin complicaciones, sin letra chica.
                                 En minutos tu carta está online.
                             </p>
                             <div className="flex flex-col justify-center gap-4 sm:flex-row">
                                 <a
-                                    href="mailto:hola@gastrored.com.ar?subject=Quiero sumarme a GastroRed&body=Hola! Me interesa probar GastroRed para mi restaurante."
+                                    href="mailto:contacto@programadorgs.com.ar?subject=Quiero sumarme a GastroRed&body=Hola! Me interesa probar GastroRed para mi restaurante."
                                     className="inline-flex items-center justify-center gap-2 px-8 py-4 text-lg font-black text-white transition-all bg-red-600 shadow-2xl hover:bg-red-500 rounded-xl shadow-red-900/50 hover:-translate-y-1"
                                 >
                                     Escribinos por email 📩
                                 </a>
                                 <a
-                                    href="https://wa.me/5491112345678?text=Hola!%20Quiero%20probar%20GastroRed%20para%20mi%20restaurante."
+                                    href="https://wa.me/5492473468486?text=Hola!%20Quiero%20probar%20GastroRed%20para%20mi%20restaurante."
                                     target="_blank" rel="noreferrer"
                                     className="inline-flex items-center justify-center gap-2 bg-[#25D366]/20 hover:bg-[#25D366]/30 border border-[#25D366]/40 text-[#25D366] px-8 py-4 rounded-xl font-black text-lg transition-all"
                                 >

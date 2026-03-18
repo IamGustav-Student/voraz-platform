@@ -14,6 +14,7 @@ import {
   getMercadopagoConfig, saveMercadopagoConfig,
   getBranding, updateBranding,
   getQRConfig,
+  toggleOrdersPaused,
 } from '../controllers/admin.controller.js';
 import { getAdminPromos, createPromo, updatePromo, deletePromo } from '../controllers/promos.controller.js';
 import { getStoreId } from '../utils/tenant.js';
@@ -81,5 +82,8 @@ router.get('/subscription', async (req, res) => {
   }
 });
 router.post('/subscription/upgrade', createUpgradeCheckout);
+
+// Pausa de pedidos
+router.patch('/orders-pause', toggleOrdersPaused);
 
 export default router;

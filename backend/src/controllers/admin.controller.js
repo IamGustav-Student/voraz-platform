@@ -363,7 +363,7 @@ export const getMercadopagoConfig = async (req, res) => {
   try {
     const storeId = await getStoreId(req);
     const result = await query(
-      'SELECT mp_public_key, mp_sandbox, mp_access_token, store_name, store_email, store_phone, store_address, cash_on_delivery FROM tenant_settings WHERE store_id = $1 LIMIT 1',
+      'SELECT mp_public_key, mp_sandbox, mp_access_token, store_name, store_email, store_phone, store_address, cash_on_delivery, orders_paused FROM tenant_settings WHERE store_id = $1 LIMIT 1',
       [storeId]
     );
     const settings = result.rows[0] || {};
@@ -375,6 +375,7 @@ export const getMercadopagoConfig = async (req, res) => {
         access_token_set: !!(settings.mp_access_token),
         mp_sandbox: settings.mp_sandbox ?? false,
         cash_on_delivery: settings.cash_on_delivery !== false,
+        orders_paused: !!settings.orders_paused,
         webhook_url: `${backendUrl}/api/payments/webhook?store_id=${storeId}`,
         store_name: settings.store_name || null,
         store_email: settings.store_email || null,
@@ -520,4 +521,39 @@ export const updateLoyaltyConfig = async (req, res) => {
     res.json({ status: 'success', message: 'Configuración de fidelización actualizada.' });
   } catch (e) { res.status(500).json({ status: 'error', message: e.message }); }
 };
+
+// ── PAUSA DE PEDIDOS ───────────────────────────────────────────────────────────
+/**
+ * PATCH /api/admin/orders-pause
+ * Body: { paused: boolean }
+ * Activa o desactiva la recepción de nuevos pedidos para el comercio.
+ */
+export const toggleOrdersPaused = async (req, res) => {
+  try {
+    const storeId = await getStoreId(req);
+    const tenantId = getTenantId(req);
+    const { paused } = req.body;
+    if (typeof paused !== 'boolean') {
+      return res.status(400).json({ status: 'error', message: 'El campo "paused" debe ser un booleano.' });
+    }
+
+    await query(
+      `INSERT INTO tenant_settings (store_id, tenant_id, tenant_id_fk, orders_paused, updated_at)
+       VALUES ($1, $2, $2, $3, NOW())
+       ON CONFLICT (store_id) DO UPDATE SET
+         orders_paused = $3,
+         updated_at    = NOW()`,
+      [storeId, String(tenantId), paused]
+    );
+
+    res.json({
+      status: 'success',
+      message: paused ? '🔴 Comercio pausado. No se aceptan nuevos pedidos.' : '✅ Comercio activo. Se aceptan pedidos.',
+      data: { orders_paused: paused },
+    });
+  } catch (e) {
+    res.status(500).json({ status: 'error', message: e.message });
+  }
+};
+
 
