@@ -427,7 +427,8 @@ export const getBranding = async (req, res) => {
     res.json({
       status: 'success',
       data: {
-        custom_branding_enabled: !!branding.custom_branding_enabled || (branding.plan_type && branding.plan_type.toLowerCase().trim() === 'expert'),
+        custom_branding_enabled: !!branding.custom_branding_enabled || 
+                                 (branding.plan_type && (branding.plan_type.toLowerCase().trim() === 'expert' || branding.plan_type.toLowerCase().trim() === 'full digital')),
         plan_type: branding.plan_type || 'Full Digital',
         primary_color:   branding.primary_color   || null,
         secondary_color: branding.secondary_color || null,
@@ -442,12 +443,13 @@ export const updateBranding = async (req, res) => {
   try {
     const tenantId = getTenantId(req);
     
-    // Validar plan Expert
+    // Validar plan Expert o Full Digital
     const tenantCheck = await query('SELECT plan_type FROM tenants WHERE id::text = $1::text OR subdomain = $1::text', [String(tenantId)]);
-    if (tenantCheck.rows[0]?.plan_type?.toLowerCase().trim() !== 'expert') {
+    const plan = tenantCheck.rows[0]?.plan_type?.toLowerCase().trim();
+    if (plan !== 'expert' && plan !== 'full digital') {
       return res.status(403).json({ 
         status: 'error', 
-        message: 'Función exclusiva del Plan Expert.' 
+        message: 'Función exclusiva del Plan Full Digital o Expert.' 
       });
     }
 

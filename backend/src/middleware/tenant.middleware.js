@@ -208,13 +208,15 @@ export const requireCustomBranding = async (req, res, next) => {
       [req.tenant.id]
     );
     
-    if ((result.rows.length > 0 && result.rows[0].custom_branding_enabled) || (req.tenant.plan_type && req.tenant.plan_type.toLowerCase().trim() === 'expert')) {
+    const plan = req.tenant.plan_type?.toLowerCase().trim();
+    if ((result.rows.length > 0 && result.rows[0].custom_branding_enabled) || 
+        (plan === 'expert' || plan === 'full digital')) {
       return next();
     }
     
     return res.status(403).json({
       status: 'error',
-      message: 'Tu plan actual no incluye branding personalizado (requiere Plan Expert). Contactá al Súper Admin',
+      message: 'Tu plan actual no incluye branding personalizado (requiere Plan Full Digital o Expert). Contactá al Súper Admin',
     });
   } catch (err) {
     console.error('requireCustomBranding error:', err);

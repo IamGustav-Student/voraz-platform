@@ -383,8 +383,8 @@ function App() {
 
   const LocationsView = () => (
     <motion.div initial="initial" animate="in" exit="out" variants={pageVariants} transition={pageTransition} className="container mx-auto px-4 py-8 pb-32">
-      <Helmet><title>Ir | {TENANT.brandName}</title></Helmet>
-      <div className="text-center mb-8"><h2 className="text-3xl md:text-5xl font-black uppercase italic mb-2"> <span className="text-white">Ir</span> 🏢</h2></div>
+      <Helmet><title>Locales | {TENANT.brandName}</title></Helmet>
+      <div className="pt-4"></div>
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         {stores.map((store) => {
           const mapsUrl = store.waze_link ||
@@ -443,6 +443,7 @@ function App() {
     </motion.div>
   );
 
+
   const DeliveryView = () => (
     <motion.div initial="initial" animate="in" exit="out" variants={pageVariants} transition={pageTransition} className="container mx-auto px-4 py-8 pb-32">
       <Helmet><title>Delivery | {TENANT.brandName}</title></Helmet>
@@ -490,11 +491,9 @@ function App() {
       {/* HEADER PC */}
       <header className={`hidden md:block sticky top-0 z-50 h-24 transition-all duration-300 ${isScrolled ? 'bg-[#121212] border-b border-white/10 shadow-xl' : 'bg-[#121212] py-4'}`}>
         <div className="container mx-auto px-4 h-full flex items-center justify-between">
-          <div className="cursor-pointer hover:opacity-80 transition" onClick={() => setCurrentView('menu')}>
-            {TENANT.logo
-              ? <img src={TENANT.logo} alt={TENANT.brandName} className="h-16 object-contain" />
-              : <span className="text-2xl font-black uppercase italic text-brand-primary">{TENANT.brandName}</span>
-            }
+          <div className="cursor-pointer hover:opacity-80 transition flex items-center space-x-3" onClick={() => setCurrentView('menu')}>
+            {TENANT.logo && <img src={TENANT.logo} alt={TENANT.brandName} className="h-16 object-contain" />}
+            <span className="text-2xl font-black uppercase italic text-brand-primary">{TENANT.brandName}</span>
           </div>
           <nav className="flex space-x-6">
             <NavButtonPC active={currentView === 'menu'} onClick={() => setCurrentView('menu')} image="/images/menu.jpg" label="Menú" />
@@ -550,10 +549,10 @@ function App() {
 
       {/* HEADER MÓVIL */}
       <header className="md:hidden sticky top-0 z-40 bg-[#121212] border-b border-white/10 h-14 flex items-center justify-between px-4 shadow-xl">
-        {TENANT.logo
-          ? <img src={TENANT.logo} className="h-8 object-contain" alt={TENANT.brandName} />
-          : <span className="text-xl font-black uppercase italic text-brand-primary">{TENANT.brandName}</span>
-        }
+        <div className="flex items-center space-x-2">
+          {TENANT.logo && <img src={TENANT.logo} className="h-8 object-contain" alt={TENANT.brandName} />}
+          <span className="text-xl font-black uppercase italic text-brand-primary">{TENANT.brandName}</span>
+        </div>
         <div className="flex items-center space-x-2">
           <motion.button whileTap={{ scale: 0.9 }}
             onClick={() => user ? setCurrentView('club') : setIsAuthOpen(true)}

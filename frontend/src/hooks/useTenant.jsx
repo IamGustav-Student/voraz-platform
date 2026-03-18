@@ -62,6 +62,16 @@ export function TenantProvider({ children }) {
           subdomain: s.subdomain || null,
           loaded: true,
         });
+
+        // Inyectar variables CSS dinámicamente
+        const root = document.documentElement;
+        if (s.brand_color_primary) {
+          root.style.setProperty('--brand-primary', s.brand_color_primary);
+          root.style.setProperty('--brand-primary-hover', s.brand_color_primary + 'cc'); // 80% opacidad
+        }
+        if (s.brand_color_secondary) {
+          root.style.setProperty('--brand-secondary', s.brand_color_secondary);
+        }
       })
       .catch(() => {
         setTenant(prev => ({ ...prev, loaded: true }));

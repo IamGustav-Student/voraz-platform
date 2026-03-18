@@ -175,6 +175,14 @@ const OrderTracking = ({ orderId, earnedPoints = 0, onBack }) => {
 
             {/* Info del pedido */}
             <div className="bg-voraz-gray rounded-2xl p-5 mb-4 border border-white/5">
+                <div className="mb-6 bg-blue-500/10 border border-blue-500/20 rounded-2xl p-4 flex items-center space-x-3">
+                    <span className="text-2xl">⏳</span>
+                    <div>
+                        <p className="text-blue-300 font-bold text-sm">Tiempo estimado de entrega</p>
+                        <p className="text-white font-black text-lg">30 Minutos</p>
+                    </div>
+                </div>
+
                 <h4 className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-3">Detalle del pedido</h4>
                 <div className="space-y-2 mb-3">
                     {order.items?.map(item => (
