@@ -314,11 +314,14 @@ export const getDashboardStats = async (req, res) => {
         LIMIT 5
       `, [storeId]),
 
-      // 5. Info de suscripción para el Hero Banner
+      // 5. Info de suscripción para el Hero Banner (Unified Branding)
       query(`
-        SELECT id, plan_type, subscription_expires_at, brand_name, status,
-               brand_color_primary, brand_color_secondary
-        FROM tenants WHERE id::text = $1::text
+        SELECT t.id, t.plan_type, t.subscription_expires_at, t.brand_name, t.status,
+               COALESCE(ts.primary_color, t.brand_color_primary) as brand_color_primary,
+               COALESCE(ts.secondary_color, t.brand_color_secondary) as brand_color_secondary
+        FROM tenants t
+        LEFT JOIN tenant_settings ts ON ts.tenant_id_fk = t.id
+        WHERE t.id::text = $1::text
       `, [String(tenantId)]),
 
       // 6. Config de puntos (para saber total asignados)
@@ -504,7 +507,13 @@ export const getBranding = async (req, res) => {
   try {
     const tenantId = getTenantId(req);
     const result = await query(
-      `SELECT ts.primary_color, ts.secondary_color, ts.font_family, ts.logo_url, ts.custom_branding_enabled, t.plan_type
+      `SELECT 
+          COALESCE(ts.primary_color, t.brand_color_primary) as primary_color,
+          COALESCE(ts.secondary_color, t.brand_color_secondary) as secondary_color,
+          ts.font_family, 
+          COALESCE(ts.logo_url, t.brand_logo_url) as logo_url,
+          ts.custom_branding_enabled, 
+          t.plan_type
        FROM tenants t
        LEFT JOIN tenant_settings ts ON ts.tenant_id_fk = t.id
        WHERE t.id::text = $1::text OR t.subdomain = $1::text LIMIT 1`,
@@ -517,9 +526,9 @@ export const getBranding = async (req, res) => {
         custom_branding_enabled: !!branding.custom_branding_enabled || 
                                  (branding.plan_type && (branding.plan_type.toLowerCase().trim() === 'expert' || branding.plan_type.toLowerCase().trim() === 'full digital')),
         plan_type: branding.plan_type || 'Full Digital',
-        primary_color:   branding.primary_color   || null,
-        secondary_color: branding.secondary_color || null,
-        font_family:     branding.font_family     || null,
+        primary_color:   branding.primary_color   || '#E30613',
+        secondary_color: branding.secondary_color || '#1A1A1A',
+        font_family:     branding.font_family     || 'Inter',
         logo_url:        branding.logo_url        || null,
       }
     });

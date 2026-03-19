@@ -395,6 +395,13 @@ function DashboardHero({ subscription }) {
           <p className="text-gray-400 max-w-md">
             Tu tienda está funcionando al 100%. Seguí potenciando tus ventas con las métricas de hoy.
           </p>
+          
+          <button 
+            onClick={() => window.print()}
+            className="no-print mt-6 flex items-center justify-center gap-2 bg-white/10 hover:bg-white/20 text-white px-5 py-2.5 rounded-xl font-black text-xs transition-all border border-white/10 active:scale-95 shadow-lg w-full sm:w-auto"
+          >
+            <span>📥</span> Exportar Reporte (PDF)
+          </button>
         </div>
 
         {subscription?.expires_at && (
@@ -624,7 +631,7 @@ function DashboardSection({ data }) {
           <div className="w-16 h-16 bg-purple-500/20 rounded-full flex items-center justify-center text-3xl mb-4 border border-purple-500/20">
             ✨
           </div>
-          <h3 className="font-black text-white mb-2">Fidelización Voraz</h3>
+          <h3 className="font-black text-white mb-2">Fidelización {subscription?.brand_name || 'Comercio'}</h3>
           <p className="text-xs text-gray-400 mb-6 leading-relaxed">
             Tenés un total de <strong>{data.assignedPoints} puntos</strong> repartidos entre tus clientes. ¡Lanzá promociones para que los canjeen!
           </p>

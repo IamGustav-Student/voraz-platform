@@ -32,3 +32,69 @@ body {
 ::-webkit-scrollbar-track { background: var(--brand-bg); }
 ::-webkit-scrollbar-thumb { background: #333; border-radius: 4px; }
 ::-webkit-scrollbar-thumb:hover { background: var(--brand-primary); }
+
+/* ── Estilos de Impresión (PDF Report) ── */
+@media print {
+  aside, .header, nav, button, .no-print, .text-xs.px-2, .text-gray-400.text-2xl {
+    display: none !important;
+  }
+  
+  body {
+    background: white !important;
+    color: black !important;
+    padding: 0 !important;
+    margin: 0 !important;
+  }
+
+  .fixed.inset-0 {
+    position: relative !important;
+    display: block !important;
+    height: auto !important;
+    background: white !important;
+    overflow: visible !important;
+  }
+
+  .flex.flex-1 {
+    display: block !important;
+    overflow: visible !important;
+  }
+
+  main {
+    padding: 20px !important;
+    background: white !important;
+    color: black !important;
+    overflow: visible !important;
+    width: 100% !important;
+  }
+
+  .text-white, .text-gray-400, .text-gray-500, h1, h2, h3 {
+    color: black !important;
+  }
+
+  .bg-white\/5, .bg-black, .bg-gradient-to-br {
+    background: #f9f9f9 !important;
+    border: 1px solid #ddd !important;
+    box-shadow: none !important;
+    color: black !important;
+  }
+
+  .grid {
+    display: grid !important;
+    grid-template-columns: repeat(2, 1fr) !important;
+    gap: 15px !important;
+  }
+
+  .xl\:grid-cols-6 {
+    grid-template-columns: repeat(3, 1fr) !important;
+  }
+
+  svg {
+    filter: none !important;
+  }
+
+  /* Forzar que el Hero se vea bien */
+  [style*="linear-gradient"] {
+    background: #f0f0f0 !important;
+    border: 2px solid #ccc !important;
+  }
+}

@@ -125,37 +125,33 @@ export const tenantMiddleware = async (req, res, next) => {
       let result;
       if (subdomainPart) {
         result = await query(
-          `SELECT id, plan_type, status, brand_name, brand_color_primary, brand_color_secondary,
-                  brand_logo_url, brand_favicon_url, slogan, subscription_expires_at,
-                  COALESCE(subdomain, id) as subdomain, custom_domain
-           FROM tenants
-           WHERE id = $1 OR (subdomain IS NOT NULL AND subdomain = $1)
+          `SELECT t.id, t.plan_type, t.status, t.brand_name, 
+                  COALESCE(ts.primary_color, t.brand_color_primary) as brand_color_primary,
+                  COALESCE(ts.secondary_color, t.brand_color_secondary) as brand_color_secondary,
+                  COALESCE(ts.logo_url, t.brand_logo_url) as brand_logo_url,
+                  t.brand_favicon_url, t.slogan, t.subscription_expires_at,
+                  COALESCE(t.subdomain, t.id) as subdomain, t.custom_domain,
+                  ts.custom_branding_enabled, ts.font_family
+           FROM tenants t
+           LEFT JOIN tenant_settings ts ON ts.tenant_id_fk = t.id
+           WHERE t.id = $1 OR (t.subdomain IS NOT NULL AND t.subdomain = $1)
            LIMIT 1`,
           [subdomainPart]
-        ).catch(async () =>
-          query(
-            `SELECT id, plan_type, status, brand_name, brand_color_primary, brand_color_secondary,
-                    brand_logo_url, brand_favicon_url, slogan, subscription_expires_at,
-                    id as subdomain, NULL as custom_domain
-             FROM tenants WHERE id = $1 LIMIT 1`,
-            [subdomainPart]
-          )
         );
       } else {
         result = await query(
-          `SELECT id, plan_type, status, brand_name, brand_color_primary, brand_color_secondary,
-                  brand_logo_url, brand_favicon_url, slogan, subscription_expires_at,
-                  COALESCE(subdomain, id) as subdomain, custom_domain
-           FROM tenants WHERE custom_domain = $1 LIMIT 1`,
+          `SELECT t.id, t.plan_type, t.status, t.brand_name, 
+                  COALESCE(ts.primary_color, t.brand_color_primary) as brand_color_primary,
+                  COALESCE(ts.secondary_color, t.brand_color_secondary) as brand_color_secondary,
+                  COALESCE(ts.logo_url, t.brand_logo_url) as brand_logo_url,
+                  t.brand_favicon_url, t.slogan, t.subscription_expires_at,
+                  COALESCE(t.subdomain, t.id) as subdomain, t.custom_domain,
+                  ts.custom_branding_enabled, ts.font_family
+           FROM tenants t
+           LEFT JOIN tenant_settings ts ON ts.tenant_id_fk = t.id
+           WHERE t.custom_domain = $1
+           LIMIT 1`,
           [host]
-        ).catch(async () =>
-          query(
-            `SELECT id, plan_type, status, brand_name, brand_color_primary, brand_color_secondary,
-                    brand_logo_url, brand_favicon_url, slogan, subscription_expires_at,
-                    id as subdomain, NULL as custom_domain
-             FROM tenants WHERE id = $1 LIMIT 1`,
-            [host]
-          )
         );
       }
 

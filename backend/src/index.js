@@ -118,15 +118,42 @@ app.get('/api/tenant-check', tenantMiddleware, (req, res) => {
 // ── Manifest PWA dinámico ───────────────────────────────────────────────────
 app.get('/api/manifest', async (req, res) => {
     const host = (req.headers['x-store-domain'] || req.headers.host || '').split(':')[0].toLowerCase();
+    const rootDomain = process.env.GASTRORED_ROOT_DOMAIN || 'gastrored.com.ar';
+    const GASTRORED_ROOT_DOMAINS = ['gastrored.com.ar', 'www.gastrored.com.ar', rootDomain].map(d => d.toLowerCase());
+
     try {
-        const result = await query(
-            'SELECT brand_name, brand_color_primary, brand_logo_url, brand_favicon_url, slogan FROM tenants WHERE custom_domain=$1 OR subdomain=$1 OR id::text=$1 LIMIT 1',
-            [host]
-        );
+        let queryStr, params;
+        
+        if (GASTRORED_ROOT_DOMAINS.includes(host)) {
+            // Caso root: Usar branding de Voraz (id=1 o subdomain='voraz')
+            queryStr = `
+                SELECT t.brand_name, 
+                       COALESCE(ts.primary_color, t.brand_color_primary) as brand_color_primary,
+                       COALESCE(ts.logo_url, t.brand_logo_url) as brand_logo_url,
+                       t.slogan
+                FROM tenants t
+                LEFT JOIN tenant_settings ts ON ts.tenant_id_fk = t.id
+                WHERE t.id = '1' OR t.subdomain = 'voraz' LIMIT 1`;
+            params = [];
+        } else {
+            // Caso tenant: Extraer subdomain o usar custom_domain
+            queryStr = `
+                SELECT t.brand_name, 
+                       COALESCE(ts.primary_color, t.brand_color_primary) as brand_color_primary,
+                       COALESCE(ts.logo_url, t.brand_logo_url) as brand_logo_url,
+                       t.slogan
+                FROM tenants t
+                LEFT JOIN tenant_settings ts ON ts.tenant_id_fk = t.id
+                WHERE t.custom_domain=$1 OR t.subdomain=$1 OR t.id::text=$1 LIMIT 1`;
+            params = [host.replace(`.${rootDomain}`, '')]; // Fallback simple para subdominios
+        }
+
+        const result = await query(queryStr, params);
         const s = result.rows[0] || {};
         const name = s.brand_name || 'GastroRed';
         const color = s.brand_color_primary || '#E30613';
         const logo = s.brand_logo_url || '/images/logo_voraz.jpg';
+
         res.setHeader('Content-Type', 'application/manifest+json');
         res.json({
             name,
@@ -141,7 +168,8 @@ app.get('/api/manifest', async (req, res) => {
                 { src: logo, sizes: '512x512', type: 'image/png' },
             ],
         });
-    } catch {
+    } catch (err) {
+        console.error('Manifest error:', err.message);
         res.json({ 
             name: 'GastroRed', 
             short_name: 'GastroRed', 
