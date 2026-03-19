@@ -85,13 +85,15 @@ export const createOrder = async (req, res) => {
             const userRes = await client.query('SELECT points FROM users WHERE id = $1 FOR UPDATE', [user_id]);
             if (userRes.rows.length === 0) throw new Error('Usuario no encontrado.');
             
+            const POINTS_BLOCK = 500;
+            const pointValue = pointsRedeemValue / POINTS_BLOCK;
             const availablePoints = userRes.rows[0].points;
-            // Solo redimimos lo que el usuario tiene y lo que el subtotal permite
+
             const maxPointsByUser = availablePoints;
-            const maxPointsBySubtotal = Math.floor(calculatedSubtotal / pointsRedeemValue);
+            const maxPointsBySubtotal = Math.floor(calculatedSubtotal / pointValue);
             
             actualPointsRedeemed = Math.min(requestedPoints, maxPointsByUser, maxPointsBySubtotal);
-            pointsDiscount = actualPointsRedeemed * pointsRedeemValue;
+            pointsDiscount = actualPointsRedeemed * pointValue;
 
             if (actualPointsRedeemed > 0) {
                 await client.query('UPDATE users SET points = points - $1 WHERE id = $2', [actualPointsRedeemed, user_id]);
