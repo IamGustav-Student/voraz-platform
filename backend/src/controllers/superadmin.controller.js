@@ -443,3 +443,22 @@ export const deleteTenant = async (req, res) => {
     res.status(500).json({ status: 'error', message: 'Error al eliminar tenant: ' + e.message });
   }
 };
+
+// ── Gestión de Historial de Trials (Bloqueos) ─────────────────────────────────
+export const getTrialHistory = async (req, res) => {
+  try {
+    const result = await query('SELECT * FROM trial_domain_history ORDER BY registered_at DESC');
+    res.json({ status: 'success', data: result.rows });
+  } catch (e) { res.status(500).json({ status: 'error', message: e.message }); }
+};
+
+export const deleteTrialHistoryEntry = async (req, res) => {
+  const { id } = req.params;
+  try {
+    const result = await query('DELETE FROM trial_domain_history WHERE id = $1 RETURNING *', [id]);
+    if (!result.rows.length) {
+      return res.status(404).json({ status: 'error', message: 'Entrada de historial no encontrada.' });
+    }
+    res.json({ status: 'success', message: 'Historial eliminado. El nombre/subdominio ahora puede volver a usar el trial.', data: result.rows[0] });
+  } catch (e) { res.status(500).json({ status: 'error', message: e.message }); }
+};

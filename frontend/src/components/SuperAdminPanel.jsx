@@ -60,6 +60,9 @@ export default function SuperAdminPanel({ onBack }) {
   const [resetModal, setResetModal] = useState(null); // { tenantId, adminEmail }
   const [resetPwd, setResetPwd] = useState('');
   const [resetting, setResetting] = useState(false);
+  // Historial de Trials (Bloqueos)
+  const [trialHistory, setTrialHistory] = useState([]);
+  const [loadingHistory, setLoadingHistory] = useState(false);
 
   // PWA Install logic
   const { isInstallable, handleInstallClick } = usePWAInstall();
@@ -75,6 +78,24 @@ export default function SuperAdminPanel({ onBack }) {
     } catch (e) { setMsg('Error: ' + e.message); }
     setLoading(false);
   }, [token]);
+
+  const loadTrialHistory = async () => {
+    setLoadingHistory(true);
+    try {
+      const data = await sfetch('/trial-history', token);
+      setTrialHistory(data);
+    } catch (e) { setMsg('Error cargando historial: ' + e.message); }
+    setLoadingHistory(false);
+  };
+
+  const deleteTrialHistoryEntry = async (id) => {
+    if (!window.confirm('¿Desbloquear este registro? Podrá volver a usarse para una prueba gratuita.')) return;
+    try {
+      await sfetch(`/trial-history/${id}`, token, { method: 'DELETE' });
+      setMsg('✅ Registro desbloqueado correctamente');
+      loadTrialHistory();
+    } catch (e) { setMsg('Error: ' + e.message); }
+  };
 
   const handleLogin = async (e) => {
     e.preventDefault(); setLoginErr('');
@@ -321,13 +342,23 @@ export default function SuperAdminPanel({ onBack }) {
 
       {/* Tabs */}
       <div className="px-6 flex gap-2 mb-6 flex-wrap">
-        {['stores', 'crear', 'config'].map(t => (
-          <button key={t} onClick={() => { setTab(t); setShowCreate(t === 'crear'); if (t === 'config') loadConfig(); }}
-            className={`px-4 py-2 rounded-xl text-sm font-bold uppercase transition ${tab === t ? 'bg-red-600 text-white' : 'bg-white/5 text-gray-400 hover:text-white'}`}>
-            {t === 'stores' ? `🏪 Comercios (${stores.length})` : t === 'crear' ? '➕ Nuevo Comercio' : '⚙️ Configuración'}
+        {[
+          { id: 'stores', label: `🏪 Comercios (${stores.length})` },
+          { id: 'crear', label: '➕ Nuevo Comercio' },
+          { id: 'history', label: '🚫 Bloqueos Trial' },
+          { id: 'config', label: '⚙️ Configuración' }
+        ].map(t => (
+          <button key={t.id} onClick={() => { 
+            setTab(t.id); 
+            setShowCreate(t.id === 'crear'); 
+            if (t.id === 'config') loadConfig(); 
+            if (t.id === 'history') loadTrialHistory();
+          }}
+            className={`px-4 py-2 rounded-xl text-sm font-bold uppercase transition ${tab === t.id ? 'bg-red-600 text-white' : 'bg-white/5 text-gray-400 hover:text-white'}`}>
+            {t.label}
           </button>
         ))}
-        <button onClick={() => load()} className="ml-auto text-xs text-gray-500 hover:text-white px-3 py-1.5 rounded-lg bg-white/5">↻ Actualizar</button>
+        <button onClick={() => { load(); if(tab === 'history') loadTrialHistory(); }} className="ml-auto text-xs text-gray-500 hover:text-white px-3 py-1.5 rounded-lg bg-white/5">↻ Actualizar</button>
       </div>
 
       <div className="px-6 pb-20">
@@ -684,6 +715,63 @@ export default function SuperAdminPanel({ onBack }) {
               {savingConfig ? 'Guardando...' : '💾 Guardar configuración'}
             </button>
           </form>
+        )}
+
+        {/* ── Gestión de Bloqueos (Trial History) ─────────────────────────────── */}
+        {tab === 'history' && (
+          <div className="space-y-4">
+            <div className="flex items-center justify-between">
+              <h3 className="text-white font-bold text-lg">Historial de Trials y Bloqueos</h3>
+              <p className="text-gray-500 text-xs">Aquí se registran los nombres y subdominios que ya usaron el plan gratuito.</p>
+            </div>
+            
+            <div className="bg-white/5 border border-white/10 rounded-2xl overflow-hidden shadow-2xl">
+              <table className="w-full text-left text-sm">
+                <thead className="bg-white/10 text-gray-300 font-bold uppercase text-[10px] tracking-widest">
+                  <tr>
+                    <th className="px-6 py-4">Tipo</th>
+                    <th className="px-6 py-4">Valor Bloqueado</th>
+                    <th className="px-6 py-4">ID Original</th>
+                    <th className="px-6 py-4 text-center">Fecha Registro</th>
+                    <th className="px-6 py-4 text-center">Acción</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-white/5">
+                  {loadingHistory && (
+                    <tr><td colSpan="5" className="px-6 py-10 text-center text-gray-500">Cargando historial...</td></tr>
+                  )}
+                  {!loadingHistory && trialHistory.length === 0 && (
+                    <tr><td colSpan="5" className="px-6 py-10 text-center text-gray-500">No hay registros de bloqueos de trial.</td></tr>
+                  )}
+                  {trialHistory.map(h => (
+                    <tr key={h.id} className="hover:bg-white/5 transition group">
+                      <td className="px-6 py-4">
+                        <span className={`px-2 py-0.5 rounded-full text-[10px] font-black uppercase ${
+                          h.type === 'subdomain' ? 'bg-blue-900/40 text-blue-400' : 
+                          h.type === 'name' ? 'bg-purple-900/40 text-purple-400' : 'bg-gray-800 text-gray-400'
+                        }`}>
+                          {h.type}
+                        </span>
+                      </td>
+                      <td className="px-6 py-4 font-mono font-bold text-gray-200">{h.value}</td>
+                      <td className="px-6 py-4 text-xs text-gray-500">{h.original_tenant_id}</td>
+                      <td className="px-6 py-4 text-xs text-gray-500 text-center">
+                        {new Date(h.registered_at).toLocaleDateString('es-AR')} {new Date(h.registered_at).toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit' })}
+                      </td>
+                      <td className="px-6 py-4 text-center">
+                        <button 
+                          onClick={() => deleteTrialHistoryEntry(h.id)}
+                          className="bg-red-900/30 hover:bg-red-600 text-red-500 hover:text-white px-3 py-1.5 rounded-lg text-xs font-bold transition flex items-center gap-1 mx-auto"
+                        >
+                          🔓 Desbloquear
+                        </button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
         )}
       </div>
 

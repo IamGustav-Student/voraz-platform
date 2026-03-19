@@ -56,7 +56,7 @@ async function syncTenantRecord(tenantId, tenantName) {
 // ── Crear tenant de trial (7 días gratis, sin pago) ────────────────────────
 export const createTrialTenant = async (req, res) => {
   const { name, brand_name, subdomain, admin_email, slogan,
-    brand_color_primary, brand_color_secondary } = req.body;
+    brand_color_primary, brand_color_secondary, admin_name, admin_password } = req.body;
 
   if (!name || !subdomain)
     return res.status(400).json({ status: 'error', message: 'name y subdomain son requeridos.' });
@@ -67,17 +67,53 @@ export const createTrialTenant = async (req, res) => {
 
   try {
     const config = await getConfig();
+
+    // ── Bloqueo de re-uso de Trial ──────────────────────────────────────────
+    const bypassSecret = req.body.secret === (process.env.GASTRORED_SUPERADMIN_SECRET || 'gastrored_super_secret');
+    
+    if (!bypassSecret) {
+      // 1. Bloqueo por Email
+      if (admin_email) {
+        const existingEmail = await query('SELECT id FROM tenants WHERE admin_email = $1 LIMIT 1', [admin_email.trim()]);
+        if (existingEmail.rows.length > 0) {
+          return res.status(403).json({ 
+            status: 'error', 
+            message: 'Este email ya ha sido seleccionado para una prueba gratuita o ya tiene un comercio asociado.' 
+          });
+        }
+      }
+
+      // 2. Bloqueo por Subdominio
+      const existingSub = await query('SELECT id FROM trial_domain_history WHERE type = $1 AND value = $2 LIMIT 1', ['subdomain', cleanSub]);
+      if (existingSub.rows.length > 0) {
+        return res.status(403).json({
+          status: 'error',
+          message: `El subdominio "${cleanSub}" ya ha utilizado el periodo de prueba anteriormente.`
+        });
+      }
+
+      // 3. Bloqueo por Nombre de Restaurante
+      const cleanName = name.trim().toLowerCase();
+      const existingName = await query('SELECT id FROM trial_domain_history WHERE type = $1 AND value = $2 LIMIT 1', ['name', cleanName]);
+      if (existingName.rows.length > 0) {
+        return res.status(403).json({
+          status: 'error',
+          message: `El nombre "${name}" ya ha sido utilizado para una prueba gratuita anteriormente.`
+        });
+      }
+    }
+
     const trialDays = parseInt(config.trial_days || '7');
     const expires = new Date();
     expires.setDate(expires.getDate() + trialDays);
 
-    // Crear en TENANTS (fuente de verdad)
+    // 1. Crear en TENANTS
     const result = await query(
       `INSERT INTO tenants
          (id, name, subdomain, brand_name, plan_type, subscription_period,
           subscription_expires_at, status, admin_email, brand_color_primary,
           brand_color_secondary, slogan, active)
-       VALUES ($1,$2,$1,$3,'Trial','monthly',$4,'trial',$5,$6,$7,$8,true)
+       VALUES ($1,$2,$1,$3,'Expert','monthly',$4,'active',$5,$6,$7,$8,true)
        RETURNING id, name, brand_name, subdomain, status, subscription_expires_at`,
       [
         cleanSub, name.trim(), (brand_name || name).trim(),
@@ -89,21 +125,44 @@ export const createTrialTenant = async (req, res) => {
     );
     const tenant = result.rows[0];
 
-    // Crear sucursal física inicial en STORES
+    // Registrar en el historial para impedir re-uso (ignorar si es bypass por simplicidad o forzar registro nuevo)
+    await query(
+      'INSERT INTO trial_domain_history (type, value, original_tenant_id) VALUES ($1, $2, $3) ON CONFLICT (value) DO NOTHING',
+      ['subdomain', cleanSub, cleanSub]
+    );
+    await query(
+      'INSERT INTO trial_domain_history (type, value, original_tenant_id) VALUES ($1, $2, $3) ON CONFLICT (value) DO NOTHING',
+      ['name', name.trim().toLowerCase(), cleanSub]
+    );
+
+    // 2. Crear sucursal física inicial en STORES
     const storeResult = await query(
       `INSERT INTO stores (name, tenant_id) VALUES ($1, $2) RETURNING id`,
       [name.trim(), cleanSub]
     );
+    const storeId = storeResult.rows[0].id;
 
-    // Crear tenant_settings
+    // 3. Crear usuario admin (NECESARIO)
+    if (admin_email && admin_password) {
+      const adminHash = await bcrypt.hash(admin_password, 10);
+      await query(
+        `INSERT INTO users (email, password_hash, name, store_id, tenant_id, role, points)
+         VALUES ($1, $2, $3, $4, $5, 'admin', 0)
+         ON CONFLICT (email, store_id) DO UPDATE
+           SET password_hash = EXCLUDED.password_hash, name = EXCLUDED.name, role = 'admin'`,
+        [admin_email.trim(), adminHash, (admin_name || name.trim()), storeId, cleanSub]
+      );
+    }
+
+    // 4. Crear tenant_settings
      await query(
        `INSERT INTO tenant_settings (store_id, tenant_id, tenant_id_fk, cash_on_delivery)
         VALUES ($1, $2, $2, true) ON CONFLICT (store_id) DO NOTHING`,
-       [storeResult.rows[0].id, cleanSub]
+       [storeId, cleanSub]
      );
 
-     // Inicializar datos de ejemplo (2 productos por categoría)
-     await initializeTenantData(cleanSub, storeResult.rows[0].id);
+     // 5. Inicializar datos de ejemplo
+     await initializeTenantData(cleanSub, storeId);
 
      res.status(201).json({
       status: 'success',

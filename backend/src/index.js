@@ -7,6 +7,9 @@ import { fileURLToPath } from 'url';
 import helmet from 'helmet';
 import rateLimit from 'express-rate-limit';
 import { query, testConnection } from './config/db.js';
+import dotenv from 'dotenv';
+
+dotenv.config();
 
 import productsRoutes from './routes/products.routes.js';
 import communityRoutes from './routes/community.routes.js';

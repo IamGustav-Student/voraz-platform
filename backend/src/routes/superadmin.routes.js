@@ -14,6 +14,8 @@ import {
   toggleCustomBranding,
   resetAdminPassword,
   deleteTenant,
+  getTrialHistory,
+  deleteTrialHistoryEntry,
 } from '../controllers/superadmin.controller.js';
 
 const router = Router();
@@ -32,6 +34,10 @@ router.patch('/stores/:id/plan', updateStorePlan);
 router.patch('/stores/:id/reset-admin-password', resetAdminPassword);
 router.patch('/tenants/:id/branding-toggle', toggleCustomBranding);
 router.get('/plans', getPlanPrices);
+
+// Gestión de Historial de Trials (Desbloqueos)
+router.get('/trial-history', getTrialHistory);
+router.delete('/trial-history/:id', deleteTrialHistoryEntry);
 
 // Configuración de la plataforma
 router.get('/config', getGastroRedConfig);
