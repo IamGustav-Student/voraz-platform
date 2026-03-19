@@ -94,7 +94,15 @@ WHERE id NOT IN (
   GROUP BY store_id
 ) AND store_id IS NOT NULL;
 
-CREATE UNIQUE INDEX IF NOT EXISTS idx_tenant_settings_store_id ON tenant_settings(store_id);
+DO $$
+BEGIN
+  IF NOT EXISTS (SELECT 1 FROM pg_indexes WHERE indexname = 'idx_tenant_settings_store_id') THEN
+    CREATE UNIQUE INDEX idx_tenant_settings_store_id ON tenant_settings(store_id);
+  END IF;
+EXCEPTION
+  WHEN OTHERS THEN
+    RAISE NOTICE 'No se pudo crear el índice único idx_tenant_settings_store_id: %', SQLERRM;
+END $$;
 
 -- 9. Superadmin inicial de GastroRed (se inserta solo si no existe ninguno)
 INSERT INTO superadmins (email, password_hash, name)

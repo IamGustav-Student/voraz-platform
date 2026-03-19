@@ -546,6 +546,8 @@ function SimpleBarChart({ data }) {
 
 function DashboardSection({ data }) {
   if (!data) return <p className="text-gray-500">Cargando...</p>;
+  const { subscription } = data;
+
   
   const cards = [
     { label: 'Ingresos (Total)', value: `$${(data.revenue || 0).toLocaleString('es-AR')}`, color: 'text-yellow-400', icon: '💰' },
