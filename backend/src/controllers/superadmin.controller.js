@@ -418,15 +418,17 @@ export const deleteTenant = async (req, res) => {
       } catch (e) { /* Tablas opcations */ }
       
       await query('DELETE FROM tenant_settings WHERE store_id = ANY($1::int[]) OR tenant_id = $2 OR tenant_id_fk = $2', [storeIds, id]);
-      await query('DELETE FROM stores WHERE tenant_id = $1', [id]);
     } else {
       await query('DELETE FROM tenant_settings WHERE tenant_id = $1 OR tenant_id_fk = $1', [id]);
     }
 
+    // 5. Borrar pagos de suscripción ANTES que las sucursales (para evitar FK violations)
     try {
-      await query('DELETE FROM subscription_payments WHERE tenant_id = $1', [id]);
-    } catch(e) {} // Ignorar si no existe tabla
+      await query('DELETE FROM subscription_payments WHERE tenant_id = $1 OR store_id = ANY($2::int[])', [id, storeIds.length ? storeIds : [-1]]);
+    } catch(e) { console.error('Error borrando pagos:', e.message); }
 
+    // 6. Finalmente borrar sucursales y el tenant
+    await query('DELETE FROM stores WHERE tenant_id = $1', [id]);
     const result = await query('DELETE FROM tenants WHERE id = $1 RETURNING id', [id]);
     
     if (!result.rows.length) {

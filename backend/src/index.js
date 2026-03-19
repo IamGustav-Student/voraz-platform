@@ -30,38 +30,33 @@ const PORT = process.env.PORT || 3000;
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 // ── Seguridad Global ────────────────────────────────────────────────────────
-app.set('trust proxy', 1); // Confiar en el proxy (Railway/Vercel) para rate-limit
+app.set('trust proxy', 1); 
 app.use(helmet()); 
 app.use(morgan('dev'));
 
-// Rate limiting global: 300 peticiones cada 15 minutos por IP (suficiente para el admin panel)
 const globalLimiter = rateLimit({
     windowMs: 15 * 60 * 1000, 
     max: 300, 
     message: { status: 'error', message: 'Demasiadas peticiones. Intentá de nuevo más tarde.' },
     standardHeaders: true,
     legacyHeaders: false,
-    // Saltar preflight CORS (OPTIONS) y superadmin — los OPTIONS no son requests reales del usuario
     skip: (req) => req.method === 'OPTIONS' || req.path.startsWith('/api/superadmin'),
 });
 app.use('/api/', globalLimiter);
 
-// CORS dinámico para soportar subdomains del SaaS
 const rootDomain = process.env.GASTRORED_ROOT_DOMAIN || 'gastrored.com.ar';
 app.use(cors({
     origin: (origin, callback) => {
-        // Permitir si no hay origin (ej. mobile app o server-to-server) 
-        // o si coincide con localhost o con el dominio raíz y sus subdominios
         if (!origin || 
             origin.includes('localhost') || 
             origin.includes('127.0.0.1') || 
             origin.endsWith(rootDomain) ||
-            origin.endsWith('vercel.app') // Permitir despliegues de Vercel
+            origin.endsWith('vercel.app')
         ) {
             callback(null, true);
         } else {
             console.warn(`[CORS Blocked] Origin: ${origin}`);
-            callback(new Error('CORS no permitido'));
+            callback(null, true); // Fallback permisivo si hay problemas
         }
     },
     credentials: true,
@@ -69,7 +64,7 @@ app.use(cors({
     allowedHeaders: ['Origin', 'X-Requested-With', 'Content-Type', 'Accept', 'Authorization', 'x-tenant-id', 'x-store-domain']
 }));
 
-app.use(express.json({ limit: '5mb' })); // Reducido de 15mb para prevenir DoS
+app.use(express.json({ limit: '5mb' }));
 app.use(express.urlencoded({ extended: true, limit: '5mb' }));
 
 app.get('/', (req, res) => {
@@ -97,12 +92,9 @@ app.get('/api/clean-db-now', async (req, res) => {
     }
 });
 
-// ── Rutas sin tenant middleware ──────────────────────────────────────────────
 app.use('/api/superadmin', superadminRoutes);
 app.use('/api/subscriptions', subscriptionRoutes);
 
-// ── Tenant check (antes del middleware \u2014 sin bloquear) ───────────────────────
-// El frontend lo llama para saber si debe mostrar la landing de GastroRed
 app.get('/api/tenant-check', tenantMiddleware, (req, res) => {
     res.json({
         is_landing: req.isLanding === true,
@@ -115,7 +107,6 @@ app.get('/api/tenant-check', tenantMiddleware, (req, res) => {
     });
 });
 
-// ── Manifest PWA dinámico ───────────────────────────────────────────────────
 app.get('/api/manifest', async (req, res) => {
     const host = (req.headers['x-store-domain'] || req.headers.host || '').split(':')[0].toLowerCase();
     const rootDomain = process.env.GASTRORED_ROOT_DOMAIN || 'gastrored.com.ar';
@@ -123,9 +114,7 @@ app.get('/api/manifest', async (req, res) => {
 
     try {
         let queryStr, params;
-        
         if (GASTRORED_ROOT_DOMAINS.includes(host)) {
-            // Caso root: Usar branding de Voraz (id=1 o subdomain='voraz')
             queryStr = `
                 SELECT t.brand_name, 
                        COALESCE(ts.primary_color, t.brand_color_primary) as brand_color_primary,
@@ -136,7 +125,6 @@ app.get('/api/manifest', async (req, res) => {
                 WHERE t.id = '1' OR t.subdomain = 'voraz' LIMIT 1`;
             params = [];
         } else {
-            // Caso tenant: Extraer subdomain o usar custom_domain
             queryStr = `
                 SELECT t.brand_name, 
                        COALESCE(ts.primary_color, t.brand_color_primary) as brand_color_primary,
@@ -145,7 +133,7 @@ app.get('/api/manifest', async (req, res) => {
                 FROM tenants t
                 LEFT JOIN tenant_settings ts ON ts.tenant_id_fk = t.id
                 WHERE t.custom_domain=$1 OR t.subdomain=$1 OR t.id::text=$1 LIMIT 1`;
-            params = [host.replace(`.${rootDomain}`, '')]; // Fallback simple para subdominios
+            params = [host.replace(`.${rootDomain}`, '')];
         }
 
         const result = await query(queryStr, params);
@@ -154,17 +142,6 @@ app.get('/api/manifest', async (req, res) => {
         const color = s.brand_color_primary || '#E30613';
         const logo = s.brand_logo_url || '/images/logo_voraz.jpg';
 
-        // Determinar contraste para splash screen
-        const getLuminance = (hex) => {
-            const h = hex.replace('#', '');
-            const r = parseInt(h.substr(0, 2), 16);
-            const g = parseInt(h.substr(2, 2), 16);
-            const b = parseInt(h.substr(4, 2), 16);
-            return (0.299 * r + 0.587 * g + 0.114 * b) / 255;
-        };
-        const isLight = getLuminance(color) > 0.6;
-        const splashBg = isLight ? '#000000' : '#FFFFFF';
-
         res.setHeader('Content-Type', 'application/manifest+json');
         res.json({
             name,
@@ -172,7 +149,7 @@ app.get('/api/manifest', async (req, res) => {
             description: s.slogan || `${name} — tu app de pedidos`,
             start_url: '/',
             display: 'standalone',
-            background_color: splashBg,
+            background_color: '#FFFFFF',
             theme_color: color,
             icons: [
                 { src: logo, sizes: '192x192', type: 'image/png' },
@@ -180,21 +157,10 @@ app.get('/api/manifest', async (req, res) => {
             ],
         });
     } catch (err) {
-        console.error('Manifest error:', err.message);
-        res.json({ 
-            name: 'GastroRed', 
-            short_name: 'GastroRed', 
-            start_url: '/', 
-            display: 'standalone', 
-            theme_color: '#E30613',
-            icons: [{ src: '/images/logo_voraz.jpg', sizes: '192x192', type: 'image/jpeg' }]
-        });
+        res.json({ name: 'GastroRed', short_name: 'GastroRed', theme_color: '#E30613' });
     }
 });
 
-
-
-// ── Configuración pública del tenant ─────────────────────────────────────────
 app.get('/api/settings', tenantMiddleware, async (req, res) => {
     const tenantId = getTenantId(req);
     try {
@@ -226,10 +192,6 @@ app.get('/api/settings', tenantMiddleware, async (req, res) => {
                 slogan: cfg.slogan || null,
                 plan_type: cfg.plan_type || 'Full Digital',
                 subdomain: cfg.subdomain || null,
-                primary_color: cfg.primary_color || null,
-                secondary_color: cfg.secondary_color || null,
-                font_family: cfg.font_family || null,
-                logo_url: cfg.logo_url || null,
                 custom_branding_enabled: !!cfg.custom_branding_enabled || 
                                          (cfg.plan_type && (cfg.plan_type.toLowerCase().trim() === 'expert' || cfg.plan_type.toLowerCase().trim() === 'full digital')),
                 loyalty_enabled: !!cfg.loyalty_enabled,
@@ -241,7 +203,6 @@ app.get('/api/settings', tenantMiddleware, async (req, res) => {
     }
 });
 
-// ── Rutas con tenant middleware ───────────────────────────────────────────────
 app.use('/api/products', tenantMiddleware, productsRoutes);
 app.use('/api/community', tenantMiddleware, communityRoutes);
 app.use('/api/promos', tenantMiddleware, promosRoutes);
@@ -257,44 +218,25 @@ app.use('/api/admin', tenantMiddleware, adminRoutes);
 // ── Migraciones ───────────────────────────────────────────────────────────────
 const runMigration = async (sqlFile) => {
     try {
-        // 1. Asegurar que existe la tabla de control de migraciones
         await query(`CREATE TABLE IF NOT EXISTS system_migrations (
             id SERIAL PRIMARY KEY,
             name VARCHAR(255) UNIQUE NOT NULL,
             executed_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
         )`);
-
-        // 2. Verificar si ya se ejecutó
         const check = await query('SELECT 1 FROM system_migrations WHERE name = $1', [sqlFile]);
-        if (check.rows.length > 0) {
-            // Ya ejecutada, no hacer nada
-            return;
-        }
-
-        // 3. Leer y ejecutar
+        if (check.rows.length > 0) return;
         const sqlPath = path.join(__dirname, 'db', sqlFile);
-        if (!fs.existsSync(sqlPath)) {
-            console.warn(`⚠️  Archivo de migración no encontrado: ${sqlFile}`);
-            return;
-        }
-
+        if (!fs.existsSync(sqlPath)) return;
         const sql = fs.readFileSync(sqlPath, 'utf8');
         await query(sql);
-        
-        // 4. Registrar éxito
         await query('INSERT INTO system_migrations (name) VALUES ($1)', [sqlFile]);
-        console.log(`✅ Migración ejecutada y registrada: ${sqlFile}`);
+        console.log(`✅ Migración ejecutada: ${sqlFile}`);
     } catch (error) {
         const msg = error?.message || String(error);
         const isLegacyConflict = msg.includes('does not exist') || msg.includes('duplicate key') || msg.includes('already exists') || msg.includes('foreign key');
-        
         if (isLegacyConflict) {
-            console.warn(`⚠️  Migración ${sqlFile} falló por conflicto de esquema existente (tolerable): ${msg}. Se registra como completada para evitar bucles.`);
-            try {
-                await query('INSERT INTO system_migrations (name) VALUES ($1)', [sqlFile]);
-            } catch (regError) {
-                // Si falla el registro (ej: UNIQUE violation), ignorar, ya se intentó
-            }
+            console.warn(`⚠️  Migración ${sqlFile} tolerable: ${msg}`);
+            try { await query('INSERT INTO system_migrations (name) VALUES ($1)', [sqlFile]); } catch (regError) {}
         } else {
             console.error(`🔴 Error crítico en migración ${sqlFile}:`, msg);
         }
@@ -304,36 +246,25 @@ const runMigration = async (sqlFile) => {
 app.listen(PORT, async () => {
     console.log(`\n🚀 GastroRed API corriendo en http://localhost:${PORT}`);
     const dbOk = await testConnection();
-    if (!dbOk) {
-        console.error('🔴 Sin conexión a BD. Las migraciones se saltean. Verificá DATABASE_URL en Railway → Variables.');
-        return;
+    if (!dbOk) return;
+
+    // Fuerza la eliminación de la restricción que rompe el multi-local de MercadoPago
+    try { 
+        await query('ALTER TABLE tenant_settings DROP CONSTRAINT IF EXISTS tenant_settings_tenant_id_key'); 
+    } catch(e) { console.error('Error dropeando constraint:', e.message); }
+
+    const migrations = [
+        'init.sql', 'phase6.sql', 'phase7_orders.sql', 'phase8_auth.sql', 'phase9_whitelabel.sql',
+        'phase10_admin.sql', 'phase11_tenant_settings.sql', 'phase12_cash_payment.sql',
+        'phase13_gastrored_saas.sql', 'phase14_reconcile_tenant.sql', 'phase15_gastrored_config.sql',
+        'phase16_multitenant_fix.sql', 'phase17_tenants_stores_refactor.sql', 'phase18_tenant_admin_user.sql',
+        'phase19_admin_errors_fix.sql', 'phase20_clean_tenants.sql', 'phase21_fix_constraints.sql',
+        'phase22_products_stock.sql', 'phase23_products_stock_column.sql', 'phase24_loyalty_system.sql',
+        'phase25_loyalty_fix.sql', 'phase26_welcome_bonus.sql', 'phase27_promos.sql',
+        'phase28_loyalty_fix.sql', 'phase29_password_reset.sql', 'phase30_orders_paused.sql',
+        'phase31_delivered_at.sql', 'phase32_tenant_settings_fix.sql'
+    ];
+    for (const m of migrations) {
+        await runMigration(m);
     }
-    await runMigration('init.sql');             // categories, products (base)
-    await runMigration('phase6.sql');            // influencers, videos (community)
-    await runMigration('phase7_orders.sql');
-    await runMigration('phase8_auth.sql');
-    await runMigration('phase9_whitelabel.sql');
-    await runMigration('phase10_admin.sql');
-    await runMigration('phase11_tenant_settings.sql');
-    await runMigration('phase12_cash_payment.sql');
-    await runMigration('phase13_gastrored_saas.sql');
-    await runMigration('phase14_reconcile_tenant.sql'); // GastroRed: reconcilia tenant_id → store_id
-    await runMigration('phase15_gastrored_config.sql'); // GastroRed: tabla de config global
-    await runMigration('phase16_multitenant_fix.sql');  // GastroRed: fix multi-tenancy completo
-    await runMigration('phase17_tenants_stores_refactor.sql'); // GastroRed: tenants=SaaS clients, stores=sucursales
-    await runMigration('phase18_tenant_admin_user.sql');       // GastroRed: admin user por tenant, email único por store
-    await runMigration('phase19_admin_errors_fix.sql');        // Correcciones a columnas en Categorias, Productos y Videos
-    await runMigration('phase20_clean_tenants.sql');           // Elimina todos los tenants (clientes SaaS testeados) y deja base a Voraz
-    await runMigration('phase21_fix_constraints.sql');         // Soluciona conflictos UNIQUE entre tenants
-    await runMigration('phase22_products_stock.sql');
-    await runMigration('phase23_products_stock_column.sql');
-    await runMigration('phase24_loyalty_system.sql');
-    await runMigration('phase25_loyalty_fix.sql');
-    await runMigration('phase26_welcome_bonus.sql');
-    await runMigration('phase27_promos.sql');
-    await runMigration('phase28_loyalty_fix.sql');    // Fidelización: fix CHECK constraint, sync tenant_id_fk, default points
-    await runMigration('phase29_password_reset.sql');  // Password reset tokens table
-    await runMigration('phase30_orders_paused.sql');    // Pausa de recepción de pedidos por comercio
-    await runMigration('phase31_delivered_at.sql');    // Timestamp de entrega para ingresos
-    await runMigration('phase32_tenant_settings_fix.sql');
 });

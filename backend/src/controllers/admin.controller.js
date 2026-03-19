@@ -497,7 +497,7 @@ export const updateOrderStatus = async (req, res) => {
       `UPDATE orders 
        SET status=$1, 
            delivered_at = CASE 
-             WHEN $1::text = 'delivered' THEN COALESCE(delivered_at, NOW()) 
+             WHEN $1::varchar = 'delivered' THEN COALESCE(delivered_at, NOW()) 
              ELSE NULL::timestamp 
            END,
            updated_at = NOW()
