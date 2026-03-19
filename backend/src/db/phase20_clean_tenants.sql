@@ -27,6 +27,16 @@ END $$;
 
 DELETE FROM categories WHERE store_id IN (SELECT id FROM stores WHERE tenant_id != 'voraz');
 
+-- Eliminar usuarios y cupones vinculados a otros comercios (Resolución FK)
+DELETE FROM users WHERE store_id IN (SELECT id FROM stores WHERE tenant_id != 'voraz') AND role != 'superadmin';
+DO $$ BEGIN
+  IF EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'users' AND column_name = 'tenant_id') THEN
+    DELETE FROM users WHERE tenant_id != 'voraz' AND role != 'superadmin';
+  END IF;
+END $$;
+
+DELETE FROM coupons WHERE store_id IN (SELECT id FROM stores WHERE tenant_id != 'voraz');
+
 -- 3. Eliminar configuraciones y sucursales
 DELETE FROM tenant_settings WHERE tenant_id != 'voraz' AND tenant_id_fk != 'voraz';
 DELETE FROM stores WHERE tenant_id != 'voraz';

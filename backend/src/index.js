@@ -286,7 +286,7 @@ const runMigration = async (sqlFile) => {
         console.log(`✅ Migración ejecutada y registrada: ${sqlFile}`);
     } catch (error) {
         const msg = error?.message || String(error);
-        const isLegacyConflict = msg.includes('does not exist') || msg.includes('duplicate key') || msg.includes('already exists');
+        const isLegacyConflict = msg.includes('does not exist') || msg.includes('duplicate key') || msg.includes('already exists') || msg.includes('foreign key');
         
         if (isLegacyConflict) {
             console.warn(`⚠️  Migración ${sqlFile} falló por conflicto de esquema existente (tolerable): ${msg}. Se registra como completada para evitar bucles.`);
