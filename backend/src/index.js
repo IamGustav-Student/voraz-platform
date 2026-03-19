@@ -219,33 +219,6 @@ app.use('/api/users', usersRoutes);
 app.use('/api/coupons', tenantMiddleware, couponsRoutes);
 app.use('/api/admin', tenantMiddleware, adminRoutes);
 
-// ── Migraciones ───────────────────────────────────────────────────────────────
-const runMigration = async (sqlFile) => {
-    try {
-        await query(`CREATE TABLE IF NOT EXISTS system_migrations (
-            id SERIAL PRIMARY KEY,
-            name VARCHAR(255) UNIQUE NOT NULL,
-            executed_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-        )`);
-        const check = await query('SELECT 1 FROM system_migrations WHERE name = $1', [sqlFile]);
-        if (check.rows.length > 0) return;
-        const sqlPath = path.join(__dirname, 'db', sqlFile);
-        if (!fs.existsSync(sqlPath)) return;
-        const sql = fs.readFileSync(sqlPath, 'utf8');
-        await query(sql);
-        await query('INSERT INTO system_migrations (name) VALUES ($1)', [sqlFile]);
-        console.log(`✅ Migración ejecutada: ${sqlFile}`);
-    } catch (error) {
-        const msg = error?.message || String(error);
-        const isLegacyConflict = msg.includes('does not exist') || msg.includes('duplicate key') || msg.includes('already exists') || msg.includes('foreign key');
-        if (isLegacyConflict) {
-            console.warn(`⚠️  Migración ${sqlFile} tolerable: ${msg}`);
-            try { await query('INSERT INTO system_migrations (name) VALUES ($1)', [sqlFile]); } catch (regError) {}
-        } else {
-            console.error(`🔴 Error crítico en migración ${sqlFile}:`, msg);
-        }
-    }
-};
 
 app.listen(PORT, async () => {
     console.log(`\n🚀 GastroRed API corriendo en http://localhost:${PORT}`);
@@ -257,18 +230,4 @@ app.listen(PORT, async () => {
         await query('ALTER TABLE tenant_settings DROP CONSTRAINT IF EXISTS tenant_settings_tenant_id_key'); 
     } catch(e) { console.error('Error dropeando constraint:', e.message); }
 
-    const migrations = [
-        'init.sql', 'phase6.sql', 'phase7_orders.sql', 'phase8_auth.sql', 'phase9_whitelabel.sql',
-        'phase10_admin.sql', 'phase11_tenant_settings.sql', 'phase12_cash_payment.sql',
-        'phase13_gastrored_saas.sql', 'phase14_reconcile_tenant.sql', 'phase15_gastrored_config.sql',
-        'phase16_multitenant_fix.sql', 'phase17_tenants_stores_refactor.sql', 'phase18_tenant_admin_user.sql',
-        'phase19_admin_errors_fix.sql', 'phase20_clean_tenants.sql', 'phase21_fix_constraints.sql',
-        'phase22_products_stock.sql', 'phase23_products_stock_column.sql', 'phase24_loyalty_system.sql',
-        'phase25_loyalty_fix.sql', 'phase26_welcome_bonus.sql', 'phase27_promos.sql',
-        'phase28_loyalty_fix.sql', 'phase29_password_reset.sql', 'phase30_orders_paused.sql',
-        'phase31_delivered_at.sql', 'phase32_tenant_settings_fix.sql'
-    ];
-    for (const m of migrations) {
-        await runMigration(m);
-    }
 });

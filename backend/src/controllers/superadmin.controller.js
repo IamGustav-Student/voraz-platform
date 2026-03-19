@@ -71,9 +71,11 @@ export const listAllTenants = async (req, res) => {
               t.plan_type, t.subscription_period, t.subscription_expires_at,
               t.status, t.brand_name, t.brand_color_primary, t.brand_logo_url,
               t.slogan, t.created_at,
-              COALESCE(ts.custom_branding_enabled, false) AS custom_branding_enabled
+              (SELECT COALESCE(ts.custom_branding_enabled, false) 
+               FROM tenant_settings ts 
+               WHERE ts.tenant_id = t.id OR ts.tenant_id_fk::text = t.id::text 
+               LIMIT 1) AS custom_branding_enabled
        FROM tenants t
-       LEFT JOIN tenant_settings ts ON ts.tenant_id = t.id OR ts.tenant_id_fk::text = t.id::text
        ORDER BY t.created_at DESC`
     );
     res.json({ status: 'success', data: result.rows });

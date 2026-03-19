@@ -52,9 +52,20 @@ export async function runMigrations() {
         return a.localeCompare(b); // Desempate alfabético
       });
 
-    // 3. Obtener historial
-    const { rows } = await query('SELECT filename FROM migrations_history');
-    const executedFiles = new Set(rows.map(r => r.filename));
+    // 3. Obtener historial (nuevo y legacy)
+    const executedFiles = new Set();
+    
+    try {
+      const { rows: newRows } = await query('SELECT filename FROM migrations_history');
+      newRows.forEach(r => executedFiles.add(r.filename));
+    } catch (e) { console.warn('[MIGRATOR] Fallo al leer migrations_history, continuando...'); }
+
+    try {
+      const { rows: legacyRows } = await query("SELECT name FROM system_migrations");
+      legacyRows.forEach(r => executedFiles.add(r.name));
+    } catch (e) {
+      // Si no existe la tabla legacy, no pasa nada
+    }
 
     // 4. Ejecutar las nuevas
     for (const file of files) {
