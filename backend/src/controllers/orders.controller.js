@@ -240,8 +240,8 @@ export const updateOrderStatus = async (req, res) => {
             `UPDATE orders 
              SET status = $1, 
                  delivered_at = CASE 
-                   WHEN $1 = 'delivered' THEN COALESCE(delivered_at, NOW()) 
-                   ELSE NULL 
+                   WHEN $1::text = 'delivered' THEN COALESCE(delivered_at, NOW()) 
+                   ELSE NULL::timestamp 
                  END,
                  updated_at = NOW() 
              WHERE id = $2 RETURNING *`,
