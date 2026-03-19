@@ -55,6 +55,7 @@ async function syncTenantRecord(tenantId, tenantName) {
 
 // ── Crear tenant de trial (7 días gratis, sin pago) ────────────────────────
 export const createTrialTenant = async (req, res) => {
+  console.log('[TRIAL] Intentando crear tenant:', JSON.stringify(req.body));
   const { name, brand_name, subdomain, admin_email, slogan,
     brand_color_primary, brand_color_secondary, admin_name, admin_password } = req.body;
 
@@ -83,24 +84,30 @@ export const createTrialTenant = async (req, res) => {
         }
       }
 
-      // 2. Bloqueo por Subdominio
-      const existingSub = await query('SELECT id FROM trial_domain_history WHERE type = $1 AND value = $2 LIMIT 1', ['subdomain', cleanSub]);
-      if (existingSub.rows.length > 0) {
-        return res.status(403).json({
-          status: 'error',
-          message: `El subdominio "${cleanSub}" ya ha utilizado el periodo de prueba anteriormente.`
-        });
-      }
+      // 2. Bloqueo por Subdominio Histórico
+      try {
+        const existingSub = await query('SELECT id FROM trial_domain_history WHERE type = $1 AND value = $2 LIMIT 1', ['subdomain', cleanSub]);
+        if (existingSub.rows.length > 0) {
+          console.log('[TRIAL] Bloqueado por subdominio histórico:', cleanSub);
+          return res.status(403).json({
+            status: 'error',
+            message: `El subdominio "${cleanSub}" ya ha utilizado el periodo de prueba anteriormente.`
+          });
+        }
+      } catch (e) { console.warn('[TRIAL] Error checking subdomain history (table missing?):', e.message); }
 
       // 3. Bloqueo por Nombre de Restaurante
-      const cleanName = name.trim().toLowerCase();
-      const existingName = await query('SELECT id FROM trial_domain_history WHERE type = $1 AND value = $2 LIMIT 1', ['name', cleanName]);
-      if (existingName.rows.length > 0) {
-        return res.status(403).json({
-          status: 'error',
-          message: `El nombre "${name}" ya ha sido utilizado para una prueba gratuita anteriormente.`
-        });
-      }
+      try {
+        const cleanName = name.trim().toLowerCase();
+        const existingName = await query('SELECT id FROM trial_domain_history WHERE type = $1 AND value = $2 LIMIT 1', ['name', cleanName]);
+        if (existingName.rows.length > 0) {
+          console.log('[TRIAL] Bloqueado por nombre histórico:', cleanName);
+          return res.status(403).json({
+            status: 'error',
+            message: `El nombre "${name}" ya ha sido utilizado para una prueba gratuita anteriormente.`
+          });
+        }
+      } catch (e) { console.warn('[TRIAL] Error checking name history (table missing?):', e.message); }
     }
 
     const trialDays = parseInt(config.trial_days || '7');
@@ -126,14 +133,18 @@ export const createTrialTenant = async (req, res) => {
     const tenant = result.rows[0];
 
     // Registrar en el historial para impedir re-uso (ignorar si es bypass por simplicidad o forzar registro nuevo)
-    await query(
-      'INSERT INTO trial_domain_history (type, value, original_tenant_id) VALUES ($1, $2, $3) ON CONFLICT (value) DO NOTHING',
-      ['subdomain', cleanSub, cleanSub]
-    );
-    await query(
-      'INSERT INTO trial_domain_history (type, value, original_tenant_id) VALUES ($1, $2, $3) ON CONFLICT (value) DO NOTHING',
-      ['name', name.trim().toLowerCase(), cleanSub]
-    );
+    try {
+      await query(
+        'INSERT INTO trial_domain_history (type, value, original_tenant_id) VALUES ($1, $2, $3) ON CONFLICT (value) DO NOTHING',
+        ['subdomain', cleanSub, cleanSub]
+      );
+      await query(
+        'INSERT INTO trial_domain_history (type, value, original_tenant_id) VALUES ($1, $2, $3) ON CONFLICT (value) DO NOTHING',
+        ['name', name.trim().toLowerCase(), cleanSub]
+      );
+    } catch (e) {
+      console.warn('[TRIAL] Error recording history (table missing?):', e.message);
+    }
 
     // 2. Crear sucursal física inicial en STORES
     const storeResult = await query(
