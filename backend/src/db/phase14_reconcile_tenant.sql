@@ -11,19 +11,26 @@ ALTER TABLE stores ADD COLUMN IF NOT EXISTS lat         DECIMAL(10, 7);
 ALTER TABLE stores ADD COLUMN IF NOT EXISTS lng         DECIMAL(10, 7);
 
 -- 2. Asegurar que la tienda GastroRed base (id=1) existe y está completa
---    Esta es la tienda "Voraz" que actúa como primer tenant.
-INSERT INTO stores (id, name, subdomain, status, plan_type, brand_name,
-                    brand_color_primary, brand_color_secondary, slogan)
-VALUES (1, 'Voraz', 'voraz', 'active', 'Expert', 'Voraz',
-        '#E30613', '#1A1A1A', 'El hambre de crecer')
-ON CONFLICT (id) DO UPDATE SET
-  subdomain             = EXCLUDED.subdomain,
-  status                = EXCLUDED.status,
-  plan_type             = EXCLUDED.plan_type,
-  brand_name            = EXCLUDED.brand_name,
-  brand_color_primary   = EXCLUDED.brand_color_primary,
-  brand_color_secondary = EXCLUDED.brand_color_secondary,
-  slogan                = EXCLUDED.slogan;
+DO $$
+BEGIN
+  IF EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'stores' AND column_name = 'subdomain') THEN
+    INSERT INTO stores (id, name, subdomain, status, plan_type, brand_name,
+                        brand_color_primary, brand_color_secondary, slogan)
+    VALUES (1, 'Voraz', 'voraz', 'active', 'Expert', 'Voraz',
+            '#E30613', '#1A1A1A', 'El hambre de crecer')
+    ON CONFLICT (id) DO UPDATE SET
+      subdomain             = EXCLUDED.subdomain,
+      status                = EXCLUDED.status,
+      plan_type             = EXCLUDED.plan_type,
+      brand_name            = EXCLUDED.brand_name,
+      brand_color_primary   = EXCLUDED.brand_color_primary,
+      brand_color_secondary = EXCLUDED.brand_color_secondary,
+      slogan                = EXCLUDED.slogan;
+  ELSE
+    -- Si no existen las columnas legacy, solo aseguramos el ID
+    INSERT INTO stores (id, name) VALUES (1, 'Voraz') ON CONFLICT (id) DO NOTHING;
+  END IF;
+END $$;
 
 -- 3. Migrar datos que tienen tenant_id='voraz' pero store_id NULL → store_id=1
 UPDATE products    SET store_id = 1 WHERE store_id IS NULL;

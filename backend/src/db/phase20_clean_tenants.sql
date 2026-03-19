@@ -3,7 +3,14 @@
 
 -- 1. Eliminar datos transaccionales de otros comercios
 DELETE FROM order_items WHERE order_id IN (SELECT id FROM orders WHERE store_id IN (SELECT id FROM stores WHERE tenant_id != 'voraz'));
-DELETE FROM order_status_history WHERE order_id IN (SELECT id FROM orders WHERE store_id IN (SELECT id FROM stores WHERE tenant_id != 'voraz'));
+
+DO $$
+BEGIN
+  IF EXISTS (SELECT 1 FROM information_schema.tables WHERE table_name = 'order_status_history') THEN
+    DELETE FROM order_status_history WHERE order_id IN (SELECT id FROM orders WHERE store_id IN (SELECT id FROM stores WHERE tenant_id != 'voraz'));
+  END IF;
+END $$;
+
 DELETE FROM orders WHERE store_id IN (SELECT id FROM stores WHERE tenant_id != 'voraz');
 
 -- 2. Eliminar catálogo y usuarios de otros comercios

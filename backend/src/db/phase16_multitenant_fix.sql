@@ -12,22 +12,31 @@
 ALTER TABLE stores DROP COLUMN IF EXISTS store_id;
 
 -- 2. Sincronizar todos los stores con subdomain hacia tenants
---    (tabla legacy que sigue siendo necesaria para el sistema)
-INSERT INTO tenants (id, name)
-SELECT subdomain, COALESCE(brand_name, name)
-FROM stores
-WHERE subdomain IS NOT NULL AND subdomain <> ''
-ON CONFLICT (id) DO UPDATE SET name = EXCLUDED.name;
+DO $$
+BEGIN
+  IF EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'stores' AND column_name = 'subdomain') THEN
+    INSERT INTO tenants (id, name)
+    SELECT subdomain, COALESCE(brand_name, name)
+    FROM stores
+    WHERE subdomain IS NOT NULL AND subdomain <> ''
+    ON CONFLICT (id) DO UPDATE SET name = EXCLUDED.name;
+  END IF;
+END $$;
 
 -- 3. Crear tenant_settings para todos los stores que no tienen
-INSERT INTO tenant_settings (store_id, tenant_id, cash_on_delivery)
-SELECT s.id, s.subdomain, true
-FROM stores s
-WHERE s.subdomain IS NOT NULL
-  AND NOT EXISTS (
-    SELECT 1 FROM tenant_settings ts WHERE ts.store_id = s.id
-  )
-ON CONFLICT (store_id) DO NOTHING;
+DO $$
+BEGIN
+  IF EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'stores' AND column_name = 'subdomain') THEN
+    INSERT INTO tenant_settings (store_id, tenant_id, cash_on_delivery)
+    SELECT s.id, s.subdomain, true
+    FROM stores s
+    WHERE s.subdomain IS NOT NULL
+      AND NOT EXISTS (
+        SELECT 1 FROM tenant_settings ts WHERE ts.store_id = s.id
+      )
+    ON CONFLICT (store_id) DO NOTHING;
+  END IF;
+END $$;
 
 -- 4. Pasar a status='suspended' los stores pending_payment con
 --    subscription_expires_at vencida (limpieza de estados huérfanos)

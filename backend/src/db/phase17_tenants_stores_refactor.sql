@@ -23,46 +23,51 @@ ALTER TABLE tenants ADD COLUMN IF NOT EXISTS mp_subscription_id VARCHAR(200);
 
 -- 2. Migar datos de stores → tenants para todos los stores con subdomain
 --    Esto convierte los "stores SaaS" existentes en tenants reales.
-INSERT INTO tenants (
-  id, name, subdomain, custom_domain, plan_type, subscription_period,
-  subscription_expires_at, status, brand_name, brand_color_primary,
-  brand_color_secondary, brand_logo_url, brand_favicon_url, slogan, admin_email,
-  mp_subscription_id, active
-)
-SELECT
-  subdomain,
-  COALESCE(brand_name, name),
-  subdomain,
-  custom_domain,
-  COALESCE(plan_type, 'Full Digital'),
-  COALESCE(subscription_period, 'monthly'),
-  subscription_expires_at,
-  COALESCE(status, 'active'),
-  COALESCE(brand_name, name),
-  COALESCE(brand_color_primary, '#E30613'),
-  COALESCE(brand_color_secondary, '#1A1A1A'),
-  brand_logo_url,
-  brand_favicon_url,
-  slogan,
-  admin_email,
-  mp_subscription_id,
-  true
-FROM stores
-WHERE subdomain IS NOT NULL
-  AND subdomain <> ''
-  AND subdomain <> 'voraz'  -- voraz ya está en tenants
-ON CONFLICT (id) DO UPDATE SET
-  custom_domain          = EXCLUDED.custom_domain,
-  plan_type              = EXCLUDED.plan_type,
-  subscription_period    = EXCLUDED.subscription_period,
-  subscription_expires_at = EXCLUDED.subscription_expires_at,
-  status                 = EXCLUDED.status,
-  brand_name             = EXCLUDED.brand_name,
-  brand_color_primary    = EXCLUDED.brand_color_primary,
-  brand_color_secondary  = EXCLUDED.brand_color_secondary,
-  brand_logo_url         = EXCLUDED.brand_logo_url,
-  slogan                 = EXCLUDED.slogan,
-  admin_email            = EXCLUDED.admin_email;
+DO $$
+BEGIN
+  IF EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'stores' AND column_name = 'subdomain') THEN
+    INSERT INTO tenants (
+      id, name, subdomain, custom_domain, plan_type, subscription_period,
+      subscription_expires_at, status, brand_name, brand_color_primary,
+      brand_color_secondary, brand_logo_url, brand_favicon_url, slogan, admin_email,
+      mp_subscription_id, active
+    )
+    SELECT
+      subdomain,
+      COALESCE(brand_name, name),
+      subdomain,
+      custom_domain,
+      COALESCE(plan_type, 'Full Digital'),
+      COALESCE(subscription_period, 'monthly'),
+      subscription_expires_at,
+      COALESCE(status, 'active'),
+      COALESCE(brand_name, name),
+      COALESCE(brand_color_primary, '#E30613'),
+      COALESCE(brand_color_secondary, '#1A1A1A'),
+      brand_logo_url,
+      brand_favicon_url,
+      slogan,
+      admin_email,
+      mp_subscription_id,
+      true
+    FROM stores
+    WHERE subdomain IS NOT NULL
+      AND subdomain <> ''
+      AND subdomain <> 'voraz'  -- voraz ya está en tenants
+    ON CONFLICT (id) DO UPDATE SET
+      custom_domain          = EXCLUDED.custom_domain,
+      plan_type              = EXCLUDED.plan_type,
+      subscription_period    = EXCLUDED.subscription_period,
+      subscription_expires_at = EXCLUDED.subscription_expires_at,
+      status                 = EXCLUDED.status,
+      brand_name             = EXCLUDED.brand_name,
+      brand_color_primary    = EXCLUDED.brand_color_primary,
+      brand_color_secondary  = EXCLUDED.brand_color_secondary,
+      brand_logo_url         = EXCLUDED.brand_logo_url,
+      slogan                 = EXCLUDED.slogan,
+      admin_email            = EXCLUDED.admin_email;
+  END IF;
+END $$;
 
 -- 3. Asegurar que Voraz (tenant=voraz) tiene todos los campos
 UPDATE tenants SET
