@@ -1723,11 +1723,15 @@ function BrandingSection({ token, onUpgrade }) {
           logo_url: branding.logo_url,
         }),
       });
-      setMsg('Branding actualizado. Recargá la página para ver los cambios.');
-      if (branding.primary_color)
+      setMsg('Branding actualizado correctamente.');
+      if (branding.primary_color) {
         document.documentElement.style.setProperty('--primary-color', branding.primary_color);
-      if (branding.secondary_color)
+        document.documentElement.style.setProperty('--brand-primary', branding.primary_color);
+      }
+      if (branding.secondary_color) {
         document.documentElement.style.setProperty('--secondary-color', branding.secondary_color);
+        document.documentElement.style.setProperty('--brand-secondary', branding.secondary_color);
+      }
     } catch (err) { setMsg('Error: ' + err.message); }
     setSaving(false);
   };

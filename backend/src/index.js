@@ -188,9 +188,13 @@ app.get('/api/settings', tenantMiddleware, async (req, res) => {
     const tenantId = getTenantId(req);
     try {
         const result = await query(
-            `SELECT t.id, ts.cash_on_delivery, ts.orders_paused, t.brand_name, t.brand_color_primary, t.brand_color_secondary,
-                    t.brand_logo_url, t.slogan, t.plan_type, t.subdomain,
-                    ts.primary_color, ts.secondary_color, ts.font_family, ts.logo_url, ts.custom_branding_enabled,
+            `SELECT t.id, ts.cash_on_delivery, ts.orders_paused, t.slogan, t.plan_type, t.subdomain,
+                    COALESCE(ts.primary_color, t.brand_color_primary) as brand_color_primary,
+                    COALESCE(ts.secondary_color, t.brand_color_secondary) as brand_color_secondary,
+                    COALESCE(ts.logo_url, t.brand_logo_url) as brand_logo_url,
+                    t.brand_name,
+                    t.brand_favicon_url,
+                    ts.primary_color, ts.secondary_color, ts.font_family, ts.logo_url as ts_logo_url, ts.custom_branding_enabled,
                     ts.loyalty_enabled, ts.points_redeem_value
              FROM tenants t
              LEFT JOIN tenant_settings ts ON ts.tenant_id_fk = t.id

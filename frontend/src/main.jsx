@@ -8,11 +8,13 @@ import { AuthProvider } from './context/AuthContext.jsx';
 import { TENANT } from './config/tenant.js';
 import { TenantProvider } from './hooks/useTenant.jsx';
 
-// Inyectar variables CSS del tenant al arrancar la app
+// Inyectar variables CSS del tenant al arrancar la app (Defaults)
 const root = document.documentElement;
 root.style.setProperty('--brand-primary',       TENANT.theme.primary);
+root.style.setProperty('--primary-color',       TENANT.theme.primary);
 root.style.setProperty('--brand-primary-hover', TENANT.theme.primaryHover);
 root.style.setProperty('--brand-secondary',     TENANT.theme.secondary);
+root.style.setProperty('--secondary-color',     TENANT.theme.secondary);
 root.style.setProperty('--brand-bg',            TENANT.theme.background);
 root.style.setProperty('--brand-surface',       TENANT.theme.surface);
 root.style.setProperty('--brand-text',          TENANT.theme.text);

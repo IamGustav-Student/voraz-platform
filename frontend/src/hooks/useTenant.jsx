@@ -75,12 +75,24 @@ export function TenantProvider({ children }) {
 
         if (s.brand_color_primary) {
           root.style.setProperty('--brand-primary', s.brand_color_primary);
+          root.style.setProperty('--primary-color', s.brand_color_primary);
           root.style.setProperty('--brand-primary-rgb', hexToRgb(s.brand_color_primary));
           root.style.setProperty('--brand-primary-hover', s.brand_color_primary + 'cc');
         }
         if (s.brand_color_secondary) {
           root.style.setProperty('--brand-secondary', s.brand_color_secondary);
+          root.style.setProperty('--secondary-color', s.brand_color_secondary);
           root.style.setProperty('--brand-secondary-rgb', hexToRgb(s.brand_color_secondary));
+        }
+        if (s.font_family) {
+          root.style.setProperty('--font-family', s.font_family);
+        }
+
+        // Dinamismo en metadatos del navegador
+        if (s.brand_name) document.title = s.brand_name;
+        if (s.brand_logo_url) {
+          const favicon = document.querySelector('link[rel="icon"]');
+          if (favicon) favicon.href = s.brand_logo_url;
         }
       })
       .catch(() => {
