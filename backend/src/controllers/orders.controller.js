@@ -138,15 +138,8 @@ export const createOrder = async (req, res) => {
             await client.query('UPDATE points_history SET order_id = $1 WHERE user_id = $2 AND order_id IS NULL AND type = \'redeemed\'', [orderId, user_id]);
         }
 
-        // 7. Acreditar puntos de forma INMEDIATA para pedidos en efectivo
-        // (Para MercadoPago, se acreditan al confirmar el pago via webhook)
-        if (resolvedPaymentMethod === 'cash' && user_id && totalPointsEarned > 0 && settings.loyalty_enabled) {
-            await client.query('UPDATE users SET points = points + $1 WHERE id = $2', [totalPointsEarned, user_id]);
-            await client.query(
-                `INSERT INTO points_history (user_id, order_id, points, type, description) VALUES ($1,$2,$3,'earned',$4)`,
-                [user_id, orderId, totalPointsEarned, `Puntos ganados por pedido #${orderId}`]
-            );
-        }
+        // 7. Acreditación de puntos ELIMINADA de aquí.
+        // Ahora se acreditan únicamente cuando el administrador marca el pedido como 'entregado'.
 
         await client.query('COMMIT');
         res.status(201).json({ status: 'success', data: { order_id: orderId, final_total: finalTotal, points_earned: totalPointsEarned } });
@@ -242,8 +235,16 @@ export const updateOrderStatus = async (req, res) => {
             }
         }
 
+        // 3. Actualizar estado de la orden (con delivered_at logic)
         const updateResult = await client.query(
-            'UPDATE orders SET status = $1, updated_at = NOW() WHERE id = $2 RETURNING *',
+            `UPDATE orders 
+             SET status = $1, 
+                 delivered_at = CASE 
+                   WHEN $1 = 'delivered' THEN COALESCE(delivered_at, NOW()) 
+                   ELSE NULL 
+                 END,
+                 updated_at = NOW() 
+             WHERE id = $2 RETURNING *`,
             [status, id]
         );
         

@@ -1,4 +1,4 @@
-import { query } from '../config/db.js';
+import { query, pool } from '../config/db.js';
 import { v2 as cloudinary } from 'cloudinary';
 import { getTenantId, getStoreId } from '../utils/tenant.js';
 
@@ -268,36 +268,36 @@ export const getDashboardStats = async (req, res) => {
       tenantInfo,
       loyaltyConfig
     ] = await Promise.all([
-      // 1. Estadísticas básicas (Cards)
+      // 1. Estadísticas básicas (Cards) - Ingresos solo si está entregado
       query(`
         SELECT 
           (SELECT COUNT(*) FROM products WHERE store_id=$1 AND is_active=true) as products_count,
           (SELECT COUNT(*) FROM orders WHERE store_id=$1 AND status != 'cancelled') as orders_count,
-          (SELECT COALESCE(SUM(total),0) FROM orders WHERE store_id=$1 AND status != 'cancelled') as total_revenue,
+          (SELECT COALESCE(SUM(total),0) FROM orders WHERE store_id=$1 AND status = 'delivered') as total_revenue,
           (SELECT COUNT(*) FROM users WHERE store_id=$1) as users_count,
-          (SELECT COALESCE(SUM(points_redeemed),0) FROM orders WHERE store_id=$1 AND status != 'cancelled') as points_redeemed
+          (SELECT COALESCE(SUM(points_redeemed),0) FROM orders WHERE store_id=$1 AND status = 'delivered') as points_redeemed
       `, [storeId]),
 
-      // 2. Pedidos mensuales por semana (últimas 4 semanas)
+      // 2. Pedidos mensuales por semana (Usando delivered_at para pedidos entregados)
       query(`
         SELECT 
-          to_char(DATE_TRUNC('week', created_at), 'DD/MM') as week_label,
+          to_char(DATE_TRUNC('week', COALESCE(delivered_at, created_at)), 'DD/MM') as week_label,
           COUNT(*) as count
         FROM orders 
-        WHERE store_id = $1 AND created_at >= NOW() - INTERVAL '30 days'
-        GROUP BY DATE_TRUNC('week', created_at)
-        ORDER BY DATE_TRUNC('week', created_at) ASC
+        WHERE store_id = $1 AND status = 'delivered' AND COALESCE(delivered_at, created_at) >= NOW() - INTERVAL '30 days'
+        GROUP BY DATE_TRUNC('week', COALESCE(delivered_at, created_at))
+        ORDER BY DATE_TRUNC('week', COALESCE(delivered_at, created_at)) ASC
       `, [storeId]),
 
-      // 3. Ingresos diarios (últimos 14 días)
+      // 3. Ingresos diarios (Solo entregados, usando delivered_at)
       query(`
         SELECT 
-          to_char(created_at, 'DD/MM') as day_label,
+          to_char(COALESCE(delivered_at, created_at), 'DD/MM') as day_label,
           COALESCE(SUM(total), 0) as amount
         FROM orders 
-        WHERE store_id = $1 AND status != 'cancelled' AND created_at >= NOW() - INTERVAL '14 days'
-        GROUP BY to_char(created_at, 'DD/MM'), DATE_TRUNC('day', created_at)
-        ORDER BY DATE_TRUNC('day', created_at) ASC
+        WHERE store_id = $1 AND status = 'delivered' AND COALESCE(delivered_at, created_at) >= NOW() - INTERVAL '14 days'
+        GROUP BY to_char(COALESCE(delivered_at, created_at), 'DD/MM'), DATE_TRUNC('day', COALESCE(delivered_at, created_at))
+        ORDER BY DATE_TRUNC('day', COALESCE(delivered_at, created_at)) ASC
       `, [storeId]),
 
       // 4. Productos más vendidos (Top 5)
@@ -308,7 +308,7 @@ export const getDashboardStats = async (req, res) => {
           SUM(subtotal) as total_amount
         FROM order_items oi
         JOIN orders o ON oi.order_id = o.id
-        WHERE o.store_id = $1 AND o.status != 'cancelled'
+        WHERE o.store_id = $1 AND o.status = 'delivered'
         GROUP BY product_name
         ORDER BY total_qty DESC
         LIMIT 5
@@ -324,10 +324,10 @@ export const getDashboardStats = async (req, res) => {
         WHERE t.id::text = $1::text
       `, [String(tenantId)]),
 
-      // 6. Config de puntos (para saber total asignados)
+      // 6. Config de puntos (Solo entregados)
       query(`
         SELECT COALESCE(SUM(points_earned), 0) as total_assigned
-        FROM orders WHERE store_id = $1 AND status != 'cancelled'
+        FROM orders WHERE store_id = $1 AND status = 'delivered'
       `, [storeId])
     ]);
 
@@ -431,6 +431,7 @@ export const getAdminOrders = async (req, res) => {
 };
 
 export const updateOrderStatus = async (req, res) => {
+  const client = await pool.connect();
   try {
     const { id } = req.params;
     const { status } = req.body;
@@ -439,13 +440,80 @@ export const updateOrderStatus = async (req, res) => {
       return res.status(400).json({ status: 'error', message: 'Estado inválido' });
     }
     const storeId = await getStoreId(req);
-    const result = await query(
-      'UPDATE orders SET status=$1 WHERE id=$2 AND store_id=$3 RETURNING *',
+    const tenantId = getTenantId(req);
+
+    await client.query('BEGIN');
+
+    // 1. Obtener estado actual de la orden con bloqueo
+    const orderRes = await client.query(
+      'SELECT id, status, user_id, points_earned, points_redeemed FROM orders WHERE id = $1 AND store_id = $2 FOR UPDATE',
+      [id, storeId]
+    );
+    if (!orderRes.rows.length) {
+      await client.query('ROLLBACK');
+      return res.status(404).json({ status: 'error', message: 'Pedido no encontrado' });
+    }
+    const order = orderRes.rows[0];
+
+    // 2. Acreditación de puntos al marcar como 'delivered'
+    if (status === 'delivered' && order.status !== 'delivered' && order.user_id && (order.points_earned || 0) > 1) {
+      const loyaltyRes = await client.query(
+        'SELECT loyalty_enabled FROM tenant_settings WHERE store_id = $1 LIMIT 1',
+        [storeId]
+      );
+      if (loyaltyRes.rows[0]?.loyalty_enabled) {
+        // Evitar duplicados (idempotencia)
+        const alreadyEarned = await client.query(
+          "SELECT id FROM points_history WHERE order_id = $1 AND type = 'earned'",
+          [id]
+        );
+        if (!alreadyEarned.rows.length) {
+          await client.query('UPDATE users SET points = points + $1 WHERE id = $2', [order.points_earned, order.user_id]);
+          await client.query(
+            `INSERT INTO points_history (user_id, order_id, points, type, description) VALUES ($1,$2,$3,'earned',$4)`,
+            [order.user_id, id, order.points_earned, `Puntos ganados por pedido entregado #${id}`]
+          );
+        }
+      }
+    }
+
+    // 3. Devolución de puntos al cancelar
+    if (status === 'cancelled' && order.status !== 'cancelled' && order.user_id && (order.points_redeemed || 0) > 0) {
+      const alreadyRefunded = await client.query(
+        "SELECT id FROM points_history WHERE order_id = $1 AND type = 'refund'",
+        [id]
+      );
+      if (!alreadyRefunded.rows.length) {
+        await client.query('UPDATE users SET points = points + $1 WHERE id = $2', [order.points_redeemed, order.user_id]);
+        await client.query(
+          `INSERT INTO points_history (user_id, order_id, points, type, description) VALUES ($1,$2,$3,'refund',$4)`,
+          [order.user_id, id, order.points_redeemed, `Devolución de puntos por cancelación de pedido #${id}`]
+        );
+      }
+    }
+
+    // 4. Actualizar estado de la orden
+    const updateResult = await client.query(
+      `UPDATE orders 
+       SET status=$1, 
+           delivered_at = CASE 
+             WHEN $1 = 'delivered' THEN COALESCE(delivered_at, NOW()) 
+             ELSE NULL 
+           END,
+           updated_at = NOW()
+       WHERE id=$2 AND store_id=$3 
+       RETURNING *`,
       [status, id, storeId]
     );
-    if (!result.rows.length) return res.status(404).json({ status: 'error', message: 'Pedido no encontrado' });
-    res.json({ status: 'success', data: result.rows[0] });
-  } catch (e) { res.status(500).json({ status: 'error', message: e.message }); }
+
+    await client.query('COMMIT');
+    res.json({ status: 'success', data: updateResult.rows[0] });
+  } catch (e) {
+    await client.query('ROLLBACK').catch(() => {});
+    res.status(500).json({ status: 'error', message: e.message });
+  } finally {
+    client.release();
+  }
 };
 
 // ── CONFIGURACIÓN MERCADOPAGO ──────────────────────────────────────────────
@@ -515,7 +583,7 @@ export const getBranding = async (req, res) => {
           ts.custom_branding_enabled, 
           t.plan_type
        FROM tenants t
-       LEFT JOIN tenant_settings ts ON ts.tenant_id_fk = t.id
+       LEFT JOIN tenant_settings ts ON ts.store_id = (SELECT id FROM stores WHERE tenant_id = t.id LIMIT 1)
        WHERE t.id::text = $1::text OR t.subdomain = $1::text LIMIT 1`,
       [String(tenantId)]
     );
@@ -550,16 +618,17 @@ export const updateBranding = async (req, res) => {
     }
 
     const { primary_color, secondary_color, font_family, logo_url } = req.body;
+    const storeId = await getStoreId(req);
     await query(
-      `INSERT INTO tenant_settings (tenant_id, tenant_id_fk, primary_color, secondary_color, font_family, logo_url, updated_at)
-       VALUES ($1, $1, $2, $3, $4, $5, NOW())
-       ON CONFLICT (tenant_id) DO UPDATE SET
-         primary_color   = COALESCE(NULLIF($2,''), tenant_settings.primary_color),
-         secondary_color = COALESCE(NULLIF($3,''), tenant_settings.secondary_color),
-         font_family     = COALESCE(NULLIF($4,''), tenant_settings.font_family),
-         logo_url        = COALESCE(NULLIF($5,''), tenant_settings.logo_url),
+      `INSERT INTO tenant_settings (store_id, tenant_id, tenant_id_fk, primary_color, secondary_color, font_family, logo_url, updated_at)
+       VALUES ($1, $2, $2, $3, $4, $5, $6, NOW())
+       ON CONFLICT (store_id) DO UPDATE SET
+         primary_color   = COALESCE(NULLIF($3,''), tenant_settings.primary_color),
+         secondary_color = COALESCE(NULLIF($4,''), tenant_settings.secondary_color),
+         font_family     = COALESCE(NULLIF($5,''), tenant_settings.font_family),
+         logo_url        = COALESCE(NULLIF($6,''), tenant_settings.logo_url),
          updated_at      = NOW()`,
-      [String(tenantId), primary_color || '', secondary_color || '', font_family || '', logo_url || '']
+      [storeId, String(tenantId), primary_color || '', secondary_color || '', font_family || '', logo_url || '']
     );
     res.json({ status: 'success', message: 'Branding actualizado correctamente.' });
   } catch (e) { res.status(500).json({ status: 'error', message: e.message }); }
@@ -592,10 +661,10 @@ export const getQRConfig = async (req, res) => {
 // ── FIDELIZACIÓN (LOYALTY) ───────────────────────────────────────────────────
 export const getLoyaltyConfig = async (req, res) => {
   try {
-    const tenantId = getTenantId(req);
+    const storeId = await getStoreId(req);
     const result = await query(
-      `SELECT loyalty_enabled, points_redeem_value FROM tenant_settings WHERE tenant_id_fk = $1`,
-      [String(tenantId)]
+      `SELECT loyalty_enabled, points_redeem_value FROM tenant_settings WHERE store_id = $1`,
+      [storeId]
     );
     const config = result.rows[0] || { loyalty_enabled: false, points_redeem_value: 0 };
     res.json({ status: 'success', data: config });
@@ -604,17 +673,18 @@ export const getLoyaltyConfig = async (req, res) => {
 
 export const updateLoyaltyConfig = async (req, res) => {
   try {
+    const storeId = await getStoreId(req);
     const tenantId = getTenantId(req);
     const { loyalty_enabled, points_redeem_value } = req.body;
     
     await query(
-      `INSERT INTO tenant_settings (tenant_id, tenant_id_fk, loyalty_enabled, points_redeem_value, updated_at)
-       VALUES ($1, $1, $2, $3, NOW())
-       ON CONFLICT (tenant_id) DO UPDATE SET
-         loyalty_enabled     = $2,
-         points_redeem_value = $3,
+      `INSERT INTO tenant_settings (store_id, tenant_id, tenant_id_fk, loyalty_enabled, points_redeem_value, updated_at)
+       VALUES ($1, $2, $2, $3, $4, NOW())
+       ON CONFLICT (store_id) DO UPDATE SET
+         loyalty_enabled     = $3,
+         points_redeem_value = $4,
          updated_at          = NOW()`,
-      [String(tenantId), !!loyalty_enabled, parseInt(points_redeem_value, 10) || 0]
+      [storeId, String(tenantId), !!loyalty_enabled, parseInt(points_redeem_value, 10) || 0]
     );
     res.json({ status: 'success', message: 'Configuración de fidelización actualizada.' });
   } catch (e) { res.status(500).json({ status: 'error', message: e.message }); }

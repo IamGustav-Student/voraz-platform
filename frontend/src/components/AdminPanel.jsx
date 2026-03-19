@@ -560,14 +560,26 @@ function DashboardSection({ data }) {
 
   return (
     <div className="animate-in fade-in slide-in-from-bottom-4 duration-500">
+      <div className="flex items-center justify-between mb-8 print:hidden">
+        <div>
+          <h2 className="text-4xl font-black text-white tracking-tighter uppercase">Dashboard</h2>
+          <p className="text-gray-500 font-medium italic">Resumen de actividad de {subscription?.brand_name || 'tu comercio'}</p>
+        </div>
+        <button 
+          onClick={() => window.print()}
+          className="bg-white/10 hover:bg-white/20 text-white px-5 py-2.5 rounded-2xl border border-white/10 transition-all flex items-center gap-2 font-bold text-sm shadow-xl shadow-black/20"
+        >
+          <span>📥</span> Descargar / Imprimir PDF
+        </button>
+      </div>
       
       {/* 1. Hero Banner Countdown */}
       <DashboardHero subscription={data.subscription} />
 
       {/* 2. Top Stats Cards */}
-      <div className="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4 mb-8">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4 mb-8">
         {cards.map(c => (
-          <div key={c.label} className="bg-white/5 rounded-2xl p-5 border border-white/10 group hover:border-white/20 transition-all">
+          <div key={c.label} className="bg-white/5 rounded-2xl p-4 sm:p-5 border border-white/10 group hover:border-white/20 transition-all flex flex-col justify-between min-h-[110px]">
             <div className="flex items-center justify-between mb-2">
               <span className="text-lg opacity-80 group-hover:scale-110 transition-transform">{c.icon}</span>
               <span className="w-1.5 h-1.5 rounded-full bg-white/20" />
@@ -578,9 +590,9 @@ function DashboardSection({ data }) {
         ))}
       </div>
 
-      <div className="grid lg:grid-cols-2 gap-8 mb-8">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 md:gap-8 mb-8">
         {/* 3. Gráfica de Ingresos Diarios */}
-        <div className="bg-white/5 rounded-3xl p-6 border border-white/10 h-[350px] flex flex-col">
+        <div className="bg-white/5 rounded-3xl p-5 sm:p-6 border border-white/10 h-[300px] sm:h-[350px] flex flex-col">
           <div className="flex items-center justify-between mb-6">
             <h3 className="font-black text-white flex items-center gap-2">
               <span className="text-yellow-500">📈</span> Ingresos Diarios
@@ -593,7 +605,7 @@ function DashboardSection({ data }) {
         </div>
 
         {/* 4. Gráfica de Pedidos Semanales */}
-        <div className="bg-white/5 rounded-3xl p-6 border border-white/10 h-[350px] flex flex-col">
+        <div className="bg-white/5 rounded-3xl p-5 sm:p-6 border border-white/10 h-[300px] sm:h-[350px] flex flex-col">
           <div className="flex items-center justify-between mb-6">
             <h3 className="font-black text-white flex items-center gap-2">
               <span className="text-blue-500">📊</span> Pedidos por Semana
@@ -607,8 +619,8 @@ function DashboardSection({ data }) {
       </div>
 
       {/* 5. Best Sellers & Loyalty Insight */}
-      <div className="grid lg:grid-cols-3 gap-8">
-        <div className="lg:col-span-2 bg-white/5 rounded-3xl p-6 border border-white/10">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 md:gap-8">
+        <div className="lg:col-span-2 bg-white/5 rounded-3xl p-5 sm:p-6 border border-white/10">
           <h3 className="font-black text-white flex items-center gap-2 mb-6 text-sm">
             <span className="text-red-500">🔥</span> Top Productos (Más Vendidos)
           </h3>
@@ -629,7 +641,7 @@ function DashboardSection({ data }) {
           </div>
         </div>
 
-        <div className="bg-gradient-to-br from-purple-900/40 via-black to-black rounded-3xl p-6 border border-white/10 flex flex-col justify-center items-center text-center">
+        <div className="bg-gradient-to-br from-purple-900/40 via-black to-black rounded-3xl p-5 sm:p-8 border border-white/10 flex flex-col justify-center items-center text-center">
           <div className="w-16 h-16 bg-purple-500/20 rounded-full flex items-center justify-center text-3xl mb-4 border border-purple-500/20">
             ✨
           </div>
@@ -1118,7 +1130,7 @@ function CouponsSection({ items, token, reload }) {
       <h2 className="text-2xl font-bold mb-6">Cupones</h2>
       <form onSubmit={submit} className="bg-white/5 rounded-xl p-5 border border-white/10 mb-8 grid grid-cols-2 gap-3">
         <h3 className="col-span-2 font-semibold text-gray-300">Nuevo cupón</h3>
-        <input placeholder="Código (ej: VORAZ20)" value={form.code} onChange={e => setForm(p => ({ ...p, code: e.target.value }))}
+        <input placeholder="Código (ej: PROMO10)" value={form.code} onChange={e => setForm(p => ({ ...p, code: e.target.value }))}
           className="bg-black/30 border border-white/10 rounded-lg px-3 py-2 text-white text-sm uppercase" required />
         <input placeholder="Descripción" value={form.description} onChange={e => setForm(p => ({ ...p, description: e.target.value }))}
           className="bg-black/30 border border-white/10 rounded-lg px-3 py-2 text-white text-sm" />
@@ -1314,8 +1326,8 @@ function LoyaltySection({ items, token }) {
             
             <div className="text-gray-600 text-2xl">=</div>
 
-            <div className="flex-1 bg-white/5 rounded-xl p-4 border border-voraz-yellow/20 relative">
-               <span className="absolute left-4 top-1/2 -translate-y-1/2 text-voraz-yellow font-black">$</span>
+            <div className="flex-1 bg-white/5 rounded-xl p-4 border border-white/10 relative">
+               <span className="absolute left-4 top-1/2 -translate-y-1/2 text-white font-black">$</span>
                <input 
                  type="number"
                  value={config.points_redeem_value}
@@ -1328,8 +1340,8 @@ function LoyaltySection({ items, token }) {
             </div>
           </div>
           
-          <div className="mt-10 bg-voraz-yellow/5 border border-voraz-yellow/10 rounded-lg p-4">
-            <p className="text-xs text-voraz-yellow/80 leading-relaxed font-medium">
+          <div className="mt-10 bg-white/5 border border-white/10 rounded-lg p-4">
+            <p className="text-xs text-gray-400 leading-relaxed font-medium">
               💡 <strong>¿Cómo funciona?</strong> Por cada producto que los clientes compren, sumarán los puntos que definas en la sección "Productos". Al llegar a 500 puntos, podrán canjearlos por <strong>${config.points_redeem_value}</strong> de descuento en su carrito.
             </p>
           </div>
@@ -1483,7 +1495,7 @@ function OrdersSection({ items, token, reload, mpData }) {
                 <span className="font-mono text-xs text-gray-600">#{o.id}</span>
                 <div className="flex-1 min-w-0">
                   <p className="text-sm text-gray-500">{o.user_name || o.user_email || 'Invitado'}</p>
-                  <p className="text-xs text-gray-600">{new Date(o.created_at).toLocaleString('es-AR')}</p>
+                  <p className="text-xs text-gray-600">{new Date(o.delivered_at || o.created_at).toLocaleString('es-AR')}</p>
                 </div>
                 <span className={`text-xs px-2 py-1 rounded-full flex-shrink-0 ${
                   o.status === 'delivered' ? 'bg-gray-800 text-gray-500' : 'bg-red-950 text-red-700'
@@ -1904,6 +1916,7 @@ function SubscriptionSection({ data, token, reload }) {
 
   return (
     <div className="p-6 max-w-4xl">
+
       <div className="mb-10">
         <h2 className="text-2xl font-black text-white mb-2">Mi Suscripción</h2>
         <div className="flex items-center gap-4 bg-white/5 border border-white/10 rounded-2xl p-5">

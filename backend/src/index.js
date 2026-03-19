@@ -334,4 +334,6 @@ app.listen(PORT, async () => {
     await runMigration('phase28_loyalty_fix.sql');    // Fidelización: fix CHECK constraint, sync tenant_id_fk, default points
     await runMigration('phase29_password_reset.sql');  // Password reset tokens table
     await runMigration('phase30_orders_paused.sql');    // Pausa de recepción de pedidos por comercio
+    await runMigration('phase31_delivered_at.sql');    // Timestamp de entrega para ingresos
+    await runMigration('phase32_tenant_settings_fix.sql');
 });

@@ -233,28 +233,9 @@ export const webhook = async (req, res) => {
             );
             const order = result.rows[0];
 
-            if (order?.user_id && (order?.points_earned || 0) > 0) {
-                // Verificar si la fidelización está activa para este comercio
-                const loyaltyCheck = await query(
-                    'SELECT loyalty_enabled FROM tenant_settings WHERE tenant_id_fk = (SELECT tenant_id_fk FROM stores WHERE id = $1)',
-                    [order.store_id]
-                );
+            // Acreditación de puntos ELIMINADA de aquí.
+            // Ahora se realiza únicamente cuando el administrador marca el pedido como 'entregado'.
 
-                if (loyaltyCheck.rows[0]?.loyalty_enabled) {
-                    const already = await query(
-                        `SELECT id FROM points_history WHERE order_id = $1 AND type = 'earned'`,
-                        [orderId]
-                    );
-                    if (!already.rows.length) {
-                        await query('UPDATE users SET points = points + $1 WHERE id = $2', [order.points_earned || 0, order.user_id]);
-                        await query(
-                            `INSERT INTO points_history (user_id, order_id, points, type, description) VALUES ($1,$2,$3,'earned',$4)`,
-                            [order.user_id, orderId, order.points_earned, `Puntos ganados por pedido #${orderId}`]
-                        );
-                        console.log(`[Loyalty Webhook] Puntos acreditados para pedido #${orderId}: ${order.points_earned} pts`);
-                    }
-                }
-            }
         } else if (newPaymentStatus === 'rejected' || newPaymentStatus === 'cancelled') {
             const orderCheck = await query('SELECT id, payment_status, status FROM orders WHERE id = $1', [orderId]);
             if (!orderCheck.rows.length) return res.sendStatus(200);
