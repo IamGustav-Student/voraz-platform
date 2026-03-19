@@ -385,19 +385,37 @@ export const deleteTenant = async (req, res) => {
 
     if (storeIds.length > 0) {
       await query('DELETE FROM order_items WHERE order_id IN (SELECT id FROM orders WHERE store_id = ANY($1::int[]))', [storeIds]);
-      await query('DELETE FROM order_status_history WHERE order_id IN (SELECT id FROM orders WHERE store_id = ANY($1::int[]))', [storeIds]);
+      
+      try {
+        await query('DELETE FROM order_status_history WHERE order_id IN (SELECT id FROM orders WHERE store_id = ANY($1::int[]))', [storeIds]);
+      } catch (e) { /* Tabla opcional */ }
+      
       await query('DELETE FROM orders WHERE store_id = ANY($1::int[])', [storeIds]);
       
-      await query('DELETE FROM cart_items WHERE session_id IN (SELECT id FROM cart_sessions WHERE store_id = ANY($1::int[]))', [storeIds]);
-      await query('DELETE FROM cart_sessions WHERE store_id = ANY($1::int[])', [storeIds]);
+      try {
+        await query('DELETE FROM cart_items WHERE session_id IN (SELECT id FROM cart_sessions WHERE store_id = ANY($1::int[]))', [storeIds]);
+        await query('DELETE FROM cart_sessions WHERE store_id = ANY($1::int[])', [storeIds]);
+      } catch (e) { /* Tablas opcations */ }
       
       await query('DELETE FROM points_history WHERE user_id IN (SELECT id FROM users WHERE store_id = ANY($1::int[]))', [storeIds]);
-      await query('DELETE FROM user_points WHERE store_id = ANY($1::int[])', [storeIds]);
+      
+      try {
+        await query('DELETE FROM user_points WHERE store_id = ANY($1::int[])', [storeIds]);
+      } catch (e) { /* Tablas opcations */ }
+      
       await query('DELETE FROM users WHERE store_id = ANY($1::int[])', [storeIds]);
       
-      await query('DELETE FROM productos WHERE store_id = ANY($1::int[])', [storeIds]);
+      try {
+        await query('DELETE FROM products WHERE store_id = ANY($1::int[])', [storeIds]);
+      } catch (e) {
+        try { await query('DELETE FROM productos WHERE store_id = ANY($1::int[])', [storeIds]); } catch(e2) {}
+      }
+      
       await query('DELETE FROM categories WHERE store_id = ANY($1::int[])', [storeIds]);
-      await query('DELETE FROM promos WHERE store_id = ANY($1::int[])', [storeIds]);
+      
+      try {
+        await query('DELETE FROM promos WHERE store_id = ANY($1::int[])', [storeIds]);
+      } catch (e) { /* Tablas opcations */ }
       
       await query('DELETE FROM tenant_settings WHERE store_id = ANY($1::int[]) OR tenant_id = $2 OR tenant_id_fk = $2', [storeIds, id]);
       await query('DELETE FROM stores WHERE tenant_id = $1', [id]);
