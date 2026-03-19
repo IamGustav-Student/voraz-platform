@@ -154,6 +154,17 @@ app.get('/api/manifest', async (req, res) => {
         const color = s.brand_color_primary || '#E30613';
         const logo = s.brand_logo_url || '/images/logo_voraz.jpg';
 
+        // Determinar contraste para splash screen
+        const getLuminance = (hex) => {
+            const h = hex.replace('#', '');
+            const r = parseInt(h.substr(0, 2), 16);
+            const g = parseInt(h.substr(2, 2), 16);
+            const b = parseInt(h.substr(4, 2), 16);
+            return (0.299 * r + 0.587 * g + 0.114 * b) / 255;
+        };
+        const isLight = getLuminance(color) > 0.6;
+        const splashBg = isLight ? '#000000' : '#FFFFFF';
+
         res.setHeader('Content-Type', 'application/manifest+json');
         res.json({
             name,
@@ -161,7 +172,7 @@ app.get('/api/manifest', async (req, res) => {
             description: s.slogan || `${name} — tu app de pedidos`,
             start_url: '/',
             display: 'standalone',
-            background_color: '#000000',
+            background_color: splashBg,
             theme_color: color,
             icons: [
                 { src: logo, sizes: '192x192', type: 'image/png' },

@@ -12,9 +12,10 @@
   --brand-primary-rgb: 227, 6, 19;
   --brand-secondary: var(--secondary-color);
   --brand-secondary-rgb: 245, 158, 11;
-  --brand-bg: #0A0A0A;        /* Negro profundo premium */
-  --brand-surface: #141414;   /* Gris oscuro para tarjetas */
+  --brand-bg: #0A0A0A;        /* Negro profundo (será sobreescrito dinámicamente) */
+  --brand-surface: #141414;   /* Gris oscuro (será sobreescrito dinámicamente) */
   --brand-text: #F5F5F5;
+  --brand-on-primary: #FFFFFF; /* Blanco por defecto */
 }
 
 .border-brand {

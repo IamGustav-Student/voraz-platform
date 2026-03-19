@@ -67,17 +67,38 @@ export function TenantProvider({ children }) {
         const root = document.documentElement;
         const hexToRgb = (hex) => {
           if (!hex) return '0, 0, 0';
-          const r = parseInt(hex.slice(1, 3), 16);
-          const g = parseInt(hex.slice(3, 5), 16);
-          const b = parseInt(hex.slice(5, 7), 16);
+          const h = hex.replace('#', '');
+          const r = parseInt(h.substr(0, 2), 16);
+          const g = parseInt(h.substr(2, 2), 16);
+          const b = parseInt(h.substr(4, 2), 16);
           return `${r}, ${g}, ${b}`;
         };
 
+        const getLuminance = (hex) => {
+          const rgb = hexToRgb(hex).split(',').map(n => parseInt(n));
+          return (0.299 * rgb[0] + 0.587 * rgb[1] + 0.114 * rgb[2]) / 255;
+        };
+
         if (s.brand_color_primary) {
+          const lum = getLuminance(s.brand_color_primary);
+          const isLightBrand = lum > 0.6;
+          
           root.style.setProperty('--brand-primary', s.brand_color_primary);
           root.style.setProperty('--primary-color', s.brand_color_primary);
           root.style.setProperty('--brand-primary-rgb', hexToRgb(s.brand_color_primary));
           root.style.setProperty('--brand-primary-hover', s.brand_color_primary + 'cc');
+          
+          // Color de texto sobre el color primario (ej: botones)
+          root.style.setProperty('--brand-on-primary', isLightBrand ? '#000000' : '#FFFFFF');
+          
+          // Fondo dinámico (Sutil matiz de la marca)
+          // Si es muy claro, usamos un tono muy oscuro de la marca para mantener el modo noche
+          const rgb = hexToRgb(s.brand_color_primary).split(',').map(n => parseInt(n));
+          const dynamicBg = `rgb(${Math.round(rgb[0]*0.05)}, ${Math.round(rgb[1]*0.05)}, ${Math.round(rgb[2]*0.05)})`;
+          const dynamicSurface = `rgb(${Math.round(rgb[0]*0.1)}, ${Math.round(rgb[1]*0.1)}, ${Math.round(rgb[2]*0.1)})`;
+          
+          root.style.setProperty('--brand-bg', dynamicBg);
+          root.style.setProperty('--brand-surface', dynamicSurface);
         }
         if (s.brand_color_secondary) {
           root.style.setProperty('--brand-secondary', s.brand_color_secondary);
