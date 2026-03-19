@@ -8,8 +8,12 @@ import helmet from 'helmet';
 import rateLimit from 'express-rate-limit';
 import { query, testConnection } from './config/db.js';
 import dotenv from 'dotenv';
+import { runMigrations } from './utils/migrations.js';
 
 dotenv.config();
+
+// Ejecutar migraciones automáticas al iniciar
+runMigrations().catch(e => console.error('[MIGRATOR] Critical error:', e.message));
 
 import productsRoutes from './routes/products.routes.js';
 import communityRoutes from './routes/community.routes.js';
@@ -83,13 +87,10 @@ app.get('/api/test-db', async (req, res) => {
     }
 });
 
-app.get('/api/clean-db-now', async (req, res) => {
+app.get('/api/run-migrations-manual', async (req, res) => {
     try {
-        const phase20 = fs.readFileSync(path.join(__dirname, 'db', 'phase20_clean_tenants.sql'), 'utf8');
-        const phase21 = fs.readFileSync(path.join(__dirname, 'db', 'phase21_fix_constraints.sql'), 'utf8');
-        await query(phase20);
-        await query(phase21);
-        res.json({ status: 'success', message: 'DB limpiada y constraints arreglados.' });
+        await runMigrations();
+        res.json({ status: 'success', message: 'Sistema de migraciones ejecutado manualmente.' });
     } catch (e) {
         res.status(500).json({ error: e.message });
     }
