@@ -45,11 +45,24 @@ export const superadminLogin = async (req, res) => {
 
 export const getGlobalStats = async (req, res) => {
   try {
-    const [total, active, suspended, payments] = await Promise.all([
+    const [total, active, suspended, payments, recentRevenue, recentTenants, totalOrders, topTenants] = await Promise.all([
       query("SELECT COUNT(*) FROM tenants WHERE id != 'voraz'"),
       query("SELECT COUNT(*) FROM tenants WHERE status = 'active' AND id != 'voraz'"),
       query("SELECT COUNT(*) FROM tenants WHERE status = 'suspended'"),
       query("SELECT COALESCE(SUM(amount),0) as total FROM subscription_payments WHERE status = 'approved'"),
+      query("SELECT COALESCE(SUM(amount),0) as total FROM subscription_payments WHERE status = 'approved' AND created_at > NOW() - INTERVAL '30 days'"),
+      query("SELECT COUNT(*) FROM tenants WHERE created_at > NOW() - INTERVAL '30 days' AND id != 'voraz'"),
+      query("SELECT COUNT(*) FROM orders"),
+      query(`
+        SELECT t.name, COUNT(o.id) as order_count 
+        FROM tenants t 
+        JOIN stores s ON s.tenant_id = t.id 
+        JOIN orders o ON o.store_id = s.id 
+        WHERE t.id != 'voraz'
+        GROUP BY t.id, t.name 
+        ORDER BY order_count DESC 
+        LIMIT 5
+      `)
     ]);
     res.json({
       status: 'success',
@@ -58,6 +71,10 @@ export const getGlobalStats = async (req, res) => {
         active_tenants: parseInt(active.rows[0].count),
         suspended_tenants: parseInt(suspended.rows[0].count),
         total_revenue: parseFloat(payments.rows[0].total),
+        revenue_30d: parseFloat(recentRevenue.rows[0].total),
+        new_tenants_30d: parseInt(recentTenants.rows[0].count),
+        total_orders: parseInt(totalOrders.rows[0].count),
+        top_tenants: topTenants.rows
       },
     });
   } catch (e) { res.status(500).json({ status: 'error', message: e.message }); }

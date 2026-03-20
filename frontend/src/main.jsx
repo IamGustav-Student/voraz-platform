@@ -8,6 +8,9 @@ import { AuthProvider } from './context/AuthContext.jsx';
 import { TENANT } from './config/tenant.js';
 import { TenantProvider } from './hooks/useTenant.jsx';
 
+import { Analytics } from '@vercel/analytics/react';
+import { SpeedInsights } from '@vercel/speed-insights/react';
+
 // Inyectar variables CSS del tenant al arrancar la app (Defaults)
 const root = document.documentElement;
 root.style.setProperty('--brand-primary',       TENANT.theme.primary);
@@ -31,6 +34,8 @@ ReactDOM.createRoot(document.getElementById('root')).render(
         <TenantProvider>
           <CartProvider>
             <App />
+            <Analytics />
+            <SpeedInsights />
           </CartProvider>
         </TenantProvider>
       </AuthProvider>

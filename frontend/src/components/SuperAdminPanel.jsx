@@ -282,17 +282,19 @@ export default function SuperAdminPanel({ onBack }) {
 
       {/* Stats */}
       {stats && (
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 px-6 py-5">
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4 px-6 py-5">
           {[
-            { label: 'Total Comercios', value: stats.total_stores, icon: '🏪' },
-            { label: 'Activos', value: stats.active_stores, icon: '✅' },
-            { label: 'Suspendidos', value: stats.suspended_stores, icon: '⏸️' },
-            { label: 'Ingresos totales', value: `$${fmt(stats.total_revenue)}`, icon: '💰' },
+            { label: 'Total Comercios', value: stats.total_tenants, icon: '🏪' },
+            { label: 'Activos', value: stats.active_tenants, icon: '✅' },
+            { label: 'Nuevos (30d)', value: stats.new_tenants_30d, icon: '📈' },
+            { label: 'Órdenes Totales', value: stats.total_orders, icon: '🛒' },
+            { label: 'Ingresos (30d)', value: `$${fmt(stats.revenue_30d)}`, icon: '📊' },
+            { label: 'Ingresos Hist.', value: `$${fmt(stats.total_revenue)}`, icon: '💰' },
           ].map(s => (
-            <div key={s.label} className="bg-white/5 rounded-xl p-4 border border-white/5">
-              <p className="text-2xl mb-1">{s.icon}</p>
+            <div key={s.label} className="bg-white/5 rounded-xl p-4 border border-white/5 group hover:border-white/20 transition">
+              <p className="text-2xl mb-1 opacity-80 group-hover:opacity-100 transition">{s.icon}</p>
               <p className="text-xl font-black text-white">{s.value}</p>
-              <p className="text-xs text-gray-500">{s.label}</p>
+              <p className="text-[10px] uppercase tracking-wider text-gray-500 font-bold">{s.label}</p>
             </div>
           ))}
         </div>
@@ -362,6 +364,24 @@ export default function SuperAdminPanel({ onBack }) {
       </div>
 
       <div className="px-6 pb-20">
+        {/* Top 5 Tenants (Solo en dashboard principal) */}
+        {tab === 'stores' && stats?.top_tenants?.length > 0 && !showCreate && (
+          <div className="mb-8">
+            <h3 className="text-white font-bold text-xs mb-4 flex items-center gap-2 opacity-60 uppercase tracking-widest">
+              🏆 Top 5 Comercios con más actividad
+            </h3>
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-4">
+              {stats.top_tenants.map((t, idx) => (
+                <div key={idx} className="bg-gradient-to-br from-white/10 to-transparent border border-white/5 rounded-2xl p-4 flex flex-col items-center text-center group hover:border-red-500/30 transition">
+                  <span className="text-2xl mb-2">{idx === 0 ? '🥇' : idx === 1 ? '🥈' : idx === 2 ? '🥉' : '✨'}</span>
+                  <p className="text-xs font-bold text-white truncate w-full group-hover:text-red-400 transition">{t.name}</p>
+                  <p className="text-[10px] text-gray-500 font-bold uppercase mt-1">{t.order_count} pedidos</p>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
         {/* Lista de comercios */}
         {tab === 'stores' && !showCreate && (
           <div className="space-y-3">
