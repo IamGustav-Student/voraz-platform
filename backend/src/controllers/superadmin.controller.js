@@ -409,6 +409,10 @@ export const deleteTenant = async (req, res) => {
         await query('DELETE FROM order_status_history WHERE order_id IN (SELECT id FROM orders WHERE store_id = ANY($1::int[]))', [storeIds]);
       } catch (e) { /* Tabla opcional */ }
       
+      try {
+        await query('DELETE FROM points_history WHERE order_id IN (SELECT id FROM orders WHERE store_id = ANY($1::int[]))', [storeIds]);
+      } catch (e) { /* Tabla opcional */ }
+
       await query('DELETE FROM orders WHERE store_id = ANY($1::int[])', [storeIds]);
       
       try {
