@@ -12,7 +12,9 @@ const connectionString = process.env.DATABASE_URL ||
 
 export const pool = new pg.Pool({
   connectionString,
-  ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false,
+  ssl: (process.env.NODE_ENV === 'production' && !connectionString.includes('cloudsql')) 
+       ? { rejectUnauthorized: false } 
+       : false,
   connectionTimeoutMillis: 10000,
   idleTimeoutMillis: 30000,
   max: 10,
