@@ -496,12 +496,12 @@ function App() {
             <span className="text-2xl font-black uppercase italic text-brand-primary">{TENANT.brandName}</span>
           </div>
           <nav className="flex space-x-6">
-            <NavButtonPC active={currentView === 'menu'} onClick={() => setCurrentView('menu')} image="/images/menu.jpg" label="Menú" />
-            <NavButtonPC active={currentView === 'promos'} onClick={() => setCurrentView('promos')} image="/images/promos.png" label="Promos" />
-            <NavButtonPC active={currentView === 'videos'} onClick={() => setCurrentView('videos')} image="/images/eventos.jpg" label="Videos" />
-            <NavButtonPC active={currentView === 'locations'} onClick={() => setCurrentView('locations')} image="/images/locales.jpg" label="Locales" />
-            <NavButtonPC active={currentView === 'delivery'} onClick={() => setCurrentView('delivery')} image="/images/delivery.jpg" label="Delivery" />
-            <NavButtonPC active={currentView === 'brandworld'} onClick={() => setCurrentView('brandworld')} image="/images/vorazburger.jpg" label={TENANT.brandName} />
+            <NavButtonPC active={currentView === 'menu'} onClick={() => setCurrentView('menu')} image="/icons/menu.png" label="Menú" />
+            <NavButtonPC active={currentView === 'promos'} onClick={() => setCurrentView('promos')} image="/icons/promos.png" label="Promos" />
+            <NavButtonPC active={currentView === 'videos'} onClick={() => setCurrentView('videos')} image="/icons/videos.png" label="Videos" />
+            <NavButtonPC active={currentView === 'locations'} onClick={() => setCurrentView('locations')} image="/icons/locales.png" label="Locales" />
+            <NavButtonPC active={currentView === 'delivery'} onClick={() => setCurrentView('delivery')} image="/icons/delivery.png" label="Delivery" />
+            <NavButtonPC active={currentView === 'brandworld'} onClick={() => setCurrentView('brandworld')} image="/icons/club.png" label={TENANT.brandName} />
           </nav>
           <div className="flex items-center space-x-3">
             <motion.button
@@ -629,21 +629,21 @@ function App() {
       {/* BOTTOM NAV */}
       <nav className="md:hidden fixed bottom-0 left-0 w-full bg-[#121212] border-t border-white/10 z-50 px-6 pb-4 pt-2 safe-area-pb">
         <div className="flex justify-between items-end">
-          <BottomNavItem icon="home" label="Menú" active={currentView === 'menu'} onClick={() => setCurrentView('menu')} />
-          <BottomNavItem icon="gift" label="Promos" active={currentView === 'promos'} onClick={() => setCurrentView('promos')} />
+          <BottomNavItem image="/icons/menu.png" label="Menú" active={currentView === 'menu'} onClick={() => setCurrentView('menu')} />
+          <BottomNavItem image="/icons/promos.png" label="Promos" active={currentView === 'promos'} onClick={() => setCurrentView('promos')} />
           <div className="relative -top-6">
             <motion.button
               whileTap={{ scale: 0.9 }}
               onClick={() => setCurrentView('vorazburger')}
-              className={`w-14 h-14 rounded-full flex items-center justify-center shadow-lg border-4 border-black ${currentView === 'vorazburger' ? 'bg-brand-secondary text-black' : 'bg-brand-secondary/20 text-brand-secondary'}`}>
-              <span className="font-black text-xs">{TENANT.brandName[0]}</span>
+              className={`w-14 h-14 rounded-full overflow-hidden flex items-center justify-center shadow-lg border-4 border-black ${currentView === 'vorazburger' ? 'bg-brand-secondary text-black ring-2 ring-brand-secondary' : 'bg-[#111] text-brand-secondary'}`}>
+              <img src="/icons/club.png" alt="Club" className="w-full h-full object-cover" />
             </motion.button>
           </div>
-          <BottomNavItem icon="map" label="Ir" active={currentView === 'locations'} onClick={() => setCurrentView('locations')} />
+          <BottomNavItem image="/icons/locales.png" label="Ir" active={currentView === 'locations'} onClick={() => setCurrentView('locations')} />
           {isInstalled ? (
-            <BottomNavItem icon="film" label="Videos" active={currentView === 'videos'} onClick={() => setCurrentView('videos')} />
+            <BottomNavItem image="/icons/videos.png" label="Videos" active={currentView === 'videos'} onClick={() => setCurrentView('videos')} />
           ) : (
-            <BottomNavItem icon="bike" label="Dely" active={currentView === 'delivery'} onClick={() => setCurrentView('delivery')} />
+            <BottomNavItem image="/icons/delivery.png" label="Dely" active={currentView === 'delivery'} onClick={() => setCurrentView('delivery')} />
           )}
         </div>
       </nav>
@@ -851,10 +851,9 @@ const NavButtonPC = ({ active, onClick, image, label }) => (
   </button>
 );
 
-const BottomNavItem = ({ icon, label, active, onClick, count }) => {
+const BottomNavItem = ({ icon, image, label, active, onClick, count }) => {
   const getIcon = () => {
     if (icon === 'home') return <path d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" />;
-    if (icon === 'users') return <path d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" />;
     if (icon === 'gift') return <path d="M20 12V8H4v4m16 0v8H4v-8m16 0H4m12-4V4H8v4m8 0H8" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" />;
     if (icon === 'cart') return <path d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" />;
     if (icon === 'map') return <path d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0zM15 11a3 3 0 11-6 0 3 3 0 016 0z" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" />;
@@ -862,13 +861,20 @@ const BottomNavItem = ({ icon, label, active, onClick, count }) => {
     if (icon === 'film') return <><rect x="2" y="6" width="20" height="12" rx="2" ry="2" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" /><line x1="2" y1="12" x2="22" y2="12" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" /><line x1="12" y1="6" x2="12" y2="18" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" /></>;
     return null;
   };
+
   return (
     <button onClick={onClick} className="flex flex-col items-center justify-center w-12 group relative">
       <motion.div
-        animate={active ? { y: -5, color: 'var(--brand-secondary)' } : { y: 0, color: '#6B7280' }}
-        className="transition-colors duration-300"
+        animate={active ? { y: -5, opacity: 1 } : { y: 0, opacity: 0.6 }}
+        className="transition-all duration-300"
       >
-        <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">{getIcon()}</svg>
+        {image ? (
+          <div className={`w-7 h-7 rounded-full overflow-hidden border transition-all ${active ? 'border-brand-secondary ring-2 ring-brand-secondary/20 shadow-lg scale-110' : 'border-transparent'}`}>
+            <img src={image} alt={label} className="w-full h-full object-cover" />
+          </div>
+        ) : (
+          <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">{getIcon()}</svg>
+        )}
         {count > 0 && (
           <span className="absolute -top-1 -right-1 bg-brand-secondary text-black text-[8px] font-black w-3.5 h-3.5 rounded-full flex items-center justify-center">
             {count}
