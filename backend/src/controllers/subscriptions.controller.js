@@ -57,7 +57,10 @@ async function syncTenantRecord(tenantId, tenantName) {
 export const createTrialTenant = async (req, res) => {
   console.log('[TRIAL] Intentando crear tenant:', JSON.stringify(req.body));
   const { name, brand_name, subdomain, admin_email, slogan,
-    brand_color_primary, brand_color_secondary, admin_name, admin_password } = req.body;
+    brand_color_primary, brand_color_secondary, admin_name, admin_password, accepted_terms } = req.body;
+
+  if (!accepted_terms && req.body.secret !== (process.env.GASTRORED_SUPERADMIN_SECRET || 'gastrored_super_secret'))
+    return res.status(400).json({ status: 'error', message: 'Debes aceptar los términos y condiciones de GastroRed para continuar.' });
 
   if (!name || !subdomain)
     return res.status(400).json({ status: 'error', message: 'name y subdomain son requeridos.' });
@@ -194,7 +197,10 @@ export const createTrialTenant = async (req, res) => {
 export const createPublicCheckout = async (req, res) => {
   const { name, brand_name, subdomain, admin_email, plan_type,
     subscription_period, brand_color_primary, brand_color_secondary, slogan,
-    admin_name, admin_password } = req.body;
+    admin_name, admin_password, accepted_terms } = req.body;
+
+  if (!accepted_terms)
+    return res.status(400).json({ status: 'error', message: 'Debes aceptar los términos y condiciones de GastroRed para continuar.' });
 
   if (!name || !subdomain || !plan_type)
     return res.status(400).json({ status: 'error', message: 'name, subdomain y plan_type son requeridos.' });

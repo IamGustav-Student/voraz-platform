@@ -162,6 +162,54 @@ function Stat({ value, label }) {
 }
 
 // ════════════════════════════════════════════════════════════════════════════
+// TERMS MODAL
+// ════════════════════════════════════════════════════════════════════════════
+function TermsModal({ onClose }) {
+    return (
+        <div className="fixed inset-0 z-[110] bg-black/90 backdrop-blur-md flex items-center justify-center p-4" onClick={onClose}>
+            <div className="bg-[#0d1117] border border-white/10 rounded-3xl p-8 max-w-2xl w-full max-h-[80vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
+                <div className="flex items-center justify-between mb-6">
+                    <h2 className="text-2xl font-black text-white">Términos y Condiciones — GastroRed</h2>
+                    <button onClick={onClose} className="flex items-center justify-center text-gray-400 transition w-9 h-9 rounded-xl bg-white/5 hover:bg-white/10 hover:text-white">✕</button>
+                </div>
+                <div className="space-y-6 text-sm leading-relaxed text-gray-300">
+                    <section>
+                        <h3 className="mb-2 text-lg font-bold text-white">1. Aceptación de los Términos</h3>
+                        <p>Al registrarse en GastroRed, el comercio acepta estos términos en su totalidad. El acceso y uso de la plataforma constituye su consentimiento legal a los presentes términos.</p>
+                    </section>
+                    <section>
+                        <h3 className="mb-2 text-lg font-bold text-white">2. Servicios</h3>
+                        <p>GastroRed provee herramientas de menú digital, gestión de pedidos y fidelización. La disponibilidad del servicio depende de la infraestructura cloud y servicios de terceros. GastroRed se reserva el derecho de actualizar o modificar las funcionalidades en cualquier momento.</p>
+                    </section>
+                    <section>
+                        <h3 className="mb-2 text-lg font-bold text-white">3. Responsabilidades del Comercio</h3>
+                        <p>El comercio es el único responsable de la veracidad de la información publicada (precios, descripción de productos, stock), así como de la atención al cliente final y la correcta configuración de sus credenciales de pago.</p>
+                    </section>
+                    <section>
+                        <h3 className="mb-2 text-lg font-bold text-white">4. Pagos y Comisiones</h3>
+                        <p>GastroRed solicita un costo fijo de suscripción mensual o anual según el plan seleccionado. GastroRed <strong>no cobra comisiones</strong> por las ventas realizadas a través de la plataforma. El comercio reconoce que las plataformas de pago (como MercadoPago) aplican sus propias comisiones por transacción, las cuales son ajenas a GastroRed.</p>
+                    </section>
+                    <section>
+                        <h3 className="mb-2 text-lg font-bold text-white">5. Propiedad Intelectual</h3>
+                        <ul className="list-disc pl-5 space-y-2">
+                            <li><strong>Del Código:</strong> El código fuente, la arquitectura y la lógica de la plataforma son propiedad exclusiva de El Desarrollador. El Cliente recibe una licencia de uso no exclusiva y no transferible mientras mantenga el abono vigente.</li>
+                            <li><strong>De los Datos:</strong> Todos los datos de productos, clientes y ventas cargados en la plataforma son propiedad de El Cliente.</li>
+                        </ul>
+                    </section>
+                    <section>
+                        <h3 className="mb-2 text-lg font-bold text-white">6. Cancelación y Reembolsos</h3>
+                        <p>La suscripción puede cancelarse en cualquier momento desde el panel de administración. No se realizarán reembolsos por períodos ya facturados o transcurridos, independientemente del uso efectivo de la plataforma durante dicho periodo.</p>
+                    </section>
+                </div>
+                <button onClick={onClose} className="block w-full py-4 mt-8 font-black text-white uppercase transition bg-red-600 hover:bg-red-500 rounded-xl">
+                    Entendido
+                </button>
+            </div>
+        </div>
+    );
+}
+
+// ════════════════════════════════════════════════════════════════════════════
 // CHECKOUT MODAL
 // ════════════════════════════════════════════════════════════════════════════
 function CheckoutModal({ plan, onClose }) {
@@ -176,12 +224,18 @@ function CheckoutModal({ plan, onClose }) {
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState('');
     const [success, setSuccess] = useState(null);
+    const [acceptedTerms, setAcceptedTerms] = useState(false);
+    const [showTerms, setShowTerms] = useState(false);
 
     const set = (k, v) => setForm(f => ({ ...f, [k]: v }));
     const cleanSub = form.subdomain.toLowerCase().replace(/[^a-z0-9-]/g, '');
 
     const handleSubmit = async (e) => {
         e.preventDefault();
+        if (!acceptedTerms) {
+            setError('Debes aceptar los términos y condiciones para continuar.');
+            return;
+        }
         setError('');
         setLoading(true);
         try {
@@ -189,7 +243,7 @@ function CheckoutModal({ plan, onClose }) {
                 const res = await fetch(`${API_URL}/subscriptions/trial`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ ...form, subdomain: cleanSub }),
+                    body: JSON.stringify({ ...form, subdomain: cleanSub, accepted_terms: true }),
                 });
                 const data = await res.json();
                 if (!res.ok) throw new Error(data.message);
@@ -203,6 +257,7 @@ function CheckoutModal({ plan, onClose }) {
                         ...form,
                         subdomain: cleanSub,
                         plan_type: plan.plan_type,
+                        accepted_terms: true,
                     }),
                 });
                 const data = await res.json();
@@ -347,6 +402,29 @@ function CheckoutModal({ plan, onClose }) {
                             {error}
                         </div>
                     )}
+
+                    {/* Aceptación de T&C */}
+                    <div className="flex items-start gap-3 p-3 transition border bg-white/5 border-white/5 rounded-2xl hover:bg-white/10">
+                        <div className="relative flex items-center pt-1 cursor-pointer">
+                            <input
+                                type="checkbox"
+                                id="terms"
+                                checked={acceptedTerms}
+                                onChange={e => setAcceptedTerms(e.target.checked)}
+                                className="w-5 h-5 transition-all bg-black border-2 rounded-lg appearance-none cursor-pointer border-white/20 checked:bg-red-600 checked:border-red-600 focus:outline-none"
+                            />
+                            {acceptedTerms && (
+                                <span className="absolute left-0 right-0 flex items-center justify-center text-white pointer-events-none text-[10px]">
+                                    ✓
+                                </span>
+                            )}
+                        </div>
+                        <label htmlFor="terms" className="text-xs leading-relaxed text-gray-400 cursor-pointer">
+                            Acepto los <button type="button" onClick={() => setShowTerms(true)} className="font-bold transition text-red-400/80 hover:text-red-400 hover:underline">términos y condiciones</button> de GastroRed.
+                        </label>
+                    </div>
+
+                    {showTerms && <TermsModal onClose={() => setShowTerms(false)} />}
 
                     <button type="submit" disabled={loading}
                         className="w-full py-4 font-black tracking-wide text-white uppercase transition bg-red-600 hover:bg-red-500 disabled:opacity-50 rounded-xl">
