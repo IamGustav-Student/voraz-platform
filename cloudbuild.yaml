@@ -35,5 +35,10 @@ steps:
 images:
   - 'gcr.io/$PROJECT_ID/github.com/iamgustav-student/voraz-platform:$COMMIT_SHA'
 
-# Tiempo límite de 15 minutos para la compilación
+# ESTO ES LO QUE FALTA - Configuración de Logs
+options:
+  logging: CLOUD_LOGGING_ONLY
+
+# Tiempo límite de 15 minutos
 timeout: '900s'
+
