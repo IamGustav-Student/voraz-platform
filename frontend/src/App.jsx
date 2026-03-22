@@ -33,7 +33,7 @@ const isGastroRedRootDomain = () => {
 function App() {
   const { itemCount, dispatch } = useCart();
   const { user } = useAuth();
-  useBranding(); // Inyecta CSS vars dinámicas desde la BD al montar
+  const branding = useBranding(); // Inyecta CSS vars dinámicas desde la BD al montar
   const { isInstallable, isInstalled, handleInstallClick } = usePWAInstall();
 
   // ── Detección de landing GastroRed ───────────────────────────────────────
@@ -826,7 +826,7 @@ function App() {
       {isAdminOpen && <AdminPanel onClose={() => setIsAdminOpen(false)} />}
 
       {/* OVERLAY PAGO PENDIENTE */}
-      {!showLanding && TENANT.status === 'pending_payment' && <PendingPaymentOverlay />}
+      {!showLanding && branding.status === 'pending_payment' && <PendingPaymentOverlay />}
     </div>
   );
 }

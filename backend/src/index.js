@@ -206,7 +206,7 @@ app.get('/api/settings', tenantMiddleware, async (req, res) => {
                     t.brand_name,
                     t.brand_favicon_url,
                     ts.primary_color, ts.secondary_color, ts.font_family, ts.logo_url as ts_logo_url, ts.custom_branding_enabled,
-                    ts.loyalty_enabled, ts.points_redeem_value
+                    ts.loyalty_enabled, ts.points_redeem_value, t.status, t.whatsapp, t.address
              FROM tenants t
              LEFT JOIN tenant_settings ts ON ts.tenant_id_fk = t.id
              WHERE t.id::text = $1::text OR t.subdomain = $1::text`,
@@ -230,6 +230,9 @@ app.get('/api/settings', tenantMiddleware, async (req, res) => {
                                          (cfg.plan_type && (cfg.plan_type.toLowerCase().trim() === 'expert' || cfg.plan_type.toLowerCase().trim() === 'full digital')),
                 loyalty_enabled: !!cfg.loyalty_enabled,
                 points_redeem_value: cfg.points_redeem_value || 0,
+                status: cfg.status || 'active',
+                whatsapp: cfg.whatsapp || '',
+                address: cfg.address || '',
             }
         });
     } catch {
