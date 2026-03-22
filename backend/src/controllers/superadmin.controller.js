@@ -398,59 +398,68 @@ export const deleteTenant = async (req, res) => {
   try {
     await query('BEGIN');
     
-    // Obtener los store_id asociados al tenant (sucursales)
+    // Obtener sucursales (stores) asociadas
     const storeRes = await query('SELECT id FROM stores WHERE tenant_id = $1', [id]);
     const storeIds = storeRes.rows.map(r => r.id);
 
     if (storeIds.length > 0) {
+      // 1. Borrar TRANSACCIONES y DETALLES (Hojas profundas)
       await query('DELETE FROM order_items WHERE order_id IN (SELECT id FROM orders WHERE store_id = ANY($1::int[]))', [storeIds]);
       
       try {
         await query('DELETE FROM order_status_history WHERE order_id IN (SELECT id FROM orders WHERE store_id = ANY($1::int[]))', [storeIds]);
-      } catch (e) { /* Tabla opcional */ }
-      
+      } catch (e) {}
+
       try {
         await query('DELETE FROM points_history WHERE order_id IN (SELECT id FROM orders WHERE store_id = ANY($1::int[]))', [storeIds]);
-      } catch (e) { /* Tabla opcional */ }
+      } catch (e) {}
 
+      // 2. Borrar ÓRDENES
       await query('DELETE FROM orders WHERE store_id = ANY($1::int[])', [storeIds]);
       
+      // 3. Borrar CARRITOS
       try {
         await query('DELETE FROM cart_items WHERE session_id IN (SELECT id FROM cart_sessions WHERE store_id = ANY($1::int[]))', [storeIds]);
         await query('DELETE FROM cart_sessions WHERE store_id = ANY($1::int[])', [storeIds]);
-      } catch (e) { /* Tablas opcations */ }
+      } catch (e) {}
+
+      // 4. Borrar MARKETING y CONTENIDO (Tablas adicionales para limpieza total)
+      try { await query('DELETE FROM promos WHERE store_id = ANY($1::int[]) OR tenant_id = $2', [storeIds, id]); } catch (e) {}
+      try { await query('DELETE FROM coupons WHERE store_id = ANY($1::int[])', [storeIds]); } catch (e) {}
+      try { await query('DELETE FROM news WHERE store_id = ANY($1::int[])', [storeIds]); } catch (e) {}
+      try { await query('DELETE FROM videos WHERE store_id = ANY($1::int[])', [storeIds]); } catch (e) {}
+      try { await query('DELETE FROM community_videos WHERE store_id = ANY($1::int[])', [storeIds]); } catch (e) {}
+      try { await query('DELETE FROM influencers WHERE store_id = ANY($1::int[])', [storeIds]); } catch (e) {}
       
-      await query('DELETE FROM points_history WHERE user_id IN (SELECT id FROM users WHERE store_id = ANY($1::int[]))', [storeIds]);
-      
+      // 5. Borrar LEALTAD y USUARIOS
       try {
+        await query('DELETE FROM points_history WHERE user_id IN (SELECT id FROM users WHERE store_id = ANY($1::int[]))', [storeIds]);
         await query('DELETE FROM user_points WHERE store_id = ANY($1::int[])', [storeIds]);
-      } catch (e) { /* Tablas opcations */ }
+      } catch (e) {}
       
       await query('DELETE FROM users WHERE store_id = ANY($1::int[])', [storeIds]);
       
+      // 6. Borrar CATÁLOGO
       try {
         await query('DELETE FROM products WHERE store_id = ANY($1::int[])', [storeIds]);
-      } catch (e) {
-        try { await query('DELETE FROM productos WHERE store_id = ANY($1::int[])', [storeIds]); } catch(e2) {}
-      }
+        await query('DELETE FROM productos WHERE store_id = ANY($1::int[])', [storeIds]); // Legacy
+      } catch (e) {}
       
       await query('DELETE FROM categories WHERE store_id = ANY($1::int[])', [storeIds]);
-      
-      try {
-        await query('DELETE FROM promos WHERE store_id = ANY($1::int[])', [storeIds]);
-      } catch (e) { /* Tablas opcations */ }
-      
+
+      // 7. Borrar CONFIGURACIÓN
       await query('DELETE FROM tenant_settings WHERE store_id = ANY($1::int[]) OR tenant_id = $2 OR tenant_id_fk = $2', [storeIds, id]);
     } else {
+      // Si no hay sucursales, borrar ajustes globales
       await query('DELETE FROM tenant_settings WHERE tenant_id = $1 OR tenant_id_fk = $1', [id]);
     }
 
-    // 5. Borrar pagos de suscripción ANTES que las sucursales (para evitar FK violations)
+    // 8. Borrar PAGOS de suscripción
     try {
       await query('DELETE FROM subscription_payments WHERE tenant_id = $1 OR store_id = ANY($2::int[])', [id, storeIds.length ? storeIds : [-1]]);
-    } catch(e) { console.error('Error borrando pagos:', e.message); }
+    } catch(e) {}
 
-    // 6. Finalmente borrar sucursales y el tenant
+    // 9. Borrar SUCURSALES y TENANT (Raíz)
     await query('DELETE FROM stores WHERE tenant_id = $1', [id]);
     const result = await query('DELETE FROM tenants WHERE id = $1 RETURNING id', [id]);
     
@@ -460,9 +469,10 @@ export const deleteTenant = async (req, res) => {
     }
     
     await query('COMMIT');
-    res.json({ status: 'success', message: `Tenant ${id} eliminado correctamente.` });
+    res.json({ status: 'success', message: `Tenant ${id} y todos sus datos relacionados eliminados correctamente.` });
   } catch (e) {
     await query('ROLLBACK');
+    console.error('CRITICAL ERROR DELETING TENANT:', e);
     res.status(500).json({ status: 'error', message: 'Error al eliminar tenant: ' + e.message });
   }
 };
