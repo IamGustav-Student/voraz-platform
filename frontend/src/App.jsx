@@ -824,9 +824,79 @@ function App() {
 
       {/* ADMIN PANEL */}
       {isAdminOpen && <AdminPanel onClose={() => setIsAdminOpen(false)} />}
+
+      {/* OVERLAY PAGO PENDIENTE */}
+      {!showLanding && TENANT.status === 'pending_payment' && <PendingPaymentOverlay />}
     </div>
   );
 }
+
+// ── COMPONENTE: PAGO PENDIENTE BLOQUEANTE ────────────────────────────────────
+const PendingPaymentOverlay = () => {
+    const gastroredDomain = import.meta.env.VITE_GASTRORED_DOMAIN || 'gastrored.com.ar';
+    // Limpiamos el número de whatsapp por si tiene espacios o caracteres especiales
+    const whatsappClean = (TENANT.whatsapp || '').replace(/[^0-9]/g, '');
+    const whatsappUrl = `https://wa.me/${whatsappClean || '5491122334455'}`;
+
+    return (
+        <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            className="fixed inset-0 z-[1000] bg-[#080c12]/95 backdrop-blur-md flex items-center justify-center p-4 overflow-hidden"
+        >
+            {/* Fondo decorativo con luces suaves */}
+            <div className="absolute inset-0 overflow-hidden pointer-events-none text-red-500">
+                <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-red-500/10 rounded-full blur-[120px]" />
+                <div className="absolute bottom-1/4 right-1/4 w-80 h-80 bg-red-600/10 rounded-full blur-[100px]" />
+            </div>
+
+            <motion.div
+                initial={{ scale: 0.9, y: 20 }}
+                animate={{ scale: 1, y: 0 }}
+                className="relative bg-[#0d1117] border border-white/10 rounded-3xl p-8 max-w-lg w-full text-center shadow-2xl"
+            >
+                <div className="mb-6 flex justify-center">
+                    <div className="w-20 h-20 bg-red-600/10 rounded-3xl flex items-center justify-center border border-red-500/20 shadow-xl shadow-red-900/10">
+                        <svg className="w-10 h-10 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
+                    </div>
+                </div>
+
+                <h2 className="text-3xl font-black text-white mb-4 uppercase italic tracking-tight">Comercio Desactivado</h2>
+                <p className="text-gray-400 mb-8 leading-relaxed">
+                    Tu tienda <strong className="text-white">{TENANT.brandName}</strong> se encuentra temporalmente desactivada hasta que se confirme el pago de la suscripción.
+                </p>
+
+                <div className="space-y-4">
+                    <a
+                        href={`https://${gastroredDomain}/#planes`}
+                        className="flex items-center justify-center gap-2 w-full py-4 text-sm font-black text-white bg-red-600 hover:bg-red-500 rounded-2xl transition shadow-lg shadow-red-900/30 group uppercase"
+                    >
+                        CONTINUAR EL PAGO
+                        <span className="group-hover:translate-x-1 transition-transform">→</span>
+                    </a>
+
+                    <a
+                        href={whatsappUrl}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="flex items-center justify-center gap-2 w-full py-4 text-sm font-bold text-white bg-white/5 border border-white/10 hover:bg-white/10 rounded-2xl transition uppercase"
+                    >
+                        <svg className="w-5 h-5 text-green-500" fill="currentColor" viewBox="0 0 24 24">
+                            <path d="M.057 24l1.687-6.163c-1.041-1.804-1.588-3.849-1.588-5.946 0-6.556 5.332-11.888 11.888-11.888 3.176 0 6.161 1.237 8.404 3.48s3.481 5.229 3.481 8.404c0 6.556-5.332 11.888-11.888 11.888-2.01 0-3.988-.511-5.741-1.48L0 24zm6.202-3.693c1.614.957 3.514 1.464 5.435 1.465 5.86 0 10.626-4.767 10.627-10.627 0-2.839-1.105-5.508-3.111-7.513s-4.674-3.112-7.514-3.112c-5.86 0-10.626 4.766-10.627 10.627 0 1.884.494 3.725 1.43 5.352l-1.011 3.69 3.774-.982zm11.23-7.545c-.328-.164-1.936-.955-2.235-1.064-.298-.109-.516-.164-.733.164-.218.328-.843 1.064-1.033 1.282-.19.218-.379.246-.707.082-.328-.164-1.385-.511-2.639-1.63-1.025-.914-1.718-2.043-1.919-2.37-.2-.328-.021-.506.143-.669.148-.146.328-.382.492-.573.164-.19.218-.328.328-.546.109-.218.055-.409-.027-.573-.082-.164-.733-1.771-1.004-2.426-.264-.638-.53-.551-.733-.561-.188-.01-.403-.011-.62-.011-.218 0-.573.082-.871.409-.298.328-1.14 1.117-1.14 2.73 0 1.613 1.17 3.168 1.332 3.386.164.218 2.296 3.504 5.56 4.912.777.335 1.384.535 1.857.685.782.247 1.493.212 2.056.128.627-.094 1.936-.791 2.208-1.554.272-.763.272-1.418.19-1.554-.082-.136-.298-.218-.627-.382z" />
+                        </svg>
+                        SOPORTE POR WHATSAPP
+                    </a>
+                </div>
+
+                <div className="mt-8 pt-6 border-t border-white/5 flex items-center justify-center gap-2">
+                    <span className="text-[10px] text-gray-600 uppercase tracking-[0.2em] font-black">GastroRed Cloud Services</span>
+                </div>
+            </motion.div>
+        </motion.div>
+    );
+};
 
 const SkeletonCard = () => (
   <div className="bg-brand-surface rounded-xl overflow-hidden border border-white/5 h-28 md:h-auto flex md:block animate-pulse">

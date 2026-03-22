@@ -54,7 +54,7 @@ function validateTenantAccess(tenant) {
       },
     };
   }
-  if (status !== 'active') {
+  if (status !== 'active' && status !== 'pending_payment') {
     return {
       statusCode: 403,
       body: {
@@ -131,7 +131,7 @@ export const tenantMiddleware = async (req, res, next) => {
                   COALESCE(ts.logo_url, t.brand_logo_url) as brand_logo_url,
                   t.brand_favicon_url, t.slogan, t.subscription_expires_at,
                   COALESCE(t.subdomain, t.id) as subdomain, t.custom_domain,
-                  ts.custom_branding_enabled, ts.font_family
+                  ts.custom_branding_enabled, ts.font_family, t.whatsapp, t.address
            FROM tenants t
            LEFT JOIN tenant_settings ts ON ts.tenant_id_fk = t.id
            WHERE t.id = $1 OR (t.subdomain IS NOT NULL AND t.subdomain = $1)
@@ -146,7 +146,7 @@ export const tenantMiddleware = async (req, res, next) => {
                   COALESCE(ts.logo_url, t.brand_logo_url) as brand_logo_url,
                   t.brand_favicon_url, t.slogan, t.subscription_expires_at,
                   COALESCE(t.subdomain, t.id) as subdomain, t.custom_domain,
-                  ts.custom_branding_enabled, ts.font_family
+                  ts.custom_branding_enabled, ts.font_family, t.whatsapp, t.address
            FROM tenants t
            LEFT JOIN tenant_settings ts ON ts.tenant_id_fk = t.id
            WHERE t.custom_domain = $1
@@ -165,12 +165,6 @@ export const tenantMiddleware = async (req, res, next) => {
       tenantCache.set(host, { tenant, expiresAt: now + CACHE_TTL_MS });
     }
 
-    if (tenant.status === 'pending_payment') {
-      req.isLanding = true;
-      req.tenant = null;
-      req.store = null;
-      return next();
-    }
 
     const invalid = validateTenantAccess(tenant);
     if (invalid) {

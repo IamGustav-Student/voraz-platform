@@ -96,6 +96,9 @@ export function applyBrandTheme(settings) {
   _tenant.customBrandingEnabled = !!settings.custom_branding_enabled;
   _tenant.loyaltyEnabled = !!settings.loyalty_enabled;
   _tenant.pointsRedeemValue = settings.points_redeem_value || 0;
+  _tenant.status = settings.status || 'active';
+  _tenant.whatsapp = settings.whatsapp || '';
+  _tenant.address = settings.address || '';
 
   // Actualizar favicon si existe
   if (settings.brand_favicon_url) {

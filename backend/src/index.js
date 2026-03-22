@@ -134,6 +134,9 @@ app.get('/api/tenant-check', tenantMiddleware, (req, res) => {
             id: req.tenant.id,
             brand_name: req.tenant.brand_name,
             subdomain: req.tenant.subdomain,
+            status: req.tenant.status,
+            whatsapp: req.tenant.whatsapp,
+            address: req.tenant.address,
         } : null,
     });
 });
