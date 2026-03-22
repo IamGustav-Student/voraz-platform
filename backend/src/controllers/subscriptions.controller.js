@@ -57,7 +57,8 @@ async function syncTenantRecord(tenantId, tenantName) {
 export const createTrialTenant = async (req, res) => {
   console.log('[TRIAL] Intentando crear tenant:', JSON.stringify(req.body));
   const { name, brand_name, subdomain, admin_email, slogan,
-    brand_color_primary, brand_color_secondary, admin_name, admin_password, accepted_terms } = req.body;
+    brand_color_primary, brand_color_secondary, admin_name, admin_password, accepted_terms,
+    address, whatsapp } = req.body;
 
   if (!accepted_terms && req.body.secret !== (process.env.GASTRORED_SUPERADMIN_SECRET || 'gastrored_super_secret'))
     return res.status(400).json({ status: 'error', message: 'Debes aceptar los términos y condiciones de GastroRed para continuar.' });
@@ -122,8 +123,8 @@ export const createTrialTenant = async (req, res) => {
       `INSERT INTO tenants
          (id, name, subdomain, brand_name, plan_type, subscription_period,
           subscription_expires_at, status, admin_email, brand_color_primary,
-          brand_color_secondary, slogan, active)
-       VALUES ($1,$2,$1,$3,'Expert','monthly',$4,'active',$5,$6,$7,$8,true)
+          brand_color_secondary, slogan, active, address, whatsapp)
+       VALUES ($1,$2,$1,$3,'Expert','monthly',$4,'active',$5,$6,$7,$8,true,$9,$10)
        RETURNING id, name, brand_name, subdomain, status, subscription_expires_at`,
       [
         cleanSub, name.trim(), (brand_name || name).trim(),
@@ -131,6 +132,8 @@ export const createTrialTenant = async (req, res) => {
         brand_color_primary || '#E30613',
         brand_color_secondary || '#1A1A1A',
         slogan?.trim() || null,
+        address?.trim() || null,
+        whatsapp?.trim() || null,
       ]
     );
     const tenant = result.rows[0];
@@ -151,8 +154,8 @@ export const createTrialTenant = async (req, res) => {
 
     // 2. Crear sucursal física inicial en STORES
     const storeResult = await query(
-      `INSERT INTO stores (name, tenant_id) VALUES ($1, $2) RETURNING id`,
-      [name.trim(), cleanSub]
+      `INSERT INTO stores (name, tenant_id, address, whatsapp) VALUES ($1, $2, $3, $4) RETURNING id`,
+      [name.trim(), cleanSub, address?.trim() || null, whatsapp?.trim() || null]
     );
     const storeId = storeResult.rows[0].id;
 
@@ -197,7 +200,7 @@ export const createTrialTenant = async (req, res) => {
 export const createPublicCheckout = async (req, res) => {
   const { name, brand_name, subdomain, admin_email, plan_type,
     subscription_period, brand_color_primary, brand_color_secondary, slogan,
-    admin_name, admin_password, accepted_terms } = req.body;
+    admin_name, admin_password, accepted_terms, address, whatsapp } = req.body;
 
   if (!accepted_terms)
     return res.status(400).json({ status: 'error', message: 'Debes aceptar los términos y condiciones de GastroRed para continuar.' });
@@ -242,8 +245,8 @@ export const createPublicCheckout = async (req, res) => {
       `INSERT INTO tenants
          (id, name, subdomain, brand_name, plan_type, subscription_period,
           subscription_expires_at, status, admin_email,
-          brand_color_primary, brand_color_secondary, slogan, active)
-       VALUES ($1,$2,$1,$3,$4,$5,$6,'pending_payment',$7,$8,$9,$10,true)
+          brand_color_primary, brand_color_secondary, slogan, active, address, whatsapp)
+       VALUES ($1,$2,$1,$3,$4,$5,$6,'pending_payment',$7,$8,$9,$10,true, $11, $12)
        RETURNING id, name, brand_name, subdomain`,
       [
         cleanSub, name.trim(), (brand_name || name).trim(),
@@ -252,14 +255,16 @@ export const createPublicCheckout = async (req, res) => {
         brand_color_primary || '#E30613',
         brand_color_secondary || '#1A1A1A',
         slogan?.trim() || null,
+        address?.trim() || null,
+        whatsapp?.trim() || null,
       ]
     );
     const tenant = tenantResult.rows[0];
 
     // Crear sucursal física inicial (pendiente de activación)
     const storeResult = await query(
-      `INSERT INTO stores (name, tenant_id) VALUES ($1, $2) RETURNING id`,
-      [name.trim(), cleanSub]
+      `INSERT INTO stores (name, tenant_id, address, whatsapp) VALUES ($1, $2, $3, $4) RETURNING id`,
+      [name.trim(), cleanSub, address?.trim() || null, whatsapp?.trim() || null]
     );
     const storeId = storeResult.rows[0].id;
 

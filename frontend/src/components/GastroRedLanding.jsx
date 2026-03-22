@@ -217,7 +217,8 @@ function CheckoutModal({ plan, onClose }) {
     const EMPTY = {
         name: '', subdomain: '', admin_email: '',
         admin_name: '', admin_password: '',
-        slogan: '', subscription_period: 'monthly'
+        slogan: '', subscription_period: 'monthly',
+        address: '', whatsapp: ''
     };
     const [form, setForm] = useState(EMPTY);
     const [mode, setMode] = useState('new'); // 'new' | 'renew'
@@ -381,6 +382,17 @@ function CheckoutModal({ plan, onClose }) {
                     <input placeholder={mode === 'renew' ? "Email con el que ingresás al panel *" : "Email del dueño *"} type="email" value={form.admin_email}
                         onChange={e => set('admin_email', e.target.value)} required
                         className="w-full px-4 py-3 text-sm text-white border bg-black/30 border-white/10 rounded-xl focus:outline-none focus:border-red-500" />
+
+                    {mode === 'new' && (
+                        <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                            <input placeholder="Dirección del comercio *" value={form.address}
+                                onChange={e => set('address', e.target.value)} required={mode === 'new'}
+                                className="w-full px-4 py-3 text-sm text-white border bg-black/30 border-white/10 rounded-xl focus:outline-none focus:border-red-500" />
+                            <input placeholder="WhatsApp del comercio *" value={form.whatsapp}
+                                onChange={e => set('whatsapp', e.target.value)} required={mode === 'new'}
+                                className="w-full px-4 py-3 text-sm text-white border bg-black/30 border-white/10 rounded-xl focus:outline-none focus:border-red-500" />
+                        </div>
+                    )}
 
                     {/* Credenciales de acceso al panel */}
                     <div className="p-4 space-y-3 border bg-white/5 border-white/10 rounded-xl">
