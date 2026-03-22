@@ -87,6 +87,19 @@ app.get('/api/test-db', async (req, res) => {
     }
 });
 
+app.get('/api/debug-config', async (req, res) => {
+    try {
+        const result = await query('SELECT key, value FROM gastrored_config');
+        res.json({ 
+            status: 'success', 
+            database: process.env.DATABASE_URL ? 'Connected (Masked)' : 'Missing URL',
+            config: Object.fromEntries(result.rows.map(r => [r.key, r.value]))
+        });
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
+
 app.get('/api/run-migrations-manual', async (req, res) => {
     try {
         await runMigrations();
