@@ -92,8 +92,22 @@ app.get('/api/debug-config', async (req, res) => {
         const result = await query('SELECT key, value FROM gastrored_config');
         res.json({ 
             status: 'success', 
-            database: process.env.DATABASE_URL ? 'Connected (Masked)' : 'Missing URL',
+            database: 'Connected',
             config: Object.fromEntries(result.rows.map(r => [r.key, r.value]))
+        });
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
+
+app.get('/api/debug-base-store', async (req, res) => {
+    try {
+        const products = await query('SELECT id, name, image_url FROM products WHERE store_id = 1');
+        const categories = await query('SELECT id, name, image_url FROM categories WHERE store_id = 1');
+        res.json({ 
+            status: 'success', 
+            products: products.rows,
+            categories: categories.rows
         });
     } catch (error) {
         res.status(500).json({ error: error.message });
