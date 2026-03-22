@@ -9,7 +9,6 @@ import rateLimit from 'express-rate-limit';
 import { query, testConnection } from './config/db.js';
 import dotenv from 'dotenv';
 import { runMigrations } from './utils/migrations.js';
-import { runImageFix } from './utils/fixImages.js';
 
 dotenv.config();
 
@@ -119,15 +118,6 @@ app.get('/api/run-migrations-manual', async (req, res) => {
     try {
         await runMigrations();
         res.json({ status: 'success', message: 'Sistema de migraciones ejecutado manualmente.' });
-    } catch (e) {
-        res.status(500).json({ error: e.message });
-    }
-});
-
-app.get('/api/run-image-fix', async (req, res) => {
-    try {
-        const results = await runImageFix();
-        res.json({ status: 'success', message: 'Fix de imágenes ejecutado.', results });
     } catch (e) {
         res.status(500).json({ error: e.message });
     }
