@@ -740,8 +740,7 @@ export const updateTenantProfile = async (req, res) => {
     await query(
       `UPDATE tenants SET 
         address = COALESCE($1, address),
-        whatsapp = COALESCE($2, whatsapp),
-        updated_at = NOW()
+        whatsapp = COALESCE($2, whatsapp)
        WHERE id::text = $3::text OR subdomain = $3::text`,
       [address || null, whatsapp || null, String(tenantId)]
     );
