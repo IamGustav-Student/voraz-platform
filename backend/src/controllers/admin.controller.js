@@ -724,4 +724,32 @@ export const toggleOrdersPaused = async (req, res) => {
   }
 };
 
+/**
+ * PATCH /api/admin/profile
+ * Actualiza los datos base del tenant (dirección, whatsapp)
+ */
+export const updateTenantProfile = async (req, res) => {
+  try {
+    const tenantId = getTenantId(req);
+    const { address, whatsapp } = req.body;
+
+    if (!address && !whatsapp) {
+      return res.status(400).json({ status: 'error', message: 'Se requiere dirección o whatsapp.' });
+    }
+
+    await query(
+      `UPDATE tenants SET 
+        address = COALESCE($1, address),
+        whatsapp = COALESCE($2, whatsapp),
+        updated_at = NOW()
+       WHERE id::text = $3::text OR subdomain = $3::text`,
+      [address || null, whatsapp || null, String(tenantId)]
+    );
+
+    res.json({ status: 'success', message: 'Perfil actualizado correctamente.' });
+  } catch (e) {
+    res.status(500).json({ status: 'error', message: e.message });
+  }
+};
+
 

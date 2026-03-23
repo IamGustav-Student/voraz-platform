@@ -15,6 +15,7 @@ import {
   getBranding, updateBranding,
   getQRConfig,
   toggleOrdersPaused,
+  updateTenantProfile,
 } from '../controllers/admin.controller.js';
 import { getAdminPromos, createPromo, updatePromo, deletePromo } from '../controllers/promos.controller.js';
 import { getStoreId } from '../utils/tenant.js';
@@ -85,5 +86,8 @@ router.post('/subscription/upgrade', createUpgradeCheckout);
 
 // Pausa de pedidos
 router.patch('/orders-pause', toggleOrdersPaused);
+
+// Perfil del comercio (address, whatsapp)
+router.patch('/profile', updateTenantProfile);
 
 export default router;

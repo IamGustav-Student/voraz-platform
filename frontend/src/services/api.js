@@ -257,4 +257,11 @@ export const resetPassword = async (token, new_password) => {
   const data = await response.json();
   if (!response.ok) throw new Error(data.message || 'Error al restablecer contraseña');
   return data;
-};
+};
+
+export const updateTenantProfile = async (payload, token) => {
+  return await adminFetch('/profile', token, {
+    method: 'PATCH',
+    body: JSON.stringify(payload)
+  });
+};

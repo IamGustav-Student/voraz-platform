@@ -11,6 +11,9 @@ const AuthModal = ({ isOpen, onClose }) => {
   const [forgotMsg, setForgotMsg] = useState('');
   const [forgotDevUrl, setForgotDevUrl] = useState('');
   const [submitting, setSubmitting] = useState(false);
+  const [resetSubmitting, setResetSubmitting] = useState(false);
+  const [acceptedTerms, setAcceptedTerms] = useState(false);
+  const [showTerms, setShowTerms] = useState(false);
   const { loginUser, registerUser, error, setError } = useAuth();
 
   if (!isOpen) return null;
@@ -22,11 +25,17 @@ const AuthModal = ({ isOpen, onClose }) => {
     setForgotEmail('');
     setForgotMsg('');
     setForgotDevUrl('');
+    setAcceptedTerms(false);
+    setShowTerms(false);
     onClose();
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    if (mode === 'register' && !acceptedTerms) {
+      setError('Debes aceptar los términos y condiciones para continuar.');
+      return;
+    }
     setSubmitting(true);
     let ok;
     if (mode === 'login') {
@@ -223,6 +232,20 @@ const AuthModal = ({ isOpen, onClose }) => {
                 )}
               </div>
             )}
+            {mode === 'register' && (
+              <div className="flex items-start gap-3 py-2">
+                <input
+                  type="checkbox"
+                  id="terms"
+                  checked={acceptedTerms}
+                  onChange={(e) => setAcceptedTerms(e.target.checked)}
+                  className="mt-1 w-4 h-4 rounded border-white/10 bg-white/5 text-brand-primary focus:ring-brand-primary transition"
+                />
+                <label htmlFor="terms" className="text-xs text-white/60 leading-relaxed cursor-pointer select-none">
+                  Acepto los <button type="button" onClick={() => setShowTerms(true)} className="text-brand-secondary hover:underline font-bold">Términos y Condiciones</button> de la plataforma.
+                </label>
+              </div>
+            )}
 
             <button
               type="submit"
@@ -252,6 +275,25 @@ const AuthModal = ({ isOpen, onClose }) => {
           </div>
         </div>
       </div>
+
+      {/* MODAL DE TÉRMINOS (Lite) */}
+      {showTerms && (
+        <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/90 backdrop-blur-sm" onClick={() => setShowTerms(false)}>
+          <div className="bg-[#1E1E1E] border border-white/10 rounded-2xl p-6 max-w-lg w-full max-h-[70vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
+            <div className="flex justify-between items-center mb-4">
+              <h3 className="text-lg font-black text-white uppercase tracking-tighter">Términos y Condiciones</h3>
+              <button onClick={() => setShowTerms(false)} className="text-white/50 hover:text-white">✕</button>
+            </div>
+            <div className="text-xs text-white/60 space-y-4 leading-relaxed">
+              <p><strong>1. Uso de la plataforma:</strong> Al registrarte en GastroRed Club, aceptas que tus datos sean utilizados para gestionar tus pedidos y puntos de fidelidad en este comercio.</p>
+              <p><strong>2. Privacidad:</strong> Tu información es privada y solo accesible por el comercio para fines operativos y de marketing directo (promociones).</p>
+              <p><strong>3. Responsabilidad:</strong> El comercio es responsable de los productos y promociones ofrecidas. GastroRed provee la tecnología de conexión.</p>
+              <p><strong>4. Cancelación:</strong> Podés solicitar la baja de tu cuenta en cualquier momento contactando al soporte del local.</p>
+            </div>
+            <button onClick={() => setShowTerms(false)} className="w-full mt-6 py-3 bg-brand-primary text-white font-bold rounded-xl text-xs uppercase tracking-widest">Entendido</button>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

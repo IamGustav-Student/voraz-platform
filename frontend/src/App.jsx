@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { getMenu, getPromos, getVideos, getStores, getNews, resetPassword as apiResetPassword } from './services/api';
+import { getMenu, getPromos, getVideos, getStores, getNews, resetPassword as apiResetPassword, updateTenantProfile } from './services/api';
 import { Helmet } from 'react-helmet-async';
 import { TENANT, formatPrice, loadTenantConfig } from './config/tenant.js';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -825,11 +825,153 @@ function App() {
       {/* ADMIN PANEL */}
       {isAdminOpen && <AdminPanel onClose={() => setIsAdminOpen(false)} />}
 
+      {/* MODAL COMPLETAR REGISTRO (Solo para Admins con datos faltantes) */}
+      <CompleteRegistrationModal />
+
       {/* OVERLAY PAGO PENDIENTE */}
       {!showLanding && branding.status === 'pending_payment' && <PendingPaymentOverlay />}
     </div>
   );
 }
+
+// ── COMPONENTE: MODAL COMPLETAR REGISTRO ─────────────────────────────────────
+const CompleteRegistrationModal = () => {
+    const { user } = useAuth();
+    const branding = useBranding();
+    const [show, setShow] = useState(false);
+    const [form, setForm] = useState({ address: '', whatsapp: '' });
+    const [accepted, setAccepted] = useState(false);
+    const [loading, setLoading] = useState(false);
+    const [error, setError] = useState('');
+    const [showTerms, setShowTerms] = useState(false);
+
+    useEffect(() => {
+        // Solo mostrar si es admin/manager y faltan datos
+        if (user && (user.role === 'admin' || user.role === 'manager')) {
+            const hasMissingData = !TENANT.address || !TENANT.whatsapp;
+            // No mostrar si la landing está activa (estamos en gastrored.com.ar)
+            const host = window.location.hostname.toLowerCase();
+            const gastroredDomain = import.meta.env.VITE_GASTRORED_DOMAIN || 'gastrored.com.ar';
+            const isRoot = host === gastroredDomain || host === `www.${gastroredDomain}`;
+            
+            if (hasMissingData && !isRoot) {
+                setForm({ 
+                    address: TENANT.address || '', 
+                    whatsapp: TENANT.whatsapp || '' 
+                });
+                setShow(true);
+            }
+        }
+    }, [user, branding.status]);
+
+    const handleSave = async (e) => {
+        e.preventDefault();
+        if (!accepted) return setError('Debes aceptar los términos y condiciones.');
+        if (!form.address || !form.whatsapp) return setError('Todos los campos son obligatorios.');
+        
+        setLoading(true);
+        setError('');
+        try {
+            const token = localStorage.getItem('voraz_token');
+            await updateTenantProfile(form, token);
+            
+            // Actualizar objeto global TENANT para que el cambio sea inmediato en la UI
+            TENANT.address = form.address;
+            TENANT.whatsapp = form.whatsapp;
+            
+            setShow(false);
+        } catch (err) {
+            setError(err.message || 'Error al guardar los datos.');
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    if (!show) return null;
+
+    return (
+        <AnimatePresence>
+            <motion.div 
+                initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+                className="fixed inset-0 z-[1100] bg-black/90 backdrop-blur-md flex items-center justify-center p-4"
+            >
+                <div className="bg-[#0d1117] border border-white/10 rounded-3xl p-8 max-w-md w-full shadow-2xl relative overflow-hidden">
+                    <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-red-500 to-orange-500" />
+                    
+                    <h3 className="text-2xl font-black text-white mb-2 uppercase tracking-tight">¡Hola, {user?.name}! 👋</h3>
+                    <p className="text-gray-400 text-sm mb-6 leading-relaxed">
+                        Para finalizar la configuración de <strong className="text-white">{TENANT.brandName}</strong> y activar todas las funciones, necesitamos completar estos datos de contacto:
+                    </p>
+
+                    <form onSubmit={handleSave} className="space-y-4">
+                        <div>
+                            <label className="block text-xs font-bold text-gray-500 uppercase mb-1 ml-1">Dirección del Comercio</label>
+                            <input 
+                                type="text" 
+                                placeholder="Ej: Av. Corrientes 1234, CABA"
+                                value={form.address}
+                                onChange={e => setForm({...form, address: e.target.value})}
+                                className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white focus:border-red-500 transition outline-none text-sm"
+                            />
+                        </div>
+
+                        <div>
+                            <label className="block text-xs font-bold text-gray-500 uppercase mb-1 ml-1">WhatsApp de Contacto</label>
+                            <input 
+                                type="text" 
+                                placeholder="Ej: 5491112345678"
+                                value={form.whatsapp}
+                                onChange={e => setForm({...form, whatsapp: e.target.value})}
+                                className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white focus:border-red-500 transition outline-none text-sm"
+                            />
+                            <p className="text-[10px] text-gray-600 mt-1 ml-1">Incluir código de país (ej: 54 para Argentina)</p>
+                        </div>
+
+                        <div className="flex items-start gap-3 pt-2">
+                            <input 
+                                type="checkbox" id="tc_complete" 
+                                checked={accepted} onChange={e => setAccepted(e.target.checked)}
+                                className="mt-1 w-4 h-4 rounded border-white/10 bg-white/5 text-red-600 focus:ring-red-500"
+                            />
+                            <label htmlFor="tc_complete" className="text-xs text-gray-400 leading-relaxed cursor-pointer select-none">
+                                Acepto los <button type="button" onClick={() => setShowTerms(true)} className="text-red-500 font-bold hover:underline">Términos y Condiciones</button> de GastroRed para comercios.
+                            </label>
+                        </div>
+
+                        {error && <p className="text-red-500 text-xs font-bold bg-red-500/10 p-3 rounded-xl border border-red-500/20">{error}</p>}
+
+                        <button 
+                            type="submit" 
+                            disabled={loading}
+                            className="w-full bg-red-600 hover:bg-red-500 py-4 rounded-xl font-black text-white text-sm uppercase tracking-widest shadow-lg shadow-red-900/20 transition-all active:scale-95 disabled:opacity-50"
+                        >
+                            {loading ? 'Guardando...' : 'Finalizar Registro →'}
+                        </button>
+                    </form>
+                </div>
+
+                {/* MODAL DE TÉRMINOS (Lite) */}
+                {showTerms && (
+                    <div className="fixed inset-0 z-[1200] flex items-center justify-center p-4 bg-black/95 backdrop-blur-md" onClick={() => setShowTerms(false)}>
+                        <div className="bg-[#0d1117] border border-white/10 rounded-3xl p-8 max-w-2xl w-full max-h-[80vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
+                            <div className="flex justify-between items-center mb-6">
+                                <h3 className="text-xl font-black text-white uppercase italic">Términos y Condiciones — Comercios</h3>
+                                <button onClick={() => setShowTerms(false)} className="text-white/50 hover:text-white text-2xl">✕</button>
+                            </div>
+                            <div className="text-sm text-gray-300 space-y-4 leading-relaxed">
+                                <p><strong>1. Responsabilidad:</strong> El comercio es responsable de la veracidad de la información y la calidad de los productos ofrecidos.</p>
+                                <p><strong>2. Pagos:</strong> Al utilizar la plataforma, el comercio acepta las comisiones de los procesadores de pago externos (MercadoPago).</p>
+                                <p><strong>3. Servicio:</strong> GastroRed provee la infraestructura tecnológica y se reserva el derecho de suspender cuentas que infrinjan las normas de uso o tengan deudas pendientes.</p>
+                                <p><strong>4. Datos:</strong> La información capturada se utiliza exclusivamente para la operación del comercio y la fidelización de sus clientes.</p>
+                            </div>
+                            <button onClick={() => setShowTerms(false)} className="w-full mt-8 py-4 bg-red-600 text-white font-black rounded-xl uppercase tracking-widest hover:bg-red-500 transition">Entendido</button>
+                        </div>
+                    </div>
+                )}
+            </motion.div>
+        </AnimatePresence>
+    );
+};
 
 // ── COMPONENTE: PAGO PENDIENTE BLOQUEANTE ────────────────────────────────────
 const PendingPaymentOverlay = () => {
