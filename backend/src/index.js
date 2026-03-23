@@ -153,7 +153,7 @@ app.get('/api/manifest', async (req, res) => {
                 SELECT t.brand_name, 
                        COALESCE(ts.primary_color, t.brand_color_primary) as brand_color_primary,
                        COALESCE(ts.logo_url, t.brand_logo_url) as brand_logo_url,
-                       t.slogan
+                       t.slogan, ts.custom_branding_enabled
                 FROM tenants t
                 LEFT JOIN tenant_settings ts ON ts.tenant_id_fk = t.id
                 WHERE t.id = '1' OR t.subdomain = 'voraz' LIMIT 1`;
@@ -163,7 +163,7 @@ app.get('/api/manifest', async (req, res) => {
                 SELECT t.brand_name, 
                        COALESCE(ts.primary_color, t.brand_color_primary) as brand_color_primary,
                        COALESCE(ts.logo_url, t.brand_logo_url) as brand_logo_url,
-                       t.slogan
+                       t.slogan, ts.custom_branding_enabled
                 FROM tenants t
                 LEFT JOIN tenant_settings ts ON ts.tenant_id_fk = t.id
                 WHERE t.custom_domain=$1 OR t.subdomain=$1 OR t.id::text=$1 LIMIT 1`;
@@ -174,7 +174,13 @@ app.get('/api/manifest', async (req, res) => {
         const s = result.rows[0] || {};
         const name = s.brand_name || 'GastroRed';
         const color = s.brand_color_primary || '#E30613';
-        const logo = s.brand_logo_url || '/images/logo_voraz.jpg';
+        const isRoot = GASTRORED_ROOT_DOMAINS.includes(host);
+        const iconUrl = (s.custom_branding_enabled && s.brand_logo_url)
+            ? s.brand_logo_url
+            : (isRoot ? '/vite.svg' : '/images/logo_voraz.jpg');
+
+        const isSvg = iconUrl.toLowerCase().endsWith('.svg');
+        const iconType = isSvg ? 'image/svg+xml' : (iconUrl.toLowerCase().endsWith('.png') ? 'image/png' : 'image/jpeg');
 
         res.setHeader('Content-Type', 'application/manifest+json');
         res.json({
@@ -186,8 +192,16 @@ app.get('/api/manifest', async (req, res) => {
             background_color: '#FFFFFF',
             theme_color: color,
             icons: [
-                { src: logo, sizes: '192x192', type: 'image/png' },
-                { src: logo, sizes: '512x512', type: 'image/png' },
+                { 
+                    src: iconUrl, 
+                    sizes: isSvg ? 'any' : '192x192', 
+                    type: iconType 
+                },
+                { 
+                    src: iconUrl, 
+                    sizes: isSvg ? 'any' : '512x512', 
+                    type: iconType 
+                },
             ],
         });
     } catch (err) {
