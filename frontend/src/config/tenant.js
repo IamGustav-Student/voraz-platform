@@ -15,7 +15,7 @@ let _tenant = {
   theme: {
     primary: import.meta.env.VITE_COLOR_PRIMARY || '#E30613',
     primaryHover: import.meta.env.VITE_COLOR_PRIMARY || '#b71c1c',
-    secondary: import.meta.env.VITE_COLOR_SECONDARY || '#F2C94C',
+    secondary: import.meta.env.VITE_COLOR_SECONDARY || '#FFFFFF',
     background: '#121212',
     surface: '#1E1E1E',
     text: '#F5F5F5',

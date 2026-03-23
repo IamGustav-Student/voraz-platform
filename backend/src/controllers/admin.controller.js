@@ -595,7 +595,7 @@ export const getBranding = async (req, res) => {
                                  (branding.plan_type && (branding.plan_type.toLowerCase().trim() === 'expert' || branding.plan_type.toLowerCase().trim() === 'full digital')),
         plan_type: branding.plan_type || 'Full Digital',
         primary_color:   branding.primary_color   || '#E30613',
-        secondary_color: branding.secondary_color || '#1A1A1A',
+        secondary_color: branding.secondary_color || '#FFFFFF',
         font_family:     branding.font_family     || 'Inter',
         logo_url:        branding.logo_url        || null,
       }

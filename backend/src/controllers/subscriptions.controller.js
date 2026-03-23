@@ -130,7 +130,7 @@ export const createTrialTenant = async (req, res) => {
         cleanSub, name.trim(), (brand_name || name).trim(),
         expires, admin_email?.trim() || null,
         brand_color_primary || '#E30613',
-        brand_color_secondary || '#1A1A1A',
+        brand_color_secondary || '#FFFFFF',
         slogan?.trim() || null,
         address?.trim() || null,
         whatsapp?.trim() || null,
