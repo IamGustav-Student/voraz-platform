@@ -35,6 +35,8 @@ let _tenant = {
     whatsapp: '',
     facebook: '',
   },
+  address: '',
+  whatsapp: '',
 };
 
 const hexToRgb = (hex) => {

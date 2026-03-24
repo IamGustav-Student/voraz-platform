@@ -846,8 +846,8 @@ const CompleteRegistrationModal = () => {
     const [showTerms, setShowTerms] = useState(false);
 
     useEffect(() => {
-        // Solo mostrar si es admin/manager y faltan datos
-        if (user && (user.role === 'admin' || user.role === 'manager')) {
+        // Solo mostrar si es admin/manager y faltan datos, y si ya cargó el branding
+        if (branding.loaded && user && (user.role === 'admin' || user.role === 'manager')) {
             const hasMissingData = !TENANT.address || !TENANT.whatsapp;
             // No mostrar si la landing está activa (estamos en gastrored.com.ar)
             const host = window.location.hostname.toLowerCase();
@@ -862,7 +862,7 @@ const CompleteRegistrationModal = () => {
                 setShow(true);
             }
         }
-    }, [user, branding.status]);
+    }, [user, branding.loaded]);
 
     const handleSave = async (e) => {
         e.preventDefault();

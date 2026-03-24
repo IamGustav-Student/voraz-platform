@@ -213,6 +213,7 @@ export const createTrialTenant = async (req, res) => {
         console.error('[NOTIFICACIÓN ERROR] Falló el envío de emails de trial:', err.message);
       }
 
+      clearTenantCache();
       res.status(201).json({
       status: 'success',
       data: {
@@ -350,6 +351,7 @@ export const createPublicCheckout = async (req, res) => {
     );
 
 
+    clearTenantCache();
     res.status(201).json({
       status: 'success',
       data: {

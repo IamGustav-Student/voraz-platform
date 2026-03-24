@@ -808,11 +808,11 @@ export default function GastroRedLanding() {
                         </p>
 
                         <div className="flex flex-col justify-center gap-4 sm:flex-row">
-                            <a href="#planes"
+                            <button onClick={() => trialPlan && setSelectedPlan(trialPlan)}
                                 className="inline-flex items-center justify-center gap-2 px-8 py-4 text-lg font-black text-white transition-all bg-red-600 shadow-2xl hover:bg-red-500 rounded-xl shadow-red-900/50 hover:shadow-red-900/70 hover:-translate-y-1">
                                 Probá gratis {trialDaysLabel}
                                 <span>→</span>
-                            </a>
+                            </button>
                             <a href="#como-funciona"
                                 className="inline-flex items-center justify-center gap-2 px-8 py-4 text-lg font-bold text-white transition-all border bg-white/5 hover:bg-white/10 border-white/10 rounded-xl">
                                 Cómo funciona
