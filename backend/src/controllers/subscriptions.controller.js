@@ -3,6 +3,11 @@ import { query } from '../config/db.js';
 import bcrypt from 'bcrypt';
 import { initializeTenantData } from '../utils/initialization.js';
 import { clearTenantCache } from '../middleware/tenant.middleware.js';
+import { 
+  sendTrialWelcomeEmail, 
+  sendSubscriptionWelcomeEmail, 
+  sendAdminNotification 
+} from '../utils/mailer.js';
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
@@ -181,7 +186,32 @@ export const createTrialTenant = async (req, res) => {
      // 5. Inicializar datos de ejemplo
      await initializeTenantData(cleanSub, storeId);
 
-     res.status(201).json({
+      // ── NOTIFICACIONES ──
+      try {
+        // Al cliente
+        await sendTrialWelcomeEmail({
+          to: admin_email,
+          brandName: name.trim(),
+          subdomain: cleanSub
+        });
+        // Al admin de la plataforma
+        await sendAdminNotification({
+          subject: `Nuevo Trial: ${name.trim()}`,
+          html: `
+            <p>Se ha registrado un nuevo trial en GastroRed.</p>
+            <ul>
+              <li><strong>Comercio:</strong> ${name.trim()}</li>
+              <li><strong>Email:</strong> ${admin_email}</li>
+              <li><strong>Subdominio:</strong> ${cleanSub}</li>
+              <li><strong>Fecha:</strong> ${new Date().toLocaleString()}</li>
+            </ul>
+          `
+        });
+      } catch (err) {
+        console.error('[NOTIFICACIÓN ERROR] Falló el envío de emails de trial:', err.message);
+      }
+
+      res.status(201).json({
       status: 'success',
       data: {
         ...tenant,
@@ -621,6 +651,43 @@ export const handleSubscriptionWebhook = async (req, res) => {
     );
 
     console.log(`✅ Suscripción aprobada: tenant=${tenantId} plan=${planType} period=${period}`);
+    
+    // ── NOTIFICACIONES ──
+    try {
+      // Buscar datos del tenant para el email (brand_name, admin_email)
+      const tenantData = await query('SELECT brand_name, admin_email FROM tenants WHERE id = $1', [tenantId]);
+      if (tenantData.rows.length) {
+        const { brand_name, admin_email } = tenantData.rows[0];
+        
+        // Al cliente
+        if (admin_email) {
+          await sendSubscriptionWelcomeEmail({
+            to: admin_email,
+            brandName: brand_name || tenantId,
+            planType,
+            amount: payment.transaction_amount || '0'
+          });
+        }
+
+        // Al admin de la plataforma
+        await sendAdminNotification({
+          subject: `Nueva Venta: ${brand_name || tenantId} (${planType})`,
+          html: `
+            <h2 style="color: #22c55e;">¡Nueva suscripción paga!</h2>
+            <ul>
+              <li><strong>Comercio:</strong> ${brand_name || tenantId}</li>
+              <li><strong>Plan:</strong> ${planType} (${period})</li>
+              <li><strong>Monto:</strong> $${payment.transaction_amount || 'n/a'}</li>
+              <li><strong>Email Admin:</strong> ${admin_email || 'n/a'}</li>
+              <li><strong>MP Payment ID:</strong> ${payment.id}</li>
+            </ul>
+          `
+        });
+      }
+    } catch (err) {
+      console.error('[NOTIFICACIÓN ERROR] Falló el envío de emails de suscripción:', err.message);
+    }
+
     clearTenantCache();
     res.sendStatus(200);
   } catch (e) {

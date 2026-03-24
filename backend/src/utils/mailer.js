@@ -113,3 +113,113 @@ export const sendPasswordResetEmail = async ({ to, resetUrl, brandName = 'Gastro
     throw error;
   }
 };
+
+/**
+ * Envía email de bienvenida por inicio de Trial.
+ */
+export const sendTrialWelcomeEmail = async ({ to, brandName, subdomain }) => {
+  const client = getClient();
+  const url = `https://${subdomain}.gastrored.com.ar`;
+  const adminUrl = `https://${subdomain}.gastrored.com.ar/admin`;
+
+  const html = `
+    <!DOCTYPE html>
+    <html lang="es">
+    <body style="margin:0;padding:20px;background:#0a0a0a;color:#fff;font-family:sans-serif;">
+      <div style="max-width:600px;margin:0 auto;background:#111;padding:40px;border-radius:16px;border:1px solid #222;">
+        <h1 style="color:#E30613;margin-top:0;">¡Bienvenido a GastroRed! 🚀</h1>
+        <p style="font-size:16px;color:#ccc;">Hola <strong>${brandName}</strong>, tu prueba gratuita de 7 días ha comenzado con éxito.</p>
+        <p style="color:#aaa;">Tu plataforma ya está online y lista para configurar:</p>
+        <div style="background:#222;padding:20px;border-radius:10px;margin:20px 0;">
+          <p style="margin:5px 0;"><strong>Tu Web:</strong> <a href="${url}" style="color:#E30613;">${url}</a></p>
+          <p style="margin:5px 0;"><strong>Panel Admin:</strong> <a href="${adminUrl}" style="color:#E30613;">${adminUrl}</a></p>
+        </div>
+        <p style="color:#aaa;">Aprovechá estos días para cargar tus productos y configurar tu MercadoPago.</p>
+        <hr style="border:0;border-top:1px solid #333;margin:30px 0;">
+        <p style="font-size:12px;color:#666;">Si tenés dudas, respondé a este email o contactanos por WhatsApp.</p>
+      </div>
+    </body>
+    </html>
+  `;
+
+  if (!client) {
+    console.log(`\n[MAILER DEV] Trial Welcome for ${brandName} (${to})`);
+    console.log(`  → URL: ${url}\n`);
+    return { sent: false };
+  }
+
+  const from = process.env.SMTP_FROM || `GastroRed <onboarding@resend.dev>`;
+  return resendClient.emails.send({
+    from,
+    to: [to],
+    subject: `🚀 ¡Bienvenido a GastroRed! — Tu acceso a ${brandName}`,
+    html
+  });
+};
+
+/**
+ * Envía email de confirmación de compra de suscripción.
+ */
+export const sendSubscriptionWelcomeEmail = async ({ to, brandName, planType, amount }) => {
+  const client = getClient();
+  const html = `
+    <!DOCTYPE html>
+    <html lang="es">
+    <body style="margin:0;padding:20px;background:#0a0a0a;color:#fff;font-family:sans-serif;">
+      <div style="max-width:600px;margin:0 auto;background:#111;padding:40px;border-radius:16px;border:1px solid #222;">
+        <h1 style="color:#fbbf24;margin-top:0;">¡Pago Confirmado! 🏆</h1>
+        <p style="font-size:16px;color:#ccc;">Hola <strong>${brandName}</strong>, tu suscripción al plan <strong>${planType}</strong> ya está activa.</p>
+        <div style="background:#222;padding:20px;border-radius:10px;margin:20px 0;">
+          <p style="margin:5px 0;"><strong>Plan:</strong> ${planType}</p>
+          <p style="margin:5px 0;"><strong>Monto:</strong> $${amount}</p>
+          <p style="margin:5px 0;"><strong>Estado:</strong> Activo ✅</p>
+        </div>
+        <p style="color:#aaa;">Gracias por confiar en GastroRed para hacer crecer tu negocio.</p>
+        <hr style="border:0;border-top:1px solid #333;margin:30px 0;">
+        <p style="font-size:12px;color:#666;">Recordá que podés gestionar tu suscripción desde el panel de administrador.</p>
+      </div>
+    </body>
+    </html>
+  `;
+
+  if (!client) {
+    console.log(`\n[MAILER DEV] Subscription Success for ${brandName} (${to})`);
+    console.log(`  → Plan: ${planType}, Amount: ${amount}\n`);
+    return { sent: false };
+  }
+
+  const from = process.env.SMTP_FROM || `GastroRed <onboarding@resend.dev>`;
+  return resendClient.emails.send({
+    from,
+    to: [to],
+    subject: `✅ Pago Confirmado — Plan ${planType} en GastroRed`,
+    html
+  });
+};
+
+/**
+ * Envía una notificación administrativa al dueño de la plataforma.
+ */
+export const sendAdminNotification = async ({ subject, html }) => {
+  const client = getClient();
+  const adminEmail = process.env.ADMIN_EMAIL;
+
+  if (!adminEmail) {
+    console.warn('[MAILER] ADMIN_EMAIL no configurado. Saltando notificación admin.');
+    return { sent: false };
+  }
+
+  if (!client) {
+    console.log(`\n[MAILER DEV] Admin Notification: ${subject}`);
+    console.log(`  → HTML length: ${html.length}\n`);
+    return { sent: false };
+  }
+
+  const from = process.env.SMTP_FROM || `GastroRed Alert <onboarding@resend.dev>`;
+  return resendClient.emails.send({
+    from,
+    to: [adminEmail],
+    subject: `🔔 [GastroRed Admin] ${subject}`,
+    html
+  });
+};
