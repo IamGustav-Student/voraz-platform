@@ -252,7 +252,7 @@ const sembrarDatos = async () => {
     // ─────────────────────────────────────────────────────────────────────────
     // VIDEOS
     // ─────────────────────────────────────────────────────────────────────────
-    console.log('🎥 Inserando videos...');
+    console.log('🎥 Insertando videos...');
     const videos = [
       { title: 'Coscu prueba su propia burger en Voraz', id: 'dQw4w9WgXcQ' },
       { title: 'FYE Squad en Voraz: Lula, Rama y el feat burger', id: 'LXb3EKWsInQ' },
