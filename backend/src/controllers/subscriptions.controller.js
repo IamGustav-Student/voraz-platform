@@ -192,7 +192,8 @@ export const createTrialTenant = async (req, res) => {
         await sendTrialWelcomeEmail({
           to: admin_email,
           brandName: name.trim(),
-          subdomain: cleanSub
+          subdomain: cleanSub,
+          trialDays
         });
         // Al admin de la plataforma
         await sendAdminNotification({
@@ -203,6 +204,7 @@ export const createTrialTenant = async (req, res) => {
               <li><strong>Comercio:</strong> ${name.trim()}</li>
               <li><strong>Email:</strong> ${admin_email}</li>
               <li><strong>Subdominio:</strong> ${cleanSub}</li>
+              <li><strong>Periodo:</strong> ${trialDays} días</li>
               <li><strong>Fecha:</strong> ${new Date().toLocaleString()}</li>
             </ul>
           `

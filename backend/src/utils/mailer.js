@@ -117,7 +117,7 @@ export const sendPasswordResetEmail = async ({ to, resetUrl, brandName = 'Gastro
 /**
  * Envía email de bienvenida por inicio de Trial.
  */
-export const sendTrialWelcomeEmail = async ({ to, brandName, subdomain }) => {
+export const sendTrialWelcomeEmail = async ({ to, brandName, subdomain, trialDays = 7 }) => {
   const client = getClient();
   const url = `https://${subdomain}.gastrored.com.ar`;
   const adminUrl = `https://${subdomain}.gastrored.com.ar/admin`;
@@ -128,13 +128,13 @@ export const sendTrialWelcomeEmail = async ({ to, brandName, subdomain }) => {
     <body style="margin:0;padding:20px;background:#0a0a0a;color:#fff;font-family:sans-serif;">
       <div style="max-width:600px;margin:0 auto;background:#111;padding:40px;border-radius:16px;border:1px solid #222;">
         <h1 style="color:#E30613;margin-top:0;">¡Bienvenido a GastroRed! 🚀</h1>
-        <p style="font-size:16px;color:#ccc;">Hola <strong>${brandName}</strong>, tu prueba gratuita de 7 días ha comenzado con éxito.</p>
+        <p style="font-size:16px;color:#ccc;">Hola <strong>${brandName}</strong>, tu prueba gratuita de <strong>${trialDays} días</strong> ha comenzado con éxito.</p>
         <p style="color:#aaa;">Tu plataforma ya está online y lista para configurar:</p>
         <div style="background:#222;padding:20px;border-radius:10px;margin:20px 0;">
           <p style="margin:5px 0;"><strong>Tu Web:</strong> <a href="${url}" style="color:#E30613;">${url}</a></p>
           <p style="margin:5px 0;"><strong>Panel Admin:</strong> <a href="${adminUrl}" style="color:#E30613;">${adminUrl}</a></p>
         </div>
-        <p style="color:#aaa;">Aprovechá estos días para cargar tus productos y configurar tu MercadoPago.</p>
+        <p style="color:#aaa;">Aprovechá estos <strong>${trialDays} días</strong> para cargar tus productos y configurar tu MercadoPago.</p>
         <hr style="border:0;border-top:1px solid #333;margin:30px 0;">
         <p style="font-size:12px;color:#666;">Si tenés dudas, respondé a este email o contactanos por WhatsApp.</p>
       </div>
@@ -144,7 +144,7 @@ export const sendTrialWelcomeEmail = async ({ to, brandName, subdomain }) => {
 
   if (!client) {
     console.log(`\n[MAILER DEV] Trial Welcome for ${brandName} (${to})`);
-    console.log(`  → URL: ${url}\n`);
+    console.log(`  → Trial Days: ${trialDays}, URL: ${url}\n`);
     return { sent: false };
   }
 
