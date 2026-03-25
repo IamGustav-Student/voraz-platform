@@ -307,7 +307,7 @@ export default function AdminPanel({ onClose }) {
               {section === 'Productos'   && <ProductsSection items={data.Productos || []} categories={data._categories || []} token={token} reload={() => load('Productos')} />}
               {section === 'Promociones' && <PromosSection items={data.Promociones || []} products={data._allProducts || []} token={token} reload={() => load('Promociones')} />}
               {section === 'Locales'     && <StoresSection items={data.Locales || []} token={token} reload={() => load('Locales')} showToast={showToast} />}
-              {section === 'Fidelización' && <LoyaltySection items={data.Fidelización || {}} token={token} />}
+              {section === 'Fidelización' && <LoyaltySection items={data.Fidelización || {}} token={token} reload={() => load('Fidelización')} showToast={showToast} />}
               {section === 'Videos'      && <VideosSection token={token} />}
               {section === 'Noticias'    && <NewsSection token={token} />}
               {section === 'Pedidos'     && <OrdersSection items={data.Pedidos || []} token={token} reload={() => load('Pedidos')} mpData={data.MercadoPago} />}
@@ -1256,7 +1256,7 @@ function NewsSection({ token }) {
 }
 
 // ── Fidelización (Loyalty) ──────────────────────────────────────────────────
-function LoyaltySection({ items, token }) {
+function LoyaltySection({ items, token, reload, showToast }) {
   const [config, setConfig] = useState({
     loyalty_enabled: items.loyalty_enabled ?? false,
     points_redeem_value: items.points_redeem_value ?? 500,
@@ -1283,6 +1283,8 @@ function LoyaltySection({ items, token }) {
         body: JSON.stringify(config),
       });
       setMsg('Configuración guardada correctamente.');
+      showToast?.('Configuración de fidelización actualizada', 'success');
+      if (reload) reload();
     } catch (err) {
       setMsg('Error: ' + err.message);
     }
