@@ -15,7 +15,7 @@ const typeConfig = {
     bonus:    { label: 'Bonus',     color: 'text-brand-secondary', bg: 'bg-brand-secondary/10', sign: '+' },
 };
 
-const VorazClub = ({ onBack, onOpenAuth }) => {
+const LoyaltyClub = ({ onBack, onOpenAuth }) => {
     const { user, logout, refreshUser, getToken } = useAuth();
     const TENANT = useTenant();
     const [activeTab, setActiveTab] = useState('puntos');
@@ -203,4 +203,4 @@ const VorazClub = ({ onBack, onOpenAuth }) => {
     );
 };
 
-export default VorazClub;
+export default LoyaltyClub;

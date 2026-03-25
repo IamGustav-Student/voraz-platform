@@ -169,7 +169,7 @@ const sembrarDatos = async () => {
 
     const products = [
       // SMASH
-      { name: 'Voraz Burger (Triple)', desc: 'La reina. Triple medallón smash, triple cheddar fundido, panceta ahumada, pickles y salsa especial Voraz. Viene con papas.', price: 24200, cat: smash, img: 'https://images.unsplash.com/photo-1594212699903-ec8a3eca50f5?w=800&q=80', badge: 'ÍCONO' },
+      { name: 'Burger (Triple)', desc: 'La reina. Triple medallón smash, triple cheddar fundido, panceta ahumada, pickles y salsa especial. Viene con papas.', price: 24200, cat: smash, img: 'https://images.unsplash.com/photo-1594212699903-ec8a3eca50f5?w=800&q=80', badge: 'ÍCONO' },
       { name: 'Cheeseburger Doble', desc: 'Doble medallón smash, doble cheddar americano, cebolla, pickles y mostaza. Con papas fritas.', price: 19000, cat: smash, img: 'https://images.unsplash.com/photo-1568901346375-23c9450c58cd?w=800&q=80', badge: 'CLÁSICO' },
       { name: 'Cheesebacon Doble', desc: 'Doble smash, cheddar, panceta crocante y salsa BBQ. Con papas fritas.', price: 21300, cat: smash, img: 'https://images.unsplash.com/photo-1553979459-d2229ba7433b?w=800&q=80', badge: null },
       { name: 'American Burger', desc: 'Doble carne, queso americano, lechuga, tomate, cebolla y mayo. Con papas.', price: 22500, cat: smash, img: 'https://images.unsplash.com/photo-1580013759032-c96505e67d06?w=800&q=80', badge: null },

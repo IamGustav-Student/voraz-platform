@@ -97,11 +97,11 @@ INSERT INTO categories (name, slug) VALUES
 
 -- Productos
 INSERT INTO products (name, description, price, category_id, image_url, badge) VALUES 
-('La Voraz Original', 'Doble carne smash, cheddar x4, bacon crujiente y salsa secreta Voraz.', 8500.00, 1, 'https://images.unsplash.com/photo-1568901346375-23c9450c58cd?auto=format&fit=crop&w=800&q=80', 'BEST SELLER'),
+('La Original', 'Doble carne smash, cheddar x4, bacon crujiente y salsa secreta.', 8500.00, 1, 'https://images.unsplash.com/photo-1568901346375-23c9450c58cd?auto=format&fit=crop&w=800&q=80', 'BEST SELLER'),
 ('Triple Cheese', 'Triple carne, triple cheddar, cebolla caramelizada.', 9200.00, 1, 'https://images.unsplash.com/photo-1594212699903-ec8a3eca50f5?auto=format&fit=crop&w=800&q=80', 'NUEVO'),
 ('Classic American', 'Medallón 180g, lechuga, tomate, cebolla morada y mayonesa.', 7800.00, 2, 'https://images.unsplash.com/photo-1550547660-d9450f859349?auto=format&fit=crop&w=800&q=80', NULL),
 ('Veggie Master', 'Medallón de lentejas y not-meat, palta, rúcula y tomate.', 8100.00, 3, 'https://images.unsplash.com/photo-1520072959219-c595dc3f3a2a?auto=format&fit=crop&w=800&q=80', 'VEGGIE'),
-('Papas Voraces', 'Papas bastón con cheddar fundido y trocitos de bacon.', 4500.00, 4, 'https://images.unsplash.com/photo-1573080496987-aeb7d53384a3?auto=format&fit=crop&w=800&q=80', 'PICANTE');
+('Papas Especiales', 'Papas bastón con cheddar fundido y trocitos de bacon.', 4500.00, 4, 'https://images.unsplash.com/photo-1573080496987-aeb7d53384a3?auto=format&fit=crop&w=800&q=80', 'PICANTE');
 
 -- Influencers
 INSERT INTO influencers (name, social_handle, image_url, testimonial) VALUES

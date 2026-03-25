@@ -952,7 +952,7 @@ export default function GastroRedLanding() {
                                     {/* Mini order list */}
                                     <div className="border divide-y bg-white/5 rounded-xl border-white/5 divide-white/5">
                                         {[
-                                            { order: 'Voraz Burger x2', status: 'Preparando', amt: '$48.400', color: 'text-yellow-400' },
+                                            { order: 'Burger (Triple) x2', status: 'Preparando', amt: '$48.400', color: 'text-yellow-400' },
                                             { order: 'Crispy Chicken x1', status: 'Listo', amt: '$14.800', color: 'text-green-400' },
                                             { order: 'Papas + Coca x3', status: 'Entregado', amt: '$21.000', color: 'text-gray-500' },
                                         ].map((o, i) => (

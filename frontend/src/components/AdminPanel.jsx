@@ -1662,7 +1662,7 @@ function MercadoPagoSection({ data, token, reload }) {
           <h3 className="font-semibold text-gray-200 mb-1">Datos del local</h3>
           <p className="text-xs text-gray-500 mb-4">Estos datos aparecen en el resumen de pago de MercadoPago.</p>
           <div className="grid grid-cols-2 gap-3">
-            <input placeholder="Nombre del local (ej: Voraz Burger)" value={form.store_name}
+            <input placeholder="Nombre del local (ej: Burger House)" value={form.store_name}
               onChange={e => setForm(p => ({ ...p, store_name: e.target.value }))}
               className="col-span-2 bg-black/30 border border-white/10 rounded-lg px-3 py-2.5 text-white text-sm" />
             <input placeholder="Email de contacto" value={form.store_email} type="email"

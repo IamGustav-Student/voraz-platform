@@ -52,7 +52,7 @@ export const useBranding = () => {
         
         const rawIcon = (b.custom_branding_enabled && (b.logo_url || b.brand_logo_url))
             ? (b.logo_url || b.brand_logo_url)
-            : (!b.custom_branding_enabled && isGastroRedRoot ? '/vite.svg' : '/images/logo_voraz.jpg');
+            : (!b.custom_branding_enabled && isGastroRedRoot ? '/vite.svg' : '/vite.svg');
 
         const isSvg = rawIcon.endsWith('.svg');
         const iconType = isSvg ? 'image/svg+xml' : (rawIcon.endsWith('.png') ? 'image/png' : 'image/jpeg');

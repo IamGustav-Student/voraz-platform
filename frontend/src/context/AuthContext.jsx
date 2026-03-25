@@ -9,12 +9,12 @@ export const AuthProvider = ({ children }) => {
   const [error, setError] = useState(null);
 
   useEffect(() => {
-    const token = localStorage.getItem('voraz_token');
+    const token = localStorage.getItem('gastrored_token');
     if (token) {
       getMe(token)
         .then(userData => {
           if (userData) setUser(userData);
-          else localStorage.removeItem('voraz_token');
+          else localStorage.removeItem('gastrored_token');
         })
         .finally(() => setLoading(false));
     } else {
@@ -26,7 +26,7 @@ export const AuthProvider = ({ children }) => {
     try {
       setError(null);
       const data = await apiLogin({ email, password });
-      localStorage.setItem('voraz_token', data.token);
+      localStorage.setItem('gastrored_token', data.token);
       setUser(data.user);
       return true;
     } catch (err) {
@@ -39,7 +39,7 @@ export const AuthProvider = ({ children }) => {
     try {
       setError(null);
       const data = await apiRegister(payload);
-      localStorage.setItem('voraz_token', data.token);
+      localStorage.setItem('gastrored_token', data.token);
       setUser(data.user);
       return true;
     } catch (err) {
@@ -49,14 +49,14 @@ export const AuthProvider = ({ children }) => {
   };
 
   const logout = () => {
-    localStorage.removeItem('voraz_token');
+    localStorage.removeItem('gastrored_token');
     setUser(null);
   };
 
-  const getToken = () => localStorage.getItem('voraz_token');
+  const getToken = () => localStorage.getItem('gastrored_token');
 
   const refreshUser = async () => {
-    const token = localStorage.getItem('voraz_token');
+    const token = localStorage.getItem('gastrored_token');
     if (!token) return;
     const userData = await getMe(token);
     if (userData) setUser(userData);

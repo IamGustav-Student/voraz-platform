@@ -8,7 +8,7 @@ import { useAuth } from './context/AuthContext';
 import CartDrawer from './components/CartDrawer';
 import OrderTracking from './components/OrderTracking';
 import AuthModal from './components/AuthModal';
-import VorazClub from './components/VorazClub';
+import LoyaltyClub from './components/LoyaltyClub';
 import AdminPanel from './components/AdminPanel';
 import GastroRedLanding from './components/GastroRedLanding';
 import { useBranding } from './hooks/useBranding';
@@ -604,7 +604,6 @@ function App() {
               {currentView === 'locations' && renderLocationsView()}
               {currentView === 'delivery' && renderDeliveryView()}
               {currentView === 'brandworld' && renderBrandWorldView()}
-              {currentView === 'vorazburger' && renderBrandWorldView()}
               {currentView === 'tracking' && activeOrderId && (
                 <OrderTracking 
                   key="tracking" 
@@ -614,7 +613,7 @@ function App() {
                 />
               )}
               {currentView === 'club' && (
-                <VorazClub key="club" onBack={() => setCurrentView('menu')} onOpenAuth={() => setIsAuthOpen(true)} />
+                <LoyaltyClub key="club" onBack={() => setCurrentView('menu')} onOpenAuth={() => setIsAuthOpen(true)} />
               )}
             </>
           ) : (
@@ -634,8 +633,8 @@ function App() {
           <div className="relative -top-6">
             <motion.button
               whileTap={{ scale: 0.9 }}
-              onClick={() => setCurrentView('vorazburger')}
-              className={`w-14 h-14 rounded-full overflow-hidden flex items-center justify-center shadow-lg border-4 border-black ${currentView === 'vorazburger' ? 'bg-brand-secondary text-black ring-2 ring-brand-secondary' : 'bg-[#111] text-brand-secondary'}`}>
+              onClick={() => setCurrentView('brandworld')}
+              className={`w-14 h-14 rounded-full overflow-hidden flex items-center justify-center shadow-lg border-4 border-black ${currentView === 'brandworld' ? 'bg-brand-secondary text-black ring-2 ring-brand-secondary' : 'bg-[#111] text-brand-secondary'}`}>
               <img src="/icons/club.png" alt="Club" className="w-full h-full object-cover" />
             </motion.button>
           </div>
@@ -872,7 +871,7 @@ const CompleteRegistrationModal = () => {
         setLoading(true);
         setError('');
         try {
-            const token = localStorage.getItem('voraz_token');
+            const token = localStorage.getItem('gastrored_token');
             await updateTenantProfile(form, token);
             
             // Actualizar objeto global TENANT para que el cambio sea inmediato en la UI
