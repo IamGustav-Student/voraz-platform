@@ -17,7 +17,27 @@ export const authMiddleware = (req, res, next) => {
     const token = req.headers.authorization?.split(' ')[1];
     if (!token) return res.status(401).json({ status: 'error', message: 'Token requerido.' });
     try {
-        req.user = jwt.verify(token, _JWT);
+        const decoded = jwt.verify(token, _JWT);
+        
+        // Multi-tenancy check (IDOR Protection)
+        if (req.tenant && req.tenant.id) {
+            const userTenantId = decoded.tenant_id;
+            const userStoreId = decoded.store_id;
+            const currentTenantId = String(req.tenant.id);
+
+            // Permitir si el tenant_id coincide O si el store_id coinciden (soportando legacy)
+            const isMatch = (String(userTenantId) === currentTenantId) || 
+                           (userStoreId && String(userStoreId) === currentTenantId);
+
+            if (!isMatch && decoded.role !== 'superadmin') {
+                return res.status(403).json({ 
+                    status: 'error', 
+                    message: 'Acceso denegado. No perteneces a este comercio.' 
+                });
+            }
+        }
+
+        req.user = decoded;
         next();
     } catch {
         res.status(401).json({ status: 'error', message: 'Token inválido o expirado.' });
@@ -29,6 +49,24 @@ export const adminMiddleware = (req, res, next) => {
     if (!token) return res.status(401).json({ status: 'error', message: 'Token requerido.' });
     try {
         const decoded = jwt.verify(token, _JWT);
+
+        // Multi-tenancy check (IDOR Protection)
+        if (req.tenant && req.tenant.id) {
+            const userTenantId = decoded.tenant_id;
+            const userStoreId = decoded.store_id;
+            const currentTenantId = String(req.tenant.id);
+
+            const isMatch = (String(userTenantId) === currentTenantId) || 
+                           (userStoreId && String(userStoreId) === currentTenantId);
+
+            if (!isMatch && decoded.role !== 'superadmin') {
+                return res.status(403).json({ 
+                    status: 'error', 
+                    message: 'Acceso denegado. No perteneces a este comercio.' 
+                });
+            }
+        }
+
         if (decoded.role !== 'admin' && decoded.role !== 'manager' && decoded.role !== 'superadmin') {
             return res.status(403).json({ status: 'error', message: 'Acceso denegado. Se requiere rol admin.' });
         }

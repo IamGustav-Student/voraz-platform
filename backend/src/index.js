@@ -32,6 +32,12 @@ import promosRoutes from './routes/promos.routes.js';
 import { tenantMiddleware } from './middleware/tenant.middleware.js';
 import { getTenantId } from './utils/tenant.js';
 
+// ── Validación de Entorno Crítica ──────────────────────────────────────────
+if (!process.env.JWT_SECRET) {
+    console.error('🔴 ERROR CRÍTICO: JWT_SECRET no definidio. El sistema no puede iniciar por seguridad.');
+    process.exit(1);
+}
+
 const app = express();
 const PORT = process.env.PORT || 3000;
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
@@ -54,16 +60,21 @@ app.use('/api/', globalLimiter);
 const rootDomain = process.env.GASTRORED_ROOT_DOMAIN || 'gastrored.com.ar';
 app.use(cors({
     origin: (origin, callback) => {
-        if (!origin || 
+        // Permitir peticiones sin origen (como apps móviles o curl si se desea, 
+        // pero aquí restringimos a web por seguridad del SaaS)
+        if (!origin) return callback(null, true);
+
+        const isAllowed = 
             origin.includes('localhost') || 
             origin.includes('127.0.0.1') || 
             origin.endsWith(rootDomain) ||
-            origin.endsWith('vercel.app')
-        ) {
+            origin.endsWith('vercel.app');
+
+        if (isAllowed) {
             callback(null, true);
         } else {
             console.warn(`[CORS Blocked] Origin: ${origin}`);
-            callback(null, true); // Fallback permisivo si hay problemas
+            callback(new Error('Not allowed by CORS'));
         }
     },
     credentials: true,
