@@ -33,6 +33,9 @@ export default function ModuleGallery() {
   const sectionRef = useRef(null);
   const triggerRef = useRef(null);
   const cardsRef = useRef([]);
+  const [selectedMod, setSelectedMod] = useState(null);
+  const modalRef = useRef(null);
+  const modalImgRef = useRef(null);
 
   useEffect(() => {
     const section = sectionRef.current;
@@ -93,6 +96,17 @@ export default function ModuleGallery() {
     return () => ctx.revert();
   }, []);
 
+  // Animación del Modal
+  useEffect(() => {
+    if (selectedMod) {
+        gsap.fromTo(modalRef.current, { opacity: 0 }, { opacity: 1, duration: 0.4, ease: "power2.out" });
+        gsap.fromTo(modalImgRef.current, { scale: 0.8, y: 20 }, { scale: 1, y: 0, duration: 0.6, ease: "back.out(1.7)" });
+        document.body.style.overflow = 'hidden';
+    } else {
+        document.body.style.overflow = 'unset';
+    }
+  }, [selectedMod]);
+
   return (
     <section 
       id="ecosistema-gastrored" 
@@ -101,7 +115,6 @@ export default function ModuleGallery() {
     >
       <div ref={triggerRef}>
         <div className="h-screen flex items-center relative">
-            {/* SEO: Título h2 oculto pero disponible para lectores */}
             <h2 id="gallery-title" className="sr-only">Ecosistema Completo de GastroRed - 20 Módulos</h2>
 
             {/* Header de la sección (fijo al principio) */}
@@ -120,6 +133,7 @@ export default function ModuleGallery() {
                 <div 
                 key={mod.id} 
                 ref={el => cardsRef.current[index] = el}
+                onClick={() => setSelectedMod(mod)}
                 className="flex-shrink-0 w-[70vw] md:w-[40vw] aspect-[16/10] bg-gradient-to-br from-white/10 to-transparent border border-white/10 rounded-[2.5rem] p-1 shadow-2xl overflow-hidden group hover:border-red-500/50 transition-colors duration-500 relative cursor-pointer"
                 style={{ transformStyle: "preserve-3d" }}
                 >
@@ -132,7 +146,7 @@ export default function ModuleGallery() {
                       {mod.img ? (
                         <img 
                           src={mod.img} 
-                          alt={`Captura del módulo ${mod.title} de GastroRed`} 
+                          alt={`Módulo ${mod.title}`} 
                           loading="lazy"
                           className="w-full h-full object-cover opacity-60 group-hover:opacity-100 transition-all duration-700 group-hover:scale-110"
                         />
@@ -158,18 +172,47 @@ export default function ModuleGallery() {
                           <span className="w-2 h-2 bg-red-500 rounded-full animate-pulse" />
                           <span className="text-[11px] font-black text-red-500/80 uppercase tracking-[0.3em]">Módulo {mod.id} / 20</span>
                         </div>
-                        <span className="text-white/20 font-mono text-xs">#SAAS_VOZ_OFF</span>
+                        <div className="text-white/40 text-[10px] font-bold uppercase group-hover:text-red-500 transition-colors">Click para ampliar +</div>
                     </div>
                 </div>
                 </div>
             ))}
             </div>
 
-            {/* Decoración SEO/Visual: Background Elements */}
-            <div className="absolute top-0 right-0 w-[50vw] h-[50vh] bg-red-600/5 blur-[120px] rounded-full -translate-y-1/2 translate-x-1/2 pointer-events-none" />
-            <div className="absolute bottom-0 left-0 w-[40vw] h-[40vh] bg-orange-600/5 blur-[100px] rounded-full translate-y-1/2 -translate-x-1/2 pointer-events-none" />
+            {/* Decoración Visual */}
+            <div className="absolute top-0 right-0 w-[50vw] h-[50vh] bg-red-600/5 blur-[120px] rounded-full pointer-events-none" />
         </div>
       </div>
+
+      {/* LIGHTBOX MODAL */}
+      {selectedMod && (
+        <div 
+            ref={modalRef}
+            className="fixed inset-0 z-[100] bg-black/95 backdrop-blur-xl flex items-center justify-center p-4 md:p-12 cursor-zoom-out"
+            onClick={() => setSelectedMod(null)}
+        >
+            <button className="absolute top-8 right-8 text-white text-4xl hover:text-red-500 transition-colors">✕</button>
+            <div 
+                ref={modalImgRef}
+                className="max-w-7xl w-full bg-[#0d1117] border border-white/10 rounded-[2rem] overflow-hidden shadow-2xl cursor-default"
+                onClick={e => e.stopPropagation()}
+            >
+                <img 
+                    src={selectedMod.img} 
+                    alt={selectedMod.title} 
+                    className="w-full h-auto max-h-[70vh] object-cover border-b border-white/5"
+                />
+                <div className="p-8 md:p-12 bg-gradient-to-br from-white/5 to-transparent">
+                    <div className="flex items-center gap-3 mb-4">
+                        <span className="w-2 h-2 bg-red-500 rounded-full" />
+                        <span className="text-red-500 font-black uppercase text-xs tracking-widest">Módulo {selectedMod.id} de GastroRed</span>
+                    </div>
+                    <h3 className="text-4xl md:text-5xl font-black text-white mb-4">{selectedMod.title}</h3>
+                    <p className="text-xl text-gray-400 max-w-3xl leading-relaxed">{selectedMod.desc}</p>
+                </div>
+            </div>
+        </div>
+      )}
     </section>
   );
 }
