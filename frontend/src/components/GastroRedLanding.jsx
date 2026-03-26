@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import SuperAdminPanel from './SuperAdminPanel';
+import FeaturesSection from './FeaturesSection';
 
 const API_URL = (import.meta.env.VITE_API_URL || 'http://localhost:3000/api').trim();
 const GASTRORED_DOMAIN = (import.meta.env.VITE_GASTRORED_DOMAIN || 'gastrored.com.ar').trim();
@@ -874,22 +875,8 @@ export default function GastroRedLanding() {
                 </div>
             </section>
 
-            {/* ── FUNCIONALIDADES ─────────────────────────────────────────────────── */}
-            <section id="funcionalidades" className="py-24">
-                <div className="px-4 mx-auto max-w-7xl md:px-8">
-                    <div className="mb-16 text-center">
-                        <div className="mb-4 text-sm font-bold tracking-widest text-red-500 uppercase">Funcionalidades</div>
-                        <h2 className="mb-4 text-4xl font-black md:text-5xl">
-                            Todo lo que necesitás,{' '}
-                            <span className="text-transparent bg-clip-text bg-gradient-to-r from-red-500 to-orange-500">nada más.</span>
-                        </h2>
-                        <p className="max-w-xl mx-auto text-lg text-gray-400">Sin bloat, sin configuraciones infinitas. Cada función fue pensada para el gastronómico argentino.</p>
-                    </div>
-                    <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-                        {features.map((f, i) => <FeatureCard key={i} {...f} delay={i * 50} />)}
-                    </div>
-                </div>
-            </section>
+            {/* ── FUNCIONALIDADES PREMIUM (GSAP) ─────────────────────────────────── */}
+            <FeaturesSection />
 
             {/* ── CÓMO FUNCIONA ────────────────────────────────────────────────────── */}
             <section id="como-funciona" className="relative py-24">
