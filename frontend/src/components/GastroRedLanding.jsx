@@ -1,6 +1,33 @@
 import { useState, useEffect, useCallback } from 'react';
+import { Helmet } from 'react-helmet-async';
+
+// ── Mouse Glow Background Effect ──────────────────────────────────────────────
+function MouseGlow() {
+    useEffect(() => {
+        const glow = document.getElementById('mouse-glow');
+        if (!glow) return;
+        const moveHandler = (e) => {
+            gsap.to(glow, {
+                x: e.clientX,
+                y: e.clientY,
+                duration: 0.8,
+                ease: 'power2.out'
+            });
+        };
+        window.addEventListener('mousemove', moveHandler);
+        return () => window.removeEventListener('mousemove', moveHandler);
+    }, []);
+
+    return (
+        <div 
+            id="mouse-glow" 
+            className="fixed top-0 left-0 w-[600px] h-[600px] bg-red-600/10 blur-[150px] rounded-full pointer-events-none z-[1] -translate-x-1/2 -translate-y-1/2"
+        />
+    );
+}
 import SuperAdminPanel from './SuperAdminPanel';
 import FeaturesSection from './FeaturesSection';
+import ModuleGallery from './ModuleGallery';
 
 const API_URL = (import.meta.env.VITE_API_URL || 'http://localhost:3000/api').trim();
 const GASTRORED_DOMAIN = (import.meta.env.VITE_GASTRORED_DOMAIN || 'gastrored.com.ar').trim();
@@ -712,7 +739,18 @@ export default function GastroRedLanding() {
 
 
     return (
-        <div className="min-h-screen bg-[#080c12] text-white font-sans overflow-x-hidden">
+        <div className="min-h-screen bg-[#080c12] text-white font-sans overflow-x-hidden relative">
+            <Helmet>
+                <title>GastroRed | Digitalizá tu Restaurante en Minutos</title>
+                <meta name="description" content="GastroRed es la plataforma SaaS líder en Argentina para gastronomía. Menú digital, pedidos online, cobros con MercadoPago y fidelización de clientes." />
+                <meta name="keywords" content="restaurante, gastronómico, menú digital, pedidos online, mercadopago, qr, argentina, saas, gestión gastronómica" />
+                <meta property="og:title" content="GastroRed | Sincronización Total para tu Negocio Gastronómico" />
+                <meta property="og:description" content="Convertí tu restaurante en una experiencia digital completa. Sin comisiones por ventas." />
+                <meta property="og:image" content="/images/gallery/dashboard.jpg" />
+                <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+            </Helmet>
+
+            <MouseGlow />
 
             {/* Pantalla post-pago (retorno desde MercadoPago) */}
             {postPayment && (
@@ -877,6 +915,9 @@ export default function GastroRedLanding() {
 
             {/* ── FUNCIONALIDADES PREMIUM (GSAP) ─────────────────────────────────── */}
             <FeaturesSection />
+
+            {/* ── GALERÍA DE MÓDULOS (SCROLL HORIZONTAL) ─────────────────────────── */}
+            <ModuleGallery />
 
             {/* ── CÓMO FUNCIONA ────────────────────────────────────────────────────── */}
             <section id="como-funciona" className="relative py-24">
