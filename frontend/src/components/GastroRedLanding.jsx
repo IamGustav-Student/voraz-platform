@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { Helmet } from 'react-helmet-async';
+import gsap from 'gsap';
 
 // ── Mouse Glow Background Effect ──────────────────────────────────────────────
 function MouseGlow() {
