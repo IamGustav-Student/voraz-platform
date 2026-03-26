@@ -86,9 +86,10 @@ export const listAllTenants = async (req, res) => {
     const result = await query(
       `SELECT t.id, t.name, t.subdomain, t.custom_domain, t.admin_email,
               t.plan_type, t.subscription_period, t.subscription_expires_at,
-              t.status, t.brand_name, t.brand_color_primary, t.brand_logo_url,
-              t.slogan, t.created_at,
-              (SELECT COALESCE(ts.custom_branding_enabled, false) 
+              t.status, t.brand_name, t.brand_color_primary, t.brand_color_secondary, t.brand_logo_url,
+               t.slogan, t.address, t.whatsapp, t.created_at,
+               (SELECT u.name FROM users u WHERE u.email = t.admin_email AND u.role = 'admin' LIMIT 1) as admin_name,
+               (SELECT COALESCE(ts.custom_branding_enabled, false) 
                FROM tenant_settings ts 
                WHERE ts.tenant_id = t.id OR ts.tenant_id_fk::text = t.id::text 
                LIMIT 1) AS custom_branding_enabled
@@ -384,6 +385,116 @@ export const resetAdminPassword = async (req, res) => {
       data: { admin_email: adminUser.email, admin_name: adminUser.name },
     });
   } catch (e) {
+    res.status(500).json({ status: 'error', message: e.message });
+  }
+};
+
+// ── Actualizar datos completos del tenant (desde superadmin) ─────────────────
+export const updateStoreData = async (req, res) => {
+  const { id } = req.params; // id = subdomain
+  const {
+    name, brand_name, custom_domain, plan_type, subscription_period,
+    admin_email, admin_name, admin_password, brand_color_primary, brand_color_secondary, slogan,
+    address, whatsapp, status, subscription_expires_at
+  } = req.body;
+
+  if (!id) return res.status(400).json({ status: 'error', message: 'ID (subdomain) es requerido.' });
+
+  try {
+    await query('BEGIN');
+
+    // 1. Actualizar tenants
+    const tenantQuery = `
+      UPDATE tenants
+      SET name = COALESCE($1, name),
+          brand_name = COALESCE($2, brand_name),
+          custom_domain = $3,
+          plan_type = COALESCE($4, plan_type),
+          subscription_period = COALESCE($5, subscription_period),
+          admin_email = COALESCE($6, admin_email),
+          brand_color_primary = COALESCE($7, brand_color_primary),
+          brand_color_secondary = COALESCE($8, brand_color_secondary),
+          slogan = $9,
+          address = $10,
+          whatsapp = $11,
+          status = COALESCE($12, status),
+          subscription_expires_at = $13,
+          updated_at = NOW()
+      WHERE id = $14
+      RETURNING *
+    `;
+
+    let cleanDomain = null;
+    if (custom_domain && custom_domain.trim()) {
+      cleanDomain = custom_domain.trim().toLowerCase()
+        .replace(/^https?:\/\//i, '').replace(/^www\./i, '').replace(/\/.*$/, '').trim() || null;
+    }
+
+    const tenantValues = [
+      name?.trim(),
+      (brand_name || name)?.trim(),
+      cleanDomain,
+      plan_type,
+      subscription_period,
+      admin_email?.trim(),
+      brand_color_primary,
+      brand_color_secondary,
+      slogan?.trim(),
+      address?.trim(),
+      whatsapp?.trim(),
+      status,
+      subscription_expires_at || null,
+      id
+    ];
+
+    const tenantResult = await query(tenantQuery, tenantValues);
+
+    if (!tenantResult.rows.length) {
+      await query('ROLLBACK');
+      return res.status(404).json({ status: 'error', message: 'Tenant no encontrado.' });
+    }
+
+    // 2. Actualizar STORES (solo la principal para este tenant)
+    const storeUpdateQuery = `
+      UPDATE stores
+      SET name = COALESCE($1, name),
+          address = $2,
+          whatsapp = $3
+      WHERE tenant_id = $4
+    `;
+    await query(storeUpdateQuery, [name?.trim(), address?.trim(), whatsapp?.trim(), id]);
+
+    // 3. Actualizar usuario Administrador (si se proveen datos)
+    if (admin_name || admin_password) {
+      const userUpdateFields = [];
+      const userValues = [];
+      let valCount = 1;
+
+      if (admin_name) {
+        userUpdateFields.push(`name = $${valCount++}`);
+        userValues.push(admin_name.trim());
+      }
+      if (admin_password && admin_password.length >= 6) {
+        const hash = await bcrypt.hash(admin_password, 10);
+        userUpdateFields.push(`password_hash = $${valCount++}`);
+        userValues.push(hash);
+      }
+
+      if (userUpdateFields.length > 0) {
+        userValues.push(admin_email || tenantResult.rows[0].admin_email);
+        userValues.push(id);
+        await query(
+          `UPDATE users SET ${userUpdateFields.join(', ')}, updated_at = NOW()
+           WHERE email = $${valCount++} AND (tenant_id = $${valCount++} OR role = 'admin')`,
+          userValues
+        );
+      }
+    }
+
+    await query('COMMIT');
+    res.json({ status: 'success', data: tenantResult.rows[0], message: 'Datos del comercio actualizados correctamente.' });
+  } catch (e) {
+    await query('ROLLBACK');
     res.status(500).json({ status: 'error', message: e.message });
   }
 };

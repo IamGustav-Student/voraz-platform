@@ -8,6 +8,7 @@ import {
   createTenant,
   updateStoreStatus,
   updateStorePlan,
+  updateStoreData,
   getPlanPrices,
   getGastroRedConfig,
   updateGastroRedConfig,
@@ -29,6 +30,7 @@ router.get('/stats', getGlobalStats);
 router.get('/stores', listAllStores);
 router.post('/stores', createTenant);
 router.patch('/stores/:id/status', updateStoreStatus);
+router.put('/stores/:id', updateStoreData);
 router.delete('/stores/:id', deleteTenant);
 router.patch('/stores/:id/plan', updateStorePlan);
 router.patch('/stores/:id/reset-admin-password', resetAdminPassword);

@@ -52,6 +52,10 @@ export default function SuperAdminPanel({ onBack }) {
   const [createForm, setCreateForm] = useState(EMPTY_FORM);
   const [creating, setCreating] = useState(false);
   const [lastCreated, setLastCreated] = useState(null);
+  // Editar
+  const [showEdit, setShowEdit] = useState(false);
+  const [editForm, setEditForm] = useState(null);
+  const [saving, setSaving] = useState(false);
   // Config
   const [config, setConfig] = useState(null);
   const [configForm, setConfigForm] = useState({});
@@ -164,6 +168,24 @@ export default function SuperAdminPanel({ onBack }) {
       load();
     } catch (e) { setMsg('Error: ' + e.message); }
     setCreating(false);
+  };
+  
+  const handleSaveEdit = async (e) => {
+    e.preventDefault();
+    setSaving(true);
+    setMsg('');
+    try {
+      await sfetch(`/stores/${editForm.id}`, token, {
+        method: 'PUT',
+        body: JSON.stringify(editForm)
+      });
+      setMsg('✅ Datos del comercio actualizados');
+      setShowEdit(false);
+      load();
+    } catch (e) {
+      setMsg('Error: ' + e.message);
+    }
+    setSaving(false);
   };
 
   const handleDeleteTenant = async (id, name) => {
@@ -469,6 +491,18 @@ export default function SuperAdminPanel({ onBack }) {
                       🔗 Ver sitio
                     </a>
                   )}
+                  {/* Botón editar comercio */}
+                  <button
+                    onClick={() => {
+                      setEditForm({ ...s });
+                      setShowEdit(true);
+                      setMsg('');
+                    }}
+                    className="text-xs px-3 py-1.5 bg-blue-600 hover:bg-blue-700 rounded-lg font-bold"
+                    title="Editar todos los datos de este comercio"
+                  >
+                    ✏️ Editar
+                  </button>
                   {/* Botón reset contraseña admin */}
                   <button
                     onClick={() => { setResetModal({ tenantId: s.id, adminEmail: s.admin_email }); setResetPwd(''); setMsg(''); }}
@@ -803,7 +837,211 @@ export default function SuperAdminPanel({ onBack }) {
           brandName="GastroRed SuperAdmin"
         />
       )}
+
+      {/* MODAL DE EDICIÓN COMPLETO */}
+      {showEdit && editForm && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm overflow-y-auto">
+          <div className="bg-[#111] border border-white/10 rounded-2xl p-6 w-full max-w-2xl my-8 relative max-h-[90vh] overflow-y-auto no-scrollbar">
+            <div className="flex justify-between items-center mb-6 sticky top-0 bg-[#111] py-2 z-10 border-b border-white/5">
+              <div>
+                <h2 className="text-xl font-black text-white uppercase tracking-tight">Editar Comercio</h2>
+                <p className="text-[10px] text-gray-500 font-mono mt-0.5">ID: {editForm.id}</p>
+              </div>
+              <button onClick={() => setShowEdit(false)} className="text-gray-500 hover:text-white text-3xl">&times;</button>
+            </div>
+            
+            <form onSubmit={handleSaveEdit} className="space-y-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="md:col-span-2">
+                  <label className="text-[10px] uppercase tracking-widest text-gray-500 font-bold mb-1 block">Nombre del Negocio (Legal/Interno)</label>
+                  <input 
+                    value={editForm.name || ''} 
+                    onChange={e => setEditForm({...editForm, name: e.target.value})}
+                    required
+                    className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-2.5 text-white text-sm focus:border-red-500 outline-none"
+                    placeholder="Ej: McDonald's Argentina"
+                  />
+                </div>
+                <div className="md:col-span-2">
+                  <label className="text-[10px] uppercase tracking-widest text-gray-500 font-bold mb-1 block">Nombre de Marca (App)</label>
+                  <input 
+                    value={editForm.brand_name || ''} 
+                    onChange={e => setEditForm({...editForm, brand_name: e.target.value})}
+                    required
+                    className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-2.5 text-white text-sm focus:border-red-500 outline-none"
+                    placeholder="Ej: McDonald's"
+                  />
+                </div>
+                <div>
+                  <label className="text-[10px] uppercase tracking-widest text-gray-500 font-bold mb-1 block">Subdominio (SaaS ID)</label>
+                  <input 
+                    value={editForm.id || ''} 
+                    disabled
+                    className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-2.5 text-gray-500 text-sm outline-none cursor-not-allowed font-mono"
+                  />
+                </div>
+                <div>
+                  <label className="text-[10px] uppercase tracking-widest text-gray-500 font-bold mb-1 block">Dominio Propio</label>
+                  <input 
+                    value={editForm.custom_domain || ''} 
+                    onChange={e => setEditForm({...editForm, custom_domain: e.target.value})}
+                    className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-2.5 text-white text-sm focus:border-red-500 outline-none font-mono"
+                    placeholder="ej: pedidos.miweb.com"
+                  />
+                </div>
+                <div>
+                  <label className="text-[10px] uppercase tracking-widest text-gray-500 font-bold mb-1 block">Plan del SaaS</label>
+                  <select 
+                    value={editForm.plan_type || ''} 
+                    onChange={e => setEditForm({...editForm, plan_type: e.target.value})}
+                    className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-2.5 text-white text-sm focus:border-red-500 outline-none"
+                  >
+                    <option value="Full Digital">Full Digital</option>
+                    <option value="Expert">Expert</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="text-[10px] uppercase tracking-widest text-gray-500 font-bold mb-1 block">Periodo de Cobro</label>
+                  <select 
+                    value={editForm.subscription_period || ''} 
+                    onChange={e => setEditForm({...editForm, subscription_period: e.target.value})}
+                    className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-2.5 text-white text-sm focus:border-red-500 outline-none"
+                  >
+                    <option value="monthly">Mensual</option>
+                    <option value="annual">Anual</option>
+                  </select>
+                </div>
+                <div className="md:col-span-2">
+                  <label className="text-[10px] uppercase tracking-widest text-gray-500 font-bold mb-1 block">Email Administrador (Dueño)</label>
+                  <input 
+                    type="email"
+                    value={editForm.admin_email || ''} 
+                    onChange={e => setEditForm({...editForm, admin_email: e.target.value})}
+                    required
+                    className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-2.5 text-white text-sm focus:border-red-500 outline-none"
+                  />
+                </div>
+                <div>
+                  <label className="text-[10px] uppercase tracking-widest text-gray-500 font-bold mb-1 block">Nombre del Dueño</label>
+                  <input 
+                    value={editForm.admin_name || ''} 
+                    onChange={e => setEditForm({...editForm, admin_name: e.target.value})}
+                    className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-2.5 text-white text-sm focus:border-red-500 outline-none"
+                    placeholder="Ej: Juan Pérez"
+                  />
+                </div>
+                <div>
+                  <label className="text-[10px] uppercase tracking-widest text-gray-500 font-bold mb-1 block">Nueva Contraseña (Dejar vacío para no cambiar)</label>
+                  <input 
+                    type="password"
+                    value={editForm.admin_password || ''} 
+                    onChange={e => setEditForm({...editForm, admin_password: e.target.value})}
+                    className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-2.5 text-white text-sm focus:border-red-500 outline-none"
+                    placeholder="••••••••"
+                  />
+                </div>
+                <div>
+                  <label className="text-[10px] uppercase tracking-widest text-gray-500 font-bold mb-1 block">Dirección Sucursal Principal</label>
+                  <input 
+                    value={editForm.address || ''} 
+                    onChange={e => setEditForm({...editForm, address: e.target.value})}
+                    className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-2.5 text-white text-sm focus:border-red-500 outline-none"
+                    placeholder="Calle 123, Ciudad"
+                  />
+                </div>
+                <div>
+                  <label className="text-[10px] uppercase tracking-widest text-gray-500 font-bold mb-1 block">WhatsApp Comercio</label>
+                  <input 
+                    value={editForm.whatsapp || ''} 
+                    onChange={e => setEditForm({...editForm, whatsapp: e.target.value})}
+                    className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-2.5 text-white text-sm focus:border-red-500 outline-none"
+                    placeholder="54911..."
+                  />
+                </div>
+                <div className="md:col-span-2">
+                  <label className="text-[10px] uppercase tracking-widest text-gray-500 font-bold mb-1 block">Slogan / Frase</label>
+                  <input 
+                    value={editForm.slogan || ''} 
+                    onChange={e => setEditForm({...editForm, slogan: e.target.value})}
+                    className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-2.5 text-white text-sm focus:border-red-500 outline-none"
+                  />
+                </div>
+                <div>
+                  <label className="text-[10px] uppercase tracking-widest text-gray-500 font-bold mb-1 block">Color Primario</label>
+                  <div className="flex gap-2">
+                    <input 
+                      type="color"
+                      value={editForm.brand_color_primary || '#E30613'} 
+                      onChange={e => setEditForm({...editForm, brand_color_primary: e.target.value})}
+                      className="w-12 h-10 bg-white/5 border border-white/10 rounded-xl cursor-pointer"
+                    />
+                    <input 
+                      value={editForm.brand_color_primary || '#E30613'} 
+                      onChange={e => setEditForm({...editForm, brand_color_primary: e.target.value})}
+                      className="flex-1 bg-white/5 border border-white/10 rounded-xl px-3 text-white text-xs font-mono outline-none"
+                    />
+                  </div>
+                </div>
+                <div>
+                  <label className="text-[10px] uppercase tracking-widest text-gray-500 font-bold mb-1 block">Color Secundario</label>
+                  <div className="flex gap-2">
+                    <input 
+                      type="color"
+                      value={editForm.brand_color_secondary || '#1A1A1A'} 
+                      onChange={e => setEditForm({...editForm, brand_color_secondary: e.target.value})}
+                      className="w-12 h-10 bg-white/5 border border-white/10 rounded-xl cursor-pointer"
+                    />
+                    <input 
+                      value={editForm.brand_color_secondary || '#1A1A1A'} 
+                      onChange={e => setEditForm({...editForm, brand_color_secondary: e.target.value})}
+                      className="flex-1 bg-white/5 border border-white/10 rounded-xl px-3 text-white text-xs font-mono outline-none"
+                    />
+                  </div>
+                </div>
+                <div>
+                  <label className="text-[10px] uppercase tracking-widest text-gray-500 font-bold mb-1 block">Estado Tenant</label>
+                  <select 
+                    value={editForm.status || ''} 
+                    onChange={e => setEditForm({...editForm, status: e.target.value})}
+                    className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-2.5 text-white text-sm focus:border-red-500 outline-none"
+                  >
+                    <option value="active">Activo</option>
+                    <option value="suspended">Suspendido</option>
+                    <option value="trial">Trial</option>
+                    <option value="pending_payment">Pago Pendiente</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="text-[10px] uppercase tracking-widest text-gray-500 font-bold mb-1 block">Vencimiento Suscripción</label>
+                  <input 
+                    type="date"
+                    value={editForm.subscription_expires_at ? new Date(editForm.subscription_expires_at).toISOString().split('T')[0] : ''} 
+                    onChange={e => setEditForm({...editForm, subscription_expires_at: e.target.value})}
+                    className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-2.5 text-white text-sm focus:border-red-500 outline-none"
+                  />
+                </div>
+              </div>
+
+              <div className="flex gap-3 pt-6 sticky bottom-0 bg-[#111] py-4 border-t border-white/5">
+                <button 
+                  type="submit" 
+                  disabled={saving}
+                  className="flex-1 bg-red-600 hover:bg-red-700 disabled:opacity-50 py-3 rounded-xl font-black text-sm uppercase tracking-wide transition"
+                >
+                  {saving ? 'Guardando...' : 'Guardar Cambios'}
+                </button>
+                <button 
+                  type="button" 
+                  onClick={() => setShowEdit(false)}
+                  className="px-6 py-3 rounded-xl bg-white/10 hover:bg-white/20 text-sm font-bold transition"
+                >
+                  Cancelar
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
-
