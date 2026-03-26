@@ -24,6 +24,11 @@ pool.on('error', (err) => {
   console.error('🔴 Error en pool PostgreSQL:', String(err));
 });
 
+// Forzar UTF8 en todas las conexiones del pool
+pool.on('connect', (client) => {
+  client.query("SET client_encoding TO 'UTF8'");
+});
+
 export const query = async (text, params) => {
   try {
     return await pool.query(text, params);
