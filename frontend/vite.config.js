@@ -10,7 +10,7 @@ export default defineConfig({
       includeAssets: ['favicon.ico'],
       manifest: false,
       workbox: {
-        globPatterns: ['**/*.{js,css,html,png,jpg,svg}'],
+        globPatterns: ['**/*.{js,css,html,png,jpg,jpeg,svg,webp,woff2}'],
         runtimeCaching: [
           {
             urlPattern: ({ url }) => url.pathname.startsWith('/api'),

@@ -39,6 +39,123 @@ const EMPTY_FORM = {
   brand_color_secondary: '#1A1A1A', slogan: '',
 };
 
+function ChartTooltip({ active, label, value, x, y, type = 'amount' }) {
+  if (!active) return null;
+  return (
+    <div 
+      className="absolute z-[100] bg-[#1a1a1a] border border-white/10 p-3 rounded-xl shadow-2xl pointer-events-none -translate-x-1/2 -translate-y-[calc(100%+10px)] transition-all duration-200"
+      style={{ left: x, top: y }}
+    >
+      <p className="text-gray-400 text-[10px] font-black uppercase mb-1">{label}</p>
+      <p className="text-white text-sm font-black whitespace-nowrap">
+        {type === 'amount' ? `$${value.toLocaleString('es-AR')}` : `${value}`}
+      </p>
+    </div>
+  );
+}
+
+function SimpleAreaChart({ data }) {
+  if (!data?.length) return null;
+  const max = Math.max(...data.map(d => d.amount), 1);
+  const points = data.map((d, i) => ({
+    x: (i / (data.length - 1)) * 100,
+    y: 100 - (d.amount / max) * 100,
+    ...d
+  }));
+
+  const pathData = `M 0 100 ` + points.map(p => `L ${p.x} ${p.y}`).join(' ') + ` L 100 100 Z`;
+  const lineData = points.map((p, i) => (i === 0 ? `M` : `L`) + ` ${p.x} ${p.y}`).join(' ');
+
+  const [hovered, setHovered] = useState(null);
+
+  return (
+    <div className="relative w-full h-full group/chart pt-4">
+      <svg viewBox="0 0 100 100" preserveAspectRatio="none" className="w-full h-full overflow-visible">
+        <defs>
+          <linearGradient id="gradRevenueGlobal" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stopColor="#facc15" stopOpacity="0.4" />
+            <stop offset="100%" stopColor="#facc15" stopOpacity="0" />
+          </linearGradient>
+        </defs>
+        <path d={pathData} fill="url(#gradRevenueGlobal)" />
+        <path d={lineData} fill="none" stroke="#facc15" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+        
+        {points.map((p, i) => (
+          <rect
+            key={i}
+            x={p.x - 2} y="0" width="4" height="100"
+            fill="transparent"
+            className="cursor-pointer"
+            onMouseEnter={(e) => {
+              const rect = e.currentTarget.parentElement.getBoundingClientRect();
+              setHovered({ ...p, screenX: (p.x / 100) * rect.width, screenY: (p.y / 100) * rect.height });
+            }}
+            onMouseLeave={() => setHovered(null)}
+          />
+        ))}
+      </svg>
+      {hovered && (
+        <ChartTooltip 
+          active={true} 
+          label={hovered.day_label} 
+          value={hovered.amount} 
+          x={hovered.screenX} 
+          y={hovered.screenY} 
+        />
+      )}
+      <div className="flex justify-between mt-2 pt-2 border-t border-white/5">
+        <span className="text-[8px] text-gray-600 font-bold">{data[0].day_label}</span>
+        <span className="text-[8px] text-gray-600 font-bold">{data[data.length-1].day_label}</span>
+      </div>
+    </div>
+  );
+}
+
+function SimpleBarChart({ data }) {
+  if (!data?.length) return null;
+  const max = Math.max(...data.map(d => d.count), 1);
+  const [hovered, setHovered] = useState(null);
+
+  return (
+    <div className="relative w-full h-full flex flex-col pt-4">
+      <div className="flex-1 flex items-end gap-2 group/chart">
+        {data.map((d, i) => {
+          const height = (d.count / max) * 100;
+          return (
+            <div 
+              key={i} 
+              className="flex-1 bg-blue-500/20 hover:bg-blue-500 rounded-t-lg transition-all relative cursor-pointer"
+              style={{ height: `${Math.max(height, 5)}%` }}
+              onMouseEnter={(e) => {
+                const rect = e.currentTarget.getBoundingClientRect();
+                const parent = e.currentTarget.offsetParent.getBoundingClientRect();
+                setHovered({ ...d, x: rect.left - parent.left + rect.width / 2, y: rect.top - parent.top });
+              }}
+              onMouseLeave={() => setHovered(null)}
+            >
+              <div className="absolute inset-0 bg-blue-400 opacity-0 hover:opacity-10 rounded-t-lg transition-opacity" />
+            </div>
+          );
+        })}
+      </div>
+      {hovered && (
+        <ChartTooltip 
+          active={true} 
+          label={hovered.week_label} 
+          value={hovered.count} 
+          type="count"
+          x={hovered.x} 
+          y={hovered.y} 
+        />
+      )}
+      <div className="flex justify-between mt-2 pt-2 border-t border-white/5">
+        <span className="text-[8px] text-gray-600 font-bold">{data[0].week_label}</span>
+        <span className="text-[8px] text-gray-600 font-bold">{data[data.length-1].week_label}</span>
+      </div>
+    </div>
+  );
+}
+
 export default function SuperAdminPanel({ onBack }) {
   const [token, setToken] = useState(() => sessionStorage.getItem('sa_token') || '');
   const [loginForm, setLoginForm] = useState({ email: '', password: '' });
@@ -220,6 +337,7 @@ export default function SuperAdminPanel({ onBack }) {
         frontend_url: cfg.frontend_url || '',
         backend_url: cfg.backend_url || '',
         contact_email: cfg.contact_email || '',
+        looker_studio_url: cfg.looker_studio_url || '',
       });
     } catch (e) { setMsg('Error al cargar config: ' + e.message); }
   };
@@ -369,13 +487,14 @@ export default function SuperAdminPanel({ onBack }) {
         {[
           { id: 'stores', label: `🏪 Comercios (${stores.length})` },
           { id: 'crear', label: '➕ Nuevo Comercio' },
+          { id: 'analytics', label: '📈 Métricas y Análisis' },
           { id: 'history', label: '🚫 Bloqueos Trial' },
           { id: 'config', label: '⚙️ Configuración' }
         ].map(t => (
           <button key={t.id} onClick={() => { 
             setTab(t.id); 
             setShowCreate(t.id === 'crear'); 
-            if (t.id === 'config') loadConfig(); 
+            if (t.id === 'config' || t.id === 'analytics') loadConfig(); 
             if (t.id === 'history') loadTrialHistory();
           }}
             className={`px-4 py-2 rounded-xl text-sm font-bold uppercase transition ${tab === t.id ? 'bg-red-600 text-white' : 'bg-white/5 text-gray-400 hover:text-white'}`}>
@@ -675,6 +794,21 @@ export default function SuperAdminPanel({ onBack }) {
         {/* ── Panel de Configuración ──────────────────────────────────────────── */}
         {tab === 'config' && (
           <form onSubmit={saveConfig} className="max-w-2xl space-y-6">
+            {/* Looker Studio */}
+            <div className="bg-white/5 border border-white/10 rounded-2xl p-6">
+              <h3 className="text-white font-bold text-base mb-1 flex items-center gap-2">📊 Google Analytics (Looker Studio)</h3>
+              <p className="text-gray-500 text-xs mb-4">Pegá la URL pública de tu dashboard de Looker Studio para verlo incrustado en la pestaña Métricas.</p>
+              <div>
+                <label className="text-xs text-gray-400 mb-1 block">URL Iframe de Looker Studio</label>
+                <input
+                  type="url"
+                  placeholder="https://lookerstudio.google.com/embed/reporting/..."
+                  value={configForm.looker_studio_url || ''}
+                  onChange={e => setConfigForm(f => ({ ...f, looker_studio_url: e.target.value }))}
+                  className="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-2.5 text-white text-sm focus:outline-none focus:border-red-500 font-mono"
+                />
+              </div>
+            </div>
             {/* MercadoPago */}
             <div className="bg-white/5 border border-white/10 rounded-2xl p-6">
               <h3 className="text-white font-bold text-base mb-1 flex items-center gap-2">💳 MercadoPago</h3>
@@ -769,6 +903,92 @@ export default function SuperAdminPanel({ onBack }) {
               {savingConfig ? 'Guardando...' : '💾 Guardar configuración'}
             </button>
           </form>
+        )}
+
+        {/* ── Métricas y Análisis ────────────────────────────────────────────── */}
+        {tab === 'analytics' && (
+          <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
+            {/* Gráficas Nativas */}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              <div className="bg-white/5 rounded-3xl p-6 border border-white/10 h-[350px] flex flex-col">
+                <div className="flex items-center justify-between mb-4">
+                  <h3 className="font-black text-white flex items-center gap-2">
+                    <span className="text-yellow-500">💰</span> Ingresos SaaS Diarios
+                  </h3>
+                  <span className="text-xs text-gray-500 font-bold">Últimos 14 días</span>
+                </div>
+                {stats?.dailyRevenueGlobal?.length > 0 ? (
+                  <div className="flex-1 min-h-[200px] mt-2 border-l border-b border-white/5 relative">
+                    <SimpleAreaChart data={stats.dailyRevenueGlobal.map(d => ({ ...d, amount: parseFloat(d.amount) }))} />
+                  </div>
+                ) : (
+                  <div className="flex-1 flex items-center justify-center text-gray-600 text-sm font-bold bg-black/20 rounded-xl">
+                    No hay datos de ingresos recientes.
+                  </div>
+                )}
+              </div>
+
+              <div className="bg-white/5 rounded-3xl p-6 border border-white/10 h-[350px] flex flex-col">
+                <div className="flex items-center justify-between mb-4">
+                  <h3 className="font-black text-white flex items-center gap-2">
+                    <span className="text-blue-500">📦</span> Crecimiento de Pedidos (Global)
+                  </h3>
+                  <span className="text-xs text-gray-500 font-bold">Últimos 30 días</span>
+                </div>
+                {stats?.weeklyOrdersGlobal?.length > 0 ? (
+                  <div className="flex-1 min-h-[200px] mt-2 border-l border-b border-white/5 relative">
+                    <SimpleBarChart data={stats.weeklyOrdersGlobal.map(d => ({ ...d, count: parseInt(d.count) }))} />
+                  </div>
+                ) : (
+                  <div className="flex-1 flex items-center justify-center text-gray-600 text-sm font-bold bg-black/20 rounded-xl">
+                    No hay datos de pedidos recientes.
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* Google Analytics Integration */}
+            <div className="bg-white/5 rounded-3xl p-6 border border-white/10">
+              <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-6 gap-4">
+                <div>
+                  <h3 className="font-black text-white text-xl flex items-center gap-2">
+                    <span className="text-orange-500">📊</span> Google Analytics & Data Studio
+                  </h3>
+                  <p className="text-sm text-gray-400 mt-1">
+                    Visualizá el tráfico en vivo o accedé a tus cuentas externas.
+                  </p>
+                </div>
+                <div className="flex gap-3">
+                  <a href="https://analytics.google.com/" target="_blank" rel="noreferrer" 
+                     className="px-4 py-2 bg-[#E37400]/20 hover:bg-[#E37400]/40 text-[#ffb167] border border-[#E37400]/30 rounded-xl text-xs font-black transition-all flex items-center gap-2">
+                    GA4 ↗
+                  </a>
+                  <a href="https://tagmanager.google.com/" target="_blank" rel="noreferrer" 
+                     className="px-4 py-2 bg-[#4285F4]/20 hover:bg-[#4285F4]/40 text-[#8ab4f8] border border-[#4285F4]/30 rounded-xl text-xs font-black transition-all flex items-center gap-2">
+                    GTM ↗
+                  </a>
+                </div>
+              </div>
+
+              {config?.looker_studio_url ? (
+                <div className="w-full aspect-[16/9] lg:aspect-[21/9] bg-black/50 rounded-2xl border border-white/10 overflow-hidden">
+                  <iframe 
+                    src={config.looker_studio_url} 
+                    className="w-full h-full border-0"
+                    allowFullScreen
+                    sandbox="allow-storage-access-by-user-activation allow-scripts allow-same-origin allow-popups allow-popups-to-escape-sandbox"
+                  ></iframe>
+                </div>
+              ) : (
+                <div className="w-full aspect-[21/9] min-h-[300px] bg-black/50 rounded-2xl border border-dashed border-white/20 flex flex-col items-center justify-center text-center p-6">
+                  <span className="text-4xl mb-4 opacity-50">📉</span>
+                  <p className="text-white font-bold max-w-sm mb-2">No hay un dashboard de Looker Studio configurado.</p>
+                  <p className="text-gray-500 text-xs max-w-md mb-4">Para ver métricas detalladas de visitas en tiempo real aquí dentro, podés crear un reporte público en Looker Studio (Google Data Studio) y pegar la URL en la solapa de Configuración.</p>
+                  <button onClick={() => setTab('config')} className="px-4 py-2 border border-white/20 rounded-lg text-white text-xs font-black uppercase hover:bg-white/10 transition-colors">Configurar URL</button>
+                </div>
+              )}
+            </div>
+          </div>
         )}
 
         {/* ── Gestión de Bloqueos (Trial History) ─────────────────────────────── */}

@@ -45,7 +45,7 @@ export const superadminLogin = async (req, res) => {
 
 export const getGlobalStats = async (req, res) => {
   try {
-    const [total, active, suspended, payments, recentRevenue, recentTenants, totalOrders, topTenants] = await Promise.all([
+    const [total, active, suspended, payments, recentRevenue, recentTenants, totalOrders, topTenants, dailyRevenue, weeklyOrders] = await Promise.all([
       query("SELECT COUNT(*) FROM tenants WHERE id != 'voraz'"),
       query("SELECT COUNT(*) FROM tenants WHERE status = 'active' AND id != 'voraz'"),
       query("SELECT COUNT(*) FROM tenants WHERE status = 'suspended'"),
@@ -62,6 +62,24 @@ export const getGlobalStats = async (req, res) => {
         GROUP BY t.id, t.name 
         ORDER BY order_count DESC 
         LIMIT 5
+      `),
+      query(`
+        SELECT 
+          to_char(created_at, 'DD/MM') as day_label,
+          COALESCE(SUM(amount), 0) as amount
+        FROM subscription_payments 
+        WHERE status = 'approved' AND created_at >= NOW() - INTERVAL '14 days'
+        GROUP BY to_char(created_at, 'DD/MM'), DATE_TRUNC('day', created_at)
+        ORDER BY DATE_TRUNC('day', created_at) ASC
+      `),
+      query(`
+        SELECT 
+          to_char(DATE_TRUNC('week', COALESCE(ordered_at, created_at)), 'DD/MM') as week_label,
+          COUNT(*) as count
+        FROM orders 
+        WHERE COALESCE(ordered_at, created_at) >= NOW() - INTERVAL '30 days'
+        GROUP BY DATE_TRUNC('week', COALESCE(ordered_at, created_at))
+        ORDER BY DATE_TRUNC('week', COALESCE(ordered_at, created_at)) ASC
       `)
     ]);
     res.json({
@@ -74,7 +92,9 @@ export const getGlobalStats = async (req, res) => {
         revenue_30d: parseFloat(recentRevenue.rows[0].total),
         new_tenants_30d: parseInt(recentTenants.rows[0].count),
         total_orders: parseInt(totalOrders.rows[0].count),
-        top_tenants: topTenants.rows
+        top_tenants: topTenants.rows,
+        dailyRevenueGlobal: dailyRevenue.rows,
+        weeklyOrdersGlobal: weeklyOrders.rows,
       },
     });
   } catch (e) { res.status(500).json({ status: 'error', message: e.message }); }
@@ -302,6 +322,7 @@ export const updateGastroRedConfig = async (req, res) => {
     'price_full_digital_monthly', 'price_full_digital_annual',
     'price_expert_monthly', 'price_expert_annual',
     'trial_days', 'frontend_url', 'backend_url', 'contact_email',
+    'looker_studio_url',
   ];
   try {
     const updates = [];

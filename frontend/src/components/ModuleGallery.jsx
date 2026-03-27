@@ -147,8 +147,7 @@ export default function ModuleGallery() {
                         <img 
                           src={mod.img} 
                           alt={`Módulo ${mod.title}`} 
-                          loading="lazy"
-                          className="w-full h-full object-contain opacity-100 transition-all duration-1000 group-hover:scale-110"
+                          className="w-full h-full object-cover opacity-100 transition-all duration-1000 group-hover:scale-110"
                         />
                       ) : (
                         <div className="text-9xl opacity-20 group-hover:opacity-100 transition-opacity duration-700">{mod.icon}</div>
