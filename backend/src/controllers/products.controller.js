@@ -12,7 +12,7 @@ export const getMenu = async (req, res) => {
         c.name as category
       FROM products p
       JOIN categories c ON p.category_id = c.id
-      WHERE p.is_active = true AND p.store_id = $1
+      WHERE p.is_active = true AND p.store_id = $1 AND p.deleted_at IS NULL
       ORDER BY p.category_id, p.price ASC
     `;
     const result = await query(sql, [storeId]);
@@ -29,7 +29,7 @@ export const getProductById = async (req, res) => {
     const result = await query(
       `SELECT p.*, c.name as category FROM products p
        JOIN categories c ON p.category_id = c.id
-       WHERE p.id = $1 AND p.store_id = $2`,
+       WHERE p.id = $1 AND p.store_id = $2 AND p.deleted_at IS NULL`,
       [req.params.id, storeId]
     );
     if (!result.rows.length) return res.status(404).json({ status: 'error', message: 'Producto no encontrado.' });

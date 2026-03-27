@@ -793,11 +793,18 @@ function ProductsSection({ items, categories, token, reload }) {
 
   const toggleActive = async (p) => {
     try {
-      if (p.is_active) {
-        await adminFetch(`/products/${p.id}`, token, { method: 'DELETE' });
-      } else {
-        await adminFetch(`/products/${p.id}`, token, { method: 'PUT', body: JSON.stringify({ ...p, is_active: true }) });
-      }
+      await adminFetch(`/products/${p.id}`, token, { 
+        method: 'PUT', 
+        body: JSON.stringify({ ...p, is_active: !p.is_active }) 
+      });
+      reload();
+    } catch (e) { setMsg('Error: ' + e.message); }
+  };
+
+  const deleteProductSoft = async (id) => {
+    if (!confirm('¿Estás seguro de eliminar este producto? No aparecerá más en el catálogo.')) return;
+    try {
+      await adminFetch(`/products/${id}`, token, { method: 'DELETE' });
       reload();
     } catch (e) { setMsg('Error: ' + e.message); }
   };
@@ -895,6 +902,9 @@ function ProductsSection({ items, categories, token, reload }) {
               <button onClick={() => startEdit(p)} className="text-xs text-blue-400 hover:text-blue-300 flex-shrink-0">Editar</button>
               <button onClick={() => toggleActive(p)} className={`text-xs flex-shrink-0 ${p.is_active ? 'text-gray-500 hover:text-red-400' : 'text-green-500 hover:text-green-300'}`}>
                 {p.is_active ? 'Desactivar' : 'Activar'}
+              </button>
+              <button onClick={() => deleteProductSoft(p.id)} className="text-xs text-red-600 hover:text-red-400 flex-shrink-0 font-bold">
+                Eliminar
               </button>
             </div>
           );

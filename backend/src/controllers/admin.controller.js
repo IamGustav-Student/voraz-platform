@@ -9,7 +9,8 @@ export const getAdminProducts = async (req, res) => {
     const result = await query(
       `SELECT p.*, c.name as category_name FROM products p
        LEFT JOIN categories c ON p.category_id = c.id
-       WHERE p.store_id = $1 ORDER BY p.category_id, p.id`,
+       WHERE p.store_id = $1 AND p.deleted_at IS NULL 
+       ORDER BY p.category_id, p.id`,
       [storeId]
     );
     res.json({ status: 'success', data: result.rows });
@@ -69,8 +70,8 @@ export const deleteProduct = async (req, res) => {
   try {
     const storeId = await getStoreId(req);
     const { id } = req.params;
-    await query('UPDATE products SET is_active=false WHERE id=$1 AND store_id=$2', [id, storeId]);
-    res.json({ status: 'success', message: 'Producto desactivado' });
+    await query('UPDATE products SET deleted_at = NOW() WHERE id=$1 AND store_id=$2', [id, storeId]);
+    res.json({ status: 'success', message: 'Producto eliminado (Soft Delete)' });
   } catch (e) { res.status(500).json({ status: 'error', message: e.message }); }
 };
 

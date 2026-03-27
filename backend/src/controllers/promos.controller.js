@@ -9,7 +9,7 @@ export const getPromos = async (req, res) => {
     const result = await query(
       `SELECT p.*, pr.name as product_name
        FROM promos p
-       LEFT JOIN products pr ON p.product_id = pr.id
+       LEFT JOIN products pr ON p.product_id = pr.id AND pr.deleted_at IS NULL
        WHERE p.tenant_id = $1 AND p.is_active = true
        ORDER BY p.created_at DESC`,
       [String(tenantId)]
@@ -28,7 +28,7 @@ export const getAdminPromos = async (req, res) => {
     const result = await query(
       `SELECT p.*, pr.name as product_name
        FROM promos p
-       LEFT JOIN products pr ON p.product_id = pr.id
+       LEFT JOIN products pr ON p.product_id = pr.id AND pr.deleted_at IS NULL
        WHERE p.tenant_id = $1
        ORDER BY p.created_at DESC`,
       [String(tenantId)]
