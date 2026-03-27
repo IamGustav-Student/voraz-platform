@@ -74,12 +74,12 @@ export const getGlobalStats = async (req, res) => {
       `),
       query(`
         SELECT 
-          to_char(DATE_TRUNC('week', COALESCE(ordered_at, created_at)), 'DD/MM') as week_label,
+          to_char(DATE_TRUNC('week', created_at), 'DD/MM') as week_label,
           COUNT(*) as count
         FROM orders 
-        WHERE COALESCE(ordered_at, created_at) >= NOW() - INTERVAL '30 days'
-        GROUP BY DATE_TRUNC('week', COALESCE(ordered_at, created_at))
-        ORDER BY DATE_TRUNC('week', COALESCE(ordered_at, created_at)) ASC
+        WHERE created_at >= NOW() - INTERVAL '30 days'
+        GROUP BY DATE_TRUNC('week', created_at)
+        ORDER BY DATE_TRUNC('week', created_at) ASC
       `)
     ]);
     res.json({
