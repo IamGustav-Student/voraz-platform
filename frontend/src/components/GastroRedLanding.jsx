@@ -1,6 +1,9 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { Helmet } from 'react-helmet-async';
 import gsap from 'gsap';
+import { ScrollTrigger } from 'gsap/ScrollTrigger';
+
+gsap.registerPlugin(ScrollTrigger);
 
 // ── Mouse Glow Background Effect ──────────────────────────────────────────────
 function MouseGlow() {
@@ -22,7 +25,7 @@ function MouseGlow() {
     return (
         <div 
             id="mouse-glow" 
-            className="fixed top-0 left-0 w-[600px] h-[600px] bg-red-600/10 blur-[150px] rounded-full pointer-events-none z-[1] -translate-x-1/2 -translate-y-1/2"
+            className="fixed top-0 left-0 w-[800px] h-[800px] bg-red-600/20 blur-[180px] rounded-full pointer-events-none z-[1] -translate-x-1/2 -translate-y-1/2 opacity-60"
         />
     );
 }
@@ -53,11 +56,11 @@ function GastroRedLogo({ size = 48, className = '' }) {
             <line x1="50" y1="30" x2="50" y2="44" stroke="white" strokeWidth="2" strokeLinecap="round" />
             <ellipse cx="50" cy="26" rx="4" ry="5" fill="white" opacity="0.9" />
             {/* Text: Gastro */}
-            <text x="88" y="44" fontFamily="'Segoe UI', system-ui, sans-serif" fontWeight="800" fontSize="32" fill="#F5F5F5" letterSpacing="-0.5">Gastro</text>
+            <text x="88" y="44" fontFamily="'Outfit', sans-serif" fontWeight="900" fontSize="34" fill="#FFFFFF" letterSpacing="-1">Gastro</text>
             {/* Text: Red */}
-            <text x="197" y="44" fontFamily="'Segoe UI', system-ui, sans-serif" fontWeight="800" fontSize="32" fill="url(#textGrad)" letterSpacing="-0.5">Red</text>
+            <text x="195" y="44" fontFamily="'Outfit', sans-serif" fontWeight="900" fontSize="34" fill="url(#textGrad)" letterSpacing="-1">Red</text>
             {/* Tagline */}
-            <text x="89" y="60" fontFamily="'Segoe UI', system-ui, sans-serif" fontWeight="400" fontSize="11" fill="#E30613" letterSpacing="2">SINCRONIZACIÓN TOTAL</text>
+            <text x="89" y="62" fontFamily="'Outfit', sans-serif" fontWeight="700" fontSize="10" fill="#E30613" letterSpacing="3">PLATAFORMA INTELIGENTE</text>
             <defs>
                 <linearGradient id="hatGrad" x1="8" y1="7" x2="76" y2="60">
                     <stop offset="0%" stopColor="#E30613" />
@@ -94,16 +97,16 @@ function FloatingParticle({ delay, duration, x, size }) {
 function FeatureCard({ icon, title, desc, delay = 0 }) {
     return (
         <div
-            className="group relative bg-gradient-to-br from-white/5 to-white/[0.02] border border-white/10 rounded-2xl p-6 hover:border-red-500/40 transition-all duration-500 hover:translate-y-[-4px]"
+            className="group relative glass-premium glass-premium-hover rounded-3xl p-8 transition-all duration-700 hover:translate-y-[-8px]"
             style={{ animationDelay: `${delay}ms` }}
         >
-            <div className="absolute inset-0 transition-opacity duration-500 opacity-0 rounded-2xl bg-gradient-to-br from-red-500/5 to-transparent group-hover:opacity-100" />
+            <div className="absolute inset-0 transition-opacity duration-700 opacity-0 rounded-3xl bg-gradient-to-br from-red-600/10 to-transparent group-hover:opacity-100" />
             <div className="relative">
-                <div className="flex items-center justify-center w-12 h-12 mb-4 text-2xl transition-transform duration-300 border rounded-xl bg-red-500/10 border-red-500/20 group-hover:scale-110">
+                <div className="flex items-center justify-center w-14 h-14 mb-6 text-3xl transition-all duration-500 border rounded-2xl bg-red-600/10 border-red-600/20 group-hover:scale-110 group-hover:rotate-3 group-hover:bg-red-600/20 shadow-lg shadow-red-900/10">
                     {icon}
                 </div>
-                <h3 className="mb-2 text-lg font-bold text-white">{title}</h3>
-                <p className="text-sm leading-relaxed text-gray-400">{desc}</p>
+                <h3 className="mb-3 text-xl font-black text-white tracking-tight">{title}</h3>
+                <p className="text-sm leading-relaxed text-gray-400 font-medium">{desc}</p>
             </div>
         </div>
     );
@@ -112,14 +115,14 @@ function FeatureCard({ icon, title, desc, delay = 0 }) {
 // ── Step card ─────────────────────────────────────────────────────────────────
 function StepCard({ number, title, desc, icon }) {
     return (
-        <div className="flex items-start gap-5 group">
-            <div className="flex items-center justify-center flex-shrink-0 text-2xl transition-transform shadow-lg w-14 h-14 rounded-2xl bg-gradient-to-br from-red-600 to-red-800 shadow-red-900/40 group-hover:scale-105">
+        <div className="flex items-start gap-6 group">
+            <div className="flex items-center justify-center flex-shrink-0 text-3xl transition-all duration-500 shadow-2xl w-16 h-16 rounded-2xl bg-gradient-to-br from-red-600 to-red-800 shadow-red-900/50 group-hover:scale-110 group-hover:rotate-3">
                 {icon}
             </div>
             <div>
-                <div className="mb-1 text-xs font-bold tracking-widest text-red-500 uppercase">Paso {number}</div>
-                <h4 className="mb-1 text-lg font-bold leading-tight text-white">{title}</h4>
-                <p className="text-sm leading-relaxed text-gray-400">{desc}</p>
+                <div className="mb-1.5 text-xs font-black tracking-widest text-red-500 uppercase opacity-80">Fase {number}</div>
+                <h4 className="mb-2 text-xl font-black leading-tight text-white tracking-tight">{title}</h4>
+                <p className="text-sm leading-relaxed text-gray-400 font-medium">{desc}</p>
             </div>
         </div>
     );
@@ -129,49 +132,49 @@ function StepCard({ number, title, desc, icon }) {
 function PlanCard({ name, price, period, badge, features, cta, highlighted = false, badgeColor = 'red', onSelect }) {
     const badgeColors = {
         teal: 'bg-red-500 text-white',
-        red: 'bg-red-600 text-white',
-        yellow: 'bg-yellow-400 text-black',
-        gray: 'bg-gray-700 text-gray-200',
+        red: 'bg-red-600 text-white shadow-lg shadow-red-900/50',
+        yellow: 'bg-gradient-to-r from-yellow-400 to-orange-500 text-black shadow-lg shadow-orange-900/30',
+        gray: 'bg-white/10 text-gray-300 backdrop-blur-md',
     };
     return (
-        <div className={`relative rounded-3xl p-8 flex flex-col transition-all duration-500 hover:translate-y-[-6px] ${highlighted
-            ? 'bg-gradient-to-br from-red-950/60 to-red-800/20 border-2 border-red-500/60 shadow-2xl shadow-red-900/40'
-            : 'bg-gradient-to-br from-white/5 to-white/[0.02] border border-white/10 hover:border-red-500/30'
+        <div className={`relative rounded-[2.5rem] p-10 flex flex-col transition-all duration-700 hover:translate-y-[-10px] ${highlighted
+            ? 'glass-premium border-red-500/50 shadow-[0_20px_50px_rgba(227,6,19,0.2)] bg-gradient-to-br from-red-950/40 to-transparent'
+            : 'glass-premium hover:border-red-500/30'
             }`}>
             {badge && (
-                <div className={`absolute -top-4 left-1/2 -translate-x-1/2 px-4 py-1.5 rounded-full text-xs font-black uppercase tracking-wider ${badgeColors[badgeColor]}`}>
+                <div className={`absolute -top-4 left-1/2 -translate-x-1/2 px-5 py-2 rounded-full text-[10px] font-black uppercase tracking-[0.2em] ${badgeColors[badgeColor]}`}>
                     {badge}
                 </div>
             )}
-            <div className="mb-6">
-                <h3 className="mb-1 text-2xl font-black text-white">{name}</h3>
-                <div className="flex items-end gap-2 mb-1">
+            <div className="mb-8">
+                <h3 className="mb-2 text-3xl font-black text-white tracking-tighter">{name}</h3>
+                <div className="flex items-end gap-2">
                     {price === 0 ? (
-                        <span className="text-4xl font-black text-red-400">GRATIS</span>
+                        <span className="text-5xl font-black text-transparent bg-clip-text bg-gradient-to-r from-red-400 to-red-600">GRATIS</span>
                     ) : (
                         <>
-                            <span className="text-4xl font-black text-white">${price.toLocaleString('es-AR')}</span>
-                            <span className="mb-1 text-sm text-gray-400">/{period}</span>
+                            <span className="text-5xl font-black text-white tracking-tighter">${price.toLocaleString('es-AR')}</span>
+                            <span className="mb-2 text-sm text-gray-500 font-bold">/{period}</span>
                         </>
                     )}
                 </div>
             </div>
-            <ul className="flex-1 mb-8 space-y-3">
+            <ul className="flex-1 mb-10 space-y-4">
                 {features.map((f, i) => (
-                    <li key={i} className={`flex items-start gap-3 text-sm ${f.disabled ? 'opacity-40' : ''}`}>
-                        <span className={`mt-0.5 flex-shrink-0 w-5 h-5 rounded-full flex items-center justify-center text-xs ${f.disabled ? 'bg-gray-700 text-gray-500' : 'bg-red-500/20 text-red-400'
+                    <li key={i} className={`flex items-start gap-4 text-sm ${f.disabled ? 'opacity-30' : ''}`}>
+                        <span className={`mt-0.5 flex-shrink-0 w-6 h-6 rounded-full flex items-center justify-center text-xs ${f.disabled ? 'bg-white/5 text-gray-600' : 'bg-red-600/20 text-red-500 shadow-inner'
                             }`}>
                             {f.disabled ? '\u2715' : '\u2713'}
                         </span>
-                        <span className={f.disabled ? 'text-gray-600' : 'text-gray-300'}>{f.text}</span>
+                        <span className={`font-medium ${f.disabled ? 'text-gray-600' : 'text-gray-300'}`}>{f.text}</span>
                     </li>
                 ))}
             </ul>
             <button
                 onClick={onSelect}
-                className={`block w-full text-center py-4 rounded-xl font-black uppercase tracking-wide text-sm transition-all duration-300 ${highlighted
-                    ? 'bg-red-600 hover:bg-red-500 text-white shadow-lg shadow-red-900/50'
-                    : 'bg-white/10 hover:bg-white/20 text-white border border-white/10'
+                className={`block w-full text-center py-5 rounded-2xl font-black uppercase tracking-[0.1em] text-xs transition-all duration-500 ${highlighted
+                    ? 'bg-red-600 hover:bg-red-500 text-white shadow-[0_10px_30px_rgba(227,6,19,0.4)] scale-[1.02] hover:scale-[1.05]'
+                    : 'bg-white/5 hover:bg-white/10 text-white border border-white/10 hover:border-red-500/50'
                     }`}
             >
                 {cta}
@@ -739,6 +742,52 @@ export default function GastroRedLanding() {
     ];
 
 
+    // ── GSAP Reveals ────────────────────────────────────────────────────────────
+    useEffect(() => {
+        // Reveal Hero
+        gsap.from('#hero-content > *', {
+            y: 40,
+            opacity: 0,
+            duration: 1.2,
+            stagger: 0.2,
+            ease: 'expo.out',
+            delay: 0.5
+        });
+
+        // Reveal sections on scroll
+        const reveals = [
+            { selector: '#problema h2', y: 30 },
+            { selector: '#problema p', y: 20 },
+            { selector: '#problema .grid > div', stagger: 0.15 },
+            { selector: '#como-funciona h2', x: -40 },
+            { selector: '.reveal-step', stagger: 0.2 },
+            { selector: '#planes .text-center > *', y: 30, stagger: 0.2 },
+            { selector: '#planes .grid > div', y: 40, opacity: 0, stagger: 0.2 },
+            { selector: '#contacto .glass-premium', scale: 0.9, opacity: 0 }
+        ];
+
+        reveals.forEach(r => {
+            gsap.from(r.selector, {
+                scrollTrigger: {
+                    trigger: r.selector,
+                    start: 'top 85%',
+                    toggleActions: 'play none none none'
+                },
+                y: r.y || (r.x ? 0 : 30),
+                x: r.x || 0,
+                scale: r.scale || 1,
+                opacity: 0,
+                duration: 1,
+                stagger: r.stagger || 0,
+                ease: 'power3.out'
+            });
+        });
+
+        return () => {
+            ScrollTrigger.getAll().forEach(t => t.kill());
+        };
+    }, []);
+
     return (
         <div className="min-h-screen bg-[#080c12] text-white font-sans overflow-x-hidden relative">
             <Helmet>
@@ -773,7 +822,7 @@ export default function GastroRedLanding() {
             )}
 
             {/* ── NAVBAR ─────────────────────────────────────────────────────────── */}
-            <nav className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${scrolled ? 'bg-[#080c12]/90 backdrop-blur-xl border-b border-white/5 shadow-2xl' : 'bg-transparent'
+            <nav className={`fixed top-0 left-0 right-0 z-50 transition-all duration-500 ${scrolled ? 'bg-[#080c12]/80 backdrop-blur-2xl border-b border-white/10 shadow-[0_10px_40px_rgba(0,0,0,0.5)]' : 'bg-transparent'
                 }`}>
                 <div className="flex items-center justify-between h-16 px-4 mx-auto max-w-7xl md:px-8 md:h-20">
                     <GastroRedLogo size={36} />
@@ -784,12 +833,12 @@ export default function GastroRedLanding() {
                             </a>
                         ))}
                     </div>
-                    <div className="items-center hidden gap-3 md:flex">
-                        <a href="#contacto" className="px-4 py-2 text-sm font-medium text-gray-300 transition hover:text-white rounded-xl hover:bg-white/5">
+                    <div className="items-center hidden gap-4 md:flex">
+                        <a href="#contacto" className="px-5 py-2.5 text-sm font-bold text-gray-300 transition-all hover:text-white rounded-2xl hover:bg-white/5">
                             Contacto
                         </a>
-                        <a href="#planes" className="px-5 py-2 text-sm font-bold text-white transition-all bg-red-600 shadow-lg hover:bg-red-500 rounded-xl shadow-red-900/30">
-                            Ver planes →
+                        <a href="#planes" className="px-7 py-3 text-sm font-black text-white transition-all bg-red-600 shadow-[0_10px_20px_rgba(227,6,19,0.3)] hover:bg-red-500 rounded-2xl hover:scale-105 active:scale-95">
+                            VER PLANES →
                         </a>
                     </div>
                     {/* Mobile menu button */}
@@ -826,35 +875,35 @@ export default function GastroRedLanding() {
                 </div>
 
                 <div className="relative w-full px-4 pb-20 mx-auto max-w-7xl md:px-8 pt-28">
-                    <div className="max-w-3xl mx-auto text-center">
+                    <div id="hero-content" className="max-w-3xl mx-auto text-center">
 
-                        <div className="inline-flex items-center gap-2 px-4 py-2 mb-8 text-sm font-medium text-red-500 border rounded-full bg-red-500/10 border-red-500/20">
-                            <span className="w-2 h-2 bg-red-500 rounded-full animate-pulse"></span>
-                            Plataforma SaaS para Gastronomía Argentina
+                        <div className="inline-flex items-center gap-3 px-6 py-2.5 mb-10 text-[10px] font-black tracking-[0.2em] text-red-500 border glass-premium border-red-500/30 rounded-full uppercase">
+                            <span className="w-2.5 h-2.5 bg-red-600 rounded-full animate-ping"></span>
+                            SAAS GASTRONÓMICO · LÍDER EN ARGENTINA
                         </div>
 
-                        <h1 className="mb-6 text-5xl font-black leading-none md:text-7xl">
+                        <h1 className="mb-8 text-6xl font-black leading-[0.9] md:text-8xl tracking-tighter">
                             Tu restaurante,{' '}
-                            <span className="text-transparent bg-clip-text bg-gradient-to-r from-red-500 to-orange-500">
+                            <span className="text-transparent bg-clip-text bg-gradient-to-r from-red-600 via-orange-500 to-red-600 bg-[length:200%_auto] animate-gradient text-glow">
                                 digitalizado
                             </span>
                             <br />en minutos.
                         </h1>
 
-                        <p className="max-w-2xl mx-auto mb-10 text-xl leading-relaxed text-gray-400">
-                            GastroRed es la plataforma que convierte tu negocio gastronómico en una experiencia digital completa.
-                            Menú online, pedidos, pagos y fidelización —{' '}
-                            <strong className="text-white">todo desde un solo lugar.</strong>
+                        <p className="max-w-2xl mx-auto mb-12 text-lg md:text-xl leading-relaxed text-gray-400 font-medium">
+                            GastroRed es el motor digital que eleva tu negocio.
+                            Menú interactivo, pedidos inteligentes y fidelización extrema —{' '}
+                            <strong className="text-white text-glow">todo en el mismo ecosistema.</strong>
                         </p>
 
-                        <div className="flex flex-col justify-center gap-4 sm:flex-row">
+                        <div className="flex flex-col justify-center gap-6 sm:flex-row">
                             <button onClick={() => trialPlan && setSelectedPlan(trialPlan)}
-                                className="inline-flex items-center justify-center gap-2 px-8 py-4 text-lg font-black text-white transition-all bg-red-600 shadow-2xl hover:bg-red-500 rounded-xl shadow-red-900/50 hover:shadow-red-900/70 hover:-translate-y-1">
+                                className="inline-flex items-center justify-center gap-3 px-10 py-5 text-sm font-black text-white transition-all bg-red-600 shadow-[0_20px_40px_rgba(227,6,19,0.4)] hover:bg-red-500 rounded-2xl hover:scale-105 active:scale-95 uppercase tracking-widest">
                                 Probá gratis {trialDaysLabel}
-                                <span>→</span>
+                                <span className="text-xl">→</span>
                             </button>
                             <a href="#como-funciona"
-                                className="inline-flex items-center justify-center gap-2 px-8 py-4 text-lg font-bold text-white transition-all border bg-white/5 hover:bg-white/10 border-white/10 rounded-xl">
+                                className="inline-flex items-center justify-center gap-3 px-10 py-5 text-sm font-black text-white transition-all border glass-premium hover:bg-white/10 border-white/20 rounded-2xl hover:scale-105 active:scale-95 uppercase tracking-widest">
                                 Cómo funciona
                             </a>
                         </div>
@@ -882,9 +931,9 @@ export default function GastroRedLanding() {
                 <div className="relative px-4 mx-auto max-w-7xl md:px-8">
                     <div className="mb-16 text-center">
                         <div className="mb-4 text-sm font-bold tracking-widest text-red-500 uppercase">El problema</div>
-                        <h2 className="mb-6 text-4xl font-black md:text-5xl">
+                        <h2 className="mb-8 text-5xl font-black md:text-7xl tracking-tighter">
                             ¿Cuánto tiempo perdés{' '}
-                            <span className="text-transparent bg-clip-text bg-gradient-to-r from-red-400 to-rose-600">
+                            <span className="text-transparent bg-clip-text bg-gradient-to-r from-red-600 to-orange-500 text-glow">
                                 sin digitalización?
                             </span>
                         </h2>
@@ -894,14 +943,14 @@ export default function GastroRedLanding() {
                     </div>
                     <div className="grid gap-6 mb-12 md:grid-cols-3">
                         {[
-                            { icon: '😤', title: 'Pedidos caóticos', desc: 'WhatsApp saturado, pedidos que se pierden, clientes que no saben el menú actualizado. Caos en hora pico.' },
-                            { icon: '💸', title: 'Sin datos de ventas', desc: 'No sabés qué platos venden más, a qué hora tenés más demanda, ni cuánto ingresás por semana.' },
-                            { icon: '😴', title: 'Trabajo manual infinito', desc: 'Actualizar precios manualmente, hacer carteles, responder consultas repetitivas. Horas que podrían automatizarse.' },
+                            { icon: '😤', title: 'Pedidos caóticos', desc: 'WhatsApp saturado y comendas perdidas. Caos total en cada servicio.' },
+                            { icon: '💸', title: 'Sin métricas', desc: 'No sabés qué platos venden más ni cuánto ingresás realmente.' },
+                            { icon: '😴', title: 'Trabajo manual', desc: 'Precios desactualizados y tareas repetitivas que queman a tu equipo.' },
                         ].map(p => (
-                            <div key={p.title} className="p-6 border bg-gradient-to-br from-red-900/20 to-rose-900/10 border-red-500/20 rounded-2xl">
-                                <div className="mb-4 text-4xl">{p.icon}</div>
-                                <h3 className="mb-2 text-lg font-bold text-white">{p.title}</h3>
-                                <p className="text-sm leading-relaxed text-gray-400">{p.desc}</p>
+                            <div key={p.title} className="p-8 glass-premium glass-premium-hover rounded-[2.5rem] transition-all duration-700">
+                                <div className="mb-6 text-5xl transition-transform duration-500 group-hover:scale-110">{p.icon}</div>
+                                <h3 className="mb-3 text-2xl font-black text-white tracking-tight">{p.title}</h3>
+                                <p className="text-sm leading-relaxed text-gray-400 font-medium">{p.desc}</p>
                             </div>
                         ))}
                     </div>
@@ -937,8 +986,12 @@ export default function GastroRedLanding() {
                             <p className="mb-10 text-lg text-gray-400">
                                 Sin instalar nada, sin conocimientos técnicos. GastroRed se encarga de toda la infraestructura para que vos te concentrés en cocinar.
                             </p>
-                            <div className="space-y-8">
-                                {steps.map(s => <StepCard key={s.number} {...s} />)}
+                            <div className="space-y-10 mt-12">
+                                {steps.map((s, i) => (
+                                    <div key={s.number} className="reveal-step">
+                                        <StepCard {...s} />
+                                    </div>
+                                ))}
                             </div>
                         </div>
                         {/* Panel preview mock */}
@@ -1003,11 +1056,11 @@ export default function GastroRedLanding() {
             <section id="planes" className="py-24 scroll-mt-20">
                 <div className="px-4 mx-auto max-w-7xl md:px-8">
                     <div className="mb-16 text-center">
-                        <div className="mb-4 text-sm font-bold tracking-widest text-red-500 uppercase">Planes y Precios</div>
-                        <h2 className="mb-6 text-4xl font-black md:text-5xl">
-                            Elegí el plan perfecto para <span className="text-transparent bg-clip-text bg-gradient-to-r from-red-500 to-orange-500">tu negocio.</span>
+                        <div className="mb-4 text-sm font-black tracking-[0.3em] text-red-500 uppercase opacity-60">Inversión Inteligente</div>
+                        <h2 className="mb-6 text-5xl font-black md:text-7xl tracking-tighter">
+                            Escalá tu <span className="text-transparent bg-clip-text bg-gradient-to-r from-red-600 via-orange-500 to-red-600 animate-gradient text-glow">negocio.</span>
                         </h2>
-                        <p className="max-w-xl mx-auto text-lg text-gray-400">Sin comisiones por ventas. Pagás un abono fijo y el 100% de la venta es tuya.</p>
+                        <p className="max-w-xl mx-auto text-lg text-gray-400 font-medium">Sin comisiones. Sin intermediarios. Tu éxito es 100% tuyo.</p>
                     </div>
 
                     <div className="grid gap-6 mt-8 md:grid-cols-3">
@@ -1067,33 +1120,34 @@ export default function GastroRedLanding() {
             </section>
 
             {/* ── CTA FINAL ────────────────────────────────────────────────────────── */}
-            <section id="contacto" className="py-24">
-                <div className="max-w-4xl px-4 mx-auto text-center md:px-8">
-                    <div className="relative p-12 overflow-hidden border bg-gradient-to-br from-red-950/40 to-red-900/20 border-red-500/30 rounded-3xl md:p-16">
-                        <div className="absolute top-0 w-64 h-64 -translate-x-1/2 rounded-full left-1/2 bg-red-600/15 blur-3xl" />
-                        <div className="relative">
-                            <div className="mb-6 text-5xl">🍽️</div>
-                            <h2 className="mb-4 text-4xl font-black md:text-5xl">
-                                ¿Listo para digitalizar{' '}
-                                <span className="text-red-500">tu restaurante?</span>
+            <section id="contacto" className="py-32 relative overflow-hidden">
+                <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[1000px] h-[1000px] bg-red-600/5 rounded-full blur-[200px]" />
+                <div className="max-w-5xl px-4 mx-auto text-center md:px-8">
+                    <div className="relative p-16 md:p-24 overflow-hidden glass-premium border-red-500/30 rounded-[3rem] shadow-[0_0_80px_rgba(227,6,19,0.15)]">
+                        <div className="absolute top-0 right-0 w-80 h-80 bg-red-600/10 rounded-full blur-[100px] -translate-y-1/2 translate-x-1/2" />
+                        <div className="relative z-10">
+                            <div className="mb-8 text-6xl">🔥</div>
+                            <h2 className="mb-6 text-5xl font-black md:text-7xl tracking-tighter leading-none">
+                                Dominá el mercado <br />
+                                <span className="text-transparent bg-clip-text bg-gradient-to-r from-red-500 to-orange-500 text-glow">gastronómico.</span>
                             </h2>
-                            <p className="max-w-xl mx-auto mb-8 text-lg text-gray-300">
-                                Arrancá con {trialDaysLabel} gratis. Sin técnicos, sin complicaciones, sin letra chica.
-                                En minutos tu carta está online.
+                            <p className="max-w-2xl mx-auto mb-12 text-xl text-gray-400 font-medium">
+                                Sumate a la revolución digital. Arrancá hoy con {trialDaysLabel} de acceso total gratuito.
+                                Tu restaurante merece este nivel.
                             </p>
-                            <div className="flex flex-col justify-center gap-4 sm:flex-row">
+                            <div className="flex flex-col justify-center gap-6 sm:flex-row">
                                 <a
                                     href="mailto:contacto@programadorgs.com.ar?subject=Quiero sumarme a GastroRed&body=Hola! Me interesa probar GastroRed para mi restaurante."
-                                    className="inline-flex items-center justify-center gap-2 px-8 py-4 text-lg font-black text-white transition-all bg-red-600 shadow-2xl hover:bg-red-500 rounded-xl shadow-red-900/50 hover:-translate-y-1"
+                                    className="inline-flex items-center justify-center gap-3 px-12 py-5 text-sm font-black text-white transition-all bg-red-600 shadow-[0_20px_40px_rgba(227,6,19,0.4)] hover:bg-red-500 rounded-2xl hover:scale-105 active:scale-95 uppercase tracking-widest"
                                 >
-                                    Escribinos por email 📩
+                                    Escribinos por Email ✉️
                                 </a>
                                 <a
                                     href="https://wa.me/5492473468486?text=Hola!%20Quiero%20probar%20GastroRed%20para%20mi%20restaurante."
                                     target="_blank" rel="noreferrer"
-                                    className="inline-flex items-center justify-center gap-2 bg-[#25D366]/20 hover:bg-[#25D366]/30 border border-[#25D366]/40 text-[#25D366] px-8 py-4 rounded-xl font-black text-lg transition-all"
+                                    className="inline-flex items-center justify-center gap-3 bg-[#25D366]/10 hover:bg-[#25D366]/20 border border-[#25D366]/30 text-[#25D366] px-12 py-5 rounded-2xl font-black text-sm transition-all hover:scale-105 active:scale-95 uppercase tracking-widest shadow-[0_10px_30px_rgba(37,211,102,0.15)]"
                                 >
-                                    WhatsApp 💬
+                                    WhatsApp Directo 💬
                                 </a>
                             </div>
                         </div>

@@ -1,3 +1,5 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=Outfit:wght@400;500;600;700;800;900&display=swap');
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -12,10 +14,10 @@
   --brand-primary-rgb: 227, 6, 19;
   --brand-secondary: var(--secondary-color);
   --brand-secondary-rgb: 245, 158, 11;
-  --brand-bg: #0A0A0A;        /* Negro profundo (será sobreescrito dinámicamente) */
-  --brand-surface: #141414;   /* Gris oscuro (será sobreescrito dinámicamente) */
+  --brand-bg: #080C12;
+  --brand-surface: #121212;
   --brand-text: #F5F5F5;
-  --brand-on-primary: #FFFFFF; /* Blanco por defecto */
+  --brand-on-primary: #FFFFFF;
 }
 
 .border-brand {
@@ -25,13 +27,45 @@
 body {
   background-color: var(--brand-bg);
   color: var(--brand-text);
-  font-family: 'Inter', sans-serif;
+  font-family: 'Outfit', 'Inter', sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* ── Premium Utilities ── */
+.glass-premium {
+  background: rgba(255, 255, 255, 0.03);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+}
+
+.glass-premium-hover:hover {
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(227, 6, 19, 0.3);
+  box-shadow: 0 8px 32px 0 rgba(227, 6, 19, 0.15);
+}
+
+.text-glow {
+  text-shadow: 0 0 20px rgba(var(--brand-primary-rgb), 0.5);
+}
+
+.text-glow-orange {
+  text-shadow: 0 0 20px rgba(var(--brand-secondary-rgb), 0.5);
+}
+
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
 }
 
 /* Scrollbar personalizada */
 ::-webkit-scrollbar { width: 8px; }
 ::-webkit-scrollbar-track { background: var(--brand-bg); }
-::-webkit-scrollbar-thumb { background: #333; border-radius: 4px; }
+::-webkit-scrollbar-thumb { background: #1F1F1F; border-radius: 4px; }
 ::-webkit-scrollbar-thumb:hover { background: var(--brand-primary); }
 
 /* ── Estilos de Impresión (PDF Report) ── */

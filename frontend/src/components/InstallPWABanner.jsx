@@ -22,9 +22,9 @@ export default function InstallPWABanner({ isInstallable, handleInstallClick, br
         initial={{ y: 100, opacity: 0 }}
         animate={{ y: 0, opacity: 1 }}
         exit={{ y: 100, opacity: 0 }}
-        className="fixed bottom-20 md:bottom-6 left-4 right-4 md:left-auto md:right-6 md:w-80 z-[60]"
+        className="fixed bottom-24 md:bottom-8 left-6 right-6 md:left-auto md:right-8 md:w-96 z-[60]"
       >
-        <div className="bg-[#1a1a1a] border border-white/10 rounded-2xl p-4 shadow-2xl backdrop-blur-xl relative overflow-hidden group">
+        <div className="glass-premium border-red-500/30 rounded-[2rem] p-6 shadow-[0_20px_60px_rgba(0,0,0,0.6)] relative overflow-hidden group">
           {/* Decoración de fondo */}
           <div className="absolute -right-4 -top-4 w-20 h-20 bg-brand-primary/10 rounded-full blur-2xl group-hover:bg-brand-primary/20 transition-all duration-700" />
           
@@ -36,23 +36,23 @@ export default function InstallPWABanner({ isInstallable, handleInstallClick, br
             </div>
             
             <div className="flex-grow">
-              <h3 className="text-white font-bold text-sm leading-tight mb-1">
+              <h3 className="text-white font-black text-lg leading-none mb-1 tracking-tighter">
                 Instalar {brandName}
               </h3>
-              <p className="text-gray-400 text-[11px] leading-relaxed mb-3">
-                Accedé más rápido y pedí sin abrir el navegador.
+              <p className="text-gray-400 text-xs font-medium leading-relaxed mb-4">
+                Llevá tu restaurante al escritorio. Pedidos más rápidos, experiencia 100% nativa.
               </p>
               
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-3">
                 <button
                   onClick={handleInstallClick}
-                  className="bg-brand-primary hover:bg-brand-primary-hover text-white text-[11px] font-black uppercase tracking-wider px-4 py-2 rounded-lg transition-all active:scale-95"
+                  className="bg-red-600 hover:bg-red-500 text-white text-[10px] font-black uppercase tracking-widest px-6 py-3 rounded-xl transition-all active:scale-95 shadow-[0_10px_20px_rgba(227,6,19,0.3)]"
                 >
                   Instalar App
                 </button>
                 <button
                   onClick={() => setShow(false)}
-                  className="text-gray-500 hover:text-white text-[11px] font-bold px-2 py-2 transition-colors"
+                  className="text-gray-500 hover:text-white text-[10px] font-black uppercase tracking-widest px-3 py-3 transition-colors opacity-60 hover:opacity-100"
                 >
                   Ahora no
                 </button>

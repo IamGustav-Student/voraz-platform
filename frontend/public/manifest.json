@@ -1,7 +1,7 @@
 {
   "short_name": "GastroRed",
-  "name": "GastroRed - Plataforma Gastronómica",
-  "description": "Tu carta digital, pedidos y más.",
+  "name": "GastroRed - Plataforma Gastronómica Inteligente",
+  "description": "Tu carta digital, pedidos online y fidelización en un solo lugar.",
   "icons": [
     {
       "src": "/images/logo_voraz.jpg",
@@ -17,18 +17,40 @@
   ],
   "start_url": "/",
   "display": "standalone",
-  "theme_color": "#000000",
-  "background_color": "#ffffff",
+  "theme_color": "#E30613",
+  "background_color": "#080C12",
   "orientation": "portrait",
   "scope": "/",
   "lang": "es-AR",
-  "categories": ["food", "shopping"],
+  "categories": ["food", "shopping", "business"],
   "shortcuts": [
     {
       "name": "Ver Mi Pedido",
       "short_name": "Pedidos",
       "url": "/tracking",
       "icons": [{ "src": "/images/logo_voraz.jpg", "sizes": "192x192" }]
+    },
+    {
+      "name": "Explorar Menú",
+      "short_name": "Menú",
+      "url": "/",
+      "icons": [{ "src": "/images/logo_voraz.jpg", "sizes": "192x192" }]
+    }
+  ],
+  "screenshots": [
+    {
+      "src": "/images/gallery/dashboard.jpg",
+      "sizes": "1280x720",
+      "type": "image/jpeg",
+      "form_factor": "wide",
+      "label": "Gestión Profesional"
+    },
+    {
+      "src": "/images/gallery/menu_items.jpg",
+      "sizes": "720x1280",
+      "type": "image/jpeg",
+      "form_factor": "narrow",
+      "label": "Carta Digital Premium"
     }
   ]
 }

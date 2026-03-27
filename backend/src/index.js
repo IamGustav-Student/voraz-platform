@@ -197,16 +197,20 @@ app.get('/api/manifest', async (req, res) => {
         res.json({
             name,
             short_name: name,
-            description: s.slogan || `${name} — tu app de pedidos`,
+            description: s.slogan || `${name} — Tu plataforma gastronómica inteligente.`,
             start_url: '/',
             display: 'standalone',
-            background_color: '#FFFFFF',
+            background_color: '#080C12',
             theme_color: color,
+            orientation: 'portrait',
+            categories: ['food', 'shopping', 'business'],
+            lang: 'es-AR',
             icons: [
                 { 
                     src: iconUrl, 
                     sizes: isSvg ? 'any' : '192x192', 
-                    type: iconType 
+                    type: iconType,
+                    purpose: 'any maskable'
                 },
                 { 
                     src: iconUrl, 
@@ -214,6 +218,36 @@ app.get('/api/manifest', async (req, res) => {
                     type: iconType 
                 },
             ],
+            shortcuts: [
+                {
+                    name: "Ver Mi Pedido",
+                    short_name: "Pedidos",
+                    url: "/tracking",
+                    icons: [{ src: iconUrl, sizes: "192x192" }]
+                },
+                {
+                    name: "Explorar Menú",
+                    short_name: "Menú",
+                    url: "/",
+                    icons: [{ src: iconUrl, sizes: "192x192" }]
+                }
+            ],
+            screenshots: [
+                {
+                    src: "/images/gallery/dashboard.jpg",
+                    sizes: "1280x720",
+                    type: "image/jpeg",
+                    form_factor: "wide",
+                    label: "Panel de Control Inteligente"
+                },
+                {
+                    src: "/images/gallery/menu_items.jpg",
+                    sizes: "720x1280",
+                    type: "image/jpeg",
+                    form_factor: "narrow",
+                    label: "Menú Digital Interactivo"
+                }
+            ]
         });
     } catch (err) {
         res.json({ name: 'GastroRed', short_name: 'GastroRed', theme_color: '#E30613' });

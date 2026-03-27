@@ -26,7 +26,6 @@ const isGastroRedRootDomain = () => {
   if (typeof window === 'undefined') return false;
   const host = window.location.hostname.toLowerCase();
   const matched = GASTRORED_ROOT_DOMAINS.some(d => d && host === d.toLowerCase());
-  console.log('[App] isGastroRedRootDomain check:', { host, rootDomains: GASTRORED_ROOT_DOMAINS, matched });
   return matched;
 };
 
@@ -81,7 +80,6 @@ function App() {
       })
         .then(r => r.json())
         .then(data => {
-          console.log('[App] tenant-check response:', data);
           setShowLanding(data.is_landing);
         })
         .catch(err => {

@@ -74,12 +74,12 @@ export default function FeaturesSection() {
       className="py-24 px-4 bg-[#080c12] overflow-hidden"
     >
       <div className="max-w-7xl mx-auto">
-        <div className="text-center mb-16">
-          <h2 className="text-4xl md:text-5xl font-black text-white mb-4">
-            Potencial <span className="text-transparent bg-clip-text bg-gradient-to-r from-red-500 to-orange-500 font-black">Ilimitado</span>
+        <div className="text-center mb-20">
+          <h2 className="text-5xl md:text-7xl font-black text-white mb-6 tracking-tighter">
+            Potencial <span className="text-transparent bg-clip-text bg-gradient-to-r from-red-600 via-orange-500 to-red-600 animate-gradient text-glow">Ilimitado</span>
           </h2>
-          <p className="text-gray-400 max-w-2xl mx-auto text-lg">
-            Descubrí por qué GastroRed es la plataforma de sincronización total elegida por los comercios gastronómicos líderes.
+          <p className="text-gray-400 max-w-2xl mx-auto text-lg font-medium">
+            Descubrí por qué GastroRed es el ecosistema de sincronización total elegido por los comercios gastronómicos más ambiciosos.
           </p>
         </div>
 
@@ -88,32 +88,30 @@ export default function FeaturesSection() {
             <div
               key={index}
               ref={el => cardsRef.current[index] = el}
-              className="group relative bg-white/[0.03] border border-white/10 rounded-3xl p-8 hover:border-red-500/50 transition-colors duration-500 shadow-2xl"
+              className="group relative glass-premium glass-premium-hover rounded-[2.5rem] p-10 transition-all duration-700 hover:translate-y-[-10px]"
             >
-              {/* Efecto de luz al hover */}
-              <div className="absolute inset-0 bg-gradient-to-br from-red-500/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500 rounded-3xl" />
+              <div className="absolute inset-0 bg-gradient-to-br from-red-600/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-700 rounded-[2.5rem]" />
               
               <div className="relative z-10">
-                <div className="text-5xl mb-6 bg-red-500/10 w-20 h-20 rounded-2xl flex items-center justify-center border border-red-500/20 group-hover:scale-110 transition-transform duration-500 shadow-lg shadow-red-900/20">
+                <div className="text-5xl mb-8 bg-red-600/10 w-24 h-24 rounded-3xl flex items-center justify-center border border-red-600/20 group-hover:scale-110 group-hover:rotate-3 transition-all duration-500 shadow-2xl shadow-red-900/20">
                   {feature.icon}
                 </div>
                 
-                <h3 className="text-2xl font-black text-white mb-3">
+                <h3 className="text-3xl font-black text-white mb-4 tracking-tight">
                   {feature.title}
                 </h3>
                 
-                <p className="text-red-500 text-sm font-bold mb-4 uppercase tracking-widest">
+                <p className="text-red-500 text-[10px] font-black mb-5 uppercase tracking-[0.2em] opacity-80">
                   {feature.description}
                 </p>
                 
-                <p className="text-gray-400 text-sm leading-relaxed">
+                <p className="text-gray-400 text-sm leading-relaxed font-medium">
                   {feature.action}
                 </p>
                 
-                {/* Decoración premium */}
-                <div className="mt-8 pt-6 border-t border-white/5 flex items-center justify-between">
-                  <span className="text-xs text-gray-500 font-mono tracking-tighter">MÓDULO ACTIVO</span>
-                  <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse shadow-[0_0_8px_rgba(34,197,94,0.6)]" />
+                <div className="mt-10 pt-8 border-t border-white/5 flex items-center justify-between">
+                  <span className="text-[10px] text-gray-600 font-black tracking-widest uppercase">MÓDULO ACTIVO</span>
+                  <div className="w-2.5 h-2.5 bg-green-500 rounded-full animate-pulse shadow-[0_0_15px_rgba(34,197,94,0.6)]" />
                 </div>
               </div>
             </div>
@@ -122,18 +120,18 @@ export default function FeaturesSection() {
           {/* Tarjeta de Cierre (Call to Action) */}
           <div
             ref={el => cardsRef.current[5] = el}
-            className="group relative bg-gradient-to-br from-red-600 to-red-900 rounded-3xl p-8 flex flex-col items-center justify-center text-center shadow-2xl shadow-red-900/40"
+            className="group relative bg-gradient-to-br from-red-600 to-red-900 rounded-[2.5rem] p-12 flex flex-col items-center justify-center text-center shadow-[0_20px_50px_rgba(227,6,19,0.3)] transition-all duration-700 hover:scale-[1.02]"
           >
             <div className="relative z-10">
-              <h3 className="text-3xl font-black text-white mb-4">
+              <h3 className="text-4xl font-black text-white mb-6 tracking-tighter">
                 ¿Listo para escalar?
               </h3>
-              <p className="text-white/80 mb-8 font-medium">
-                Únite a GastroRed hoy y llevá tu restaurante al siguiente nivel digital.
+              <p className="text-white/90 mb-10 font-bold text-lg leading-tight">
+                Únite a la red hoy y llevá tu negocio al nivel digital que merece.
               </p>
               <a 
                 href="#planes" 
-                className="inline-block bg-white text-red-600 font-black px-8 py-4 rounded-2xl hover:bg-gray-100 transition-all duration-300 transform group-hover:scale-105 active:scale-95 uppercase tracking-wide text-sm shadow-xl"
+                className="inline-block bg-white text-red-600 font-black px-10 py-5 rounded-2xl hover:bg-gray-100 transition-all duration-500 transform group-hover:scale-105 active:scale-95 uppercase tracking-widest text-xs shadow-2xl"
               >
                 Ver Planes Ahora
               </a>

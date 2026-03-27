@@ -118,61 +118,61 @@ export default function ModuleGallery() {
             <h2 id="gallery-title" className="sr-only">Ecosistema Completo de GastroRed - 20 Módulos</h2>
 
             {/* Header de la sección (fijo al principio) */}
-            <div className="absolute top-12 left-12 z-20 pointer-events-none">
-                <div className="text-4xl md:text-6xl font-black text-white leading-tight">
-                    Explorá el ecosistema <br/>
-                    <span className="text-transparent bg-clip-text bg-gradient-to-r from-red-600 to-orange-500">GastroRed</span>
+            <div className="absolute top-16 left-16 z-20 pointer-events-none">
+                <div className="text-5xl md:text-8xl font-black text-white leading-[0.8] tracking-tighter">
+                    Explorá el <br/>
+                    <span className="text-transparent bg-clip-text bg-gradient-to-r from-red-600 via-orange-500 to-red-600 animate-gradient text-glow">Ecosistema</span>
                 </div>
-                <p className="text-gray-500 mt-4 max-w-md font-medium">
-                    20 módulos diseñados para digitalizar cada aspecto de la gestión gastronómica moderna.
+                <p className="text-gray-500 mt-6 max-w-md font-bold text-lg leading-tight uppercase tracking-widest opacity-60">
+                    20 Módulos de Sincronización Total para la Gastronomía Pro.
                 </p>
             </div>
 
-            <div ref={sectionRef} className="flex gap-16 px-[15vw] md:px-[25vw]">
+            <div ref={sectionRef} className="flex gap-20 px-[20vw] md:px-[30vw]">
             {modules.map((mod, index) => (
                 <div 
                 key={mod.id} 
                 ref={el => cardsRef.current[index] = el}
                 onClick={() => setSelectedMod(mod)}
-                className="flex-shrink-0 w-[70vw] md:w-[40vw] aspect-[16/10] bg-gradient-to-br from-white/10 to-transparent border border-white/10 rounded-[2.5rem] p-1 shadow-2xl overflow-hidden group hover:border-red-500/50 transition-colors duration-500 relative cursor-pointer"
+                className="flex-shrink-0 w-[80vw] md:w-[45vw] aspect-[16/10] glass-premium rounded-[3rem] p-2 shadow-[0_40px_100px_rgba(0,0,0,0.5)] overflow-hidden group hover:border-red-500/50 transition-all duration-700 cursor-pointer"
                 style={{ transformStyle: "preserve-3d" }}
                 >
-                <div className="h-full flex flex-col p-6 pointer-events-none">
+                <div className="h-full flex flex-col p-8 pointer-events-none">
                     {/* Imagen o Icono */}
                     <div 
-                      className="flex-1 bg-[#0a0f18] rounded-2xl flex items-center justify-center overflow-hidden border border-white/5 relative group-hover:shadow-[0_0_30px_rgba(239,68,68,0.2)] transition-shadow duration-500"
-                      style={{ transform: "translateZ(30px)" }}
+                      className="flex-1 bg-[#0a0f18] rounded-[2rem] flex items-center justify-center overflow-hidden border border-white/5 relative group-hover:shadow-[0_0_50px_rgba(227,6,19,0.3)] transition-all duration-700"
+                      style={{ transform: "translateZ(40px)" }}
                     >
                       {mod.img ? (
                         <img 
                           src={mod.img} 
                           alt={`Módulo ${mod.title}`} 
                           loading="lazy"
-                          className="w-full h-full object-cover opacity-60 group-hover:opacity-100 transition-all duration-700 group-hover:scale-110"
+                          className="w-full h-full object-cover opacity-40 group-hover:opacity-100 transition-all duration-1000 group-hover:scale-110"
                         />
                       ) : (
-                        <div className="text-9xl opacity-40 group-hover:opacity-100 transition-opacity duration-500">{mod.icon}</div>
+                        <div className="text-9xl opacity-20 group-hover:opacity-100 transition-opacity duration-700">{mod.icon}</div>
                       )}
                       
                       {/* Overlay Gradiente */}
-                      <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent opacity-60 group-hover:opacity-20 transition-opacity" />
+                      <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-transparent to-transparent opacity-80 group-hover:opacity-30 transition-opacity" />
                     </div>
                     
-                    <div className="pt-8" style={{ transform: "translateZ(50px)" }}>
-                        <h3 className="text-3xl font-black text-white mb-2 group-hover:text-red-500 transition-colors">
+                    <div className="pt-10" style={{ transform: "translateZ(80px)" }}>
+                        <h3 className="text-4xl font-black text-white mb-3 group-hover:text-red-500 transition-colors tracking-tighter">
                           {mod.title}
                         </h3>
-                        <p className="text-sm text-gray-400 font-bold uppercase tracking-wider">
+                        <p className="text-[10px] text-gray-500 font-black uppercase tracking-[0.3em]">
                           {mod.desc}
                         </p>
                     </div>
 
-                    <div className="mt-6 flex items-center justify-between">
-                        <div className="flex items-center gap-2">
-                          <span className="w-2 h-2 bg-red-500 rounded-full animate-pulse" />
-                          <span className="text-[11px] font-black text-red-500/80 uppercase tracking-[0.3em]">Módulo {mod.id} / 20</span>
+                    <div className="mt-8 flex items-center justify-between">
+                        <div className="flex items-center gap-3">
+                          <span className="w-2.5 h-2.5 bg-red-600 rounded-full animate-ping" />
+                          <span className="text-[10px] font-black text-red-500/60 uppercase tracking-[0.4em]">ACTIVO · {mod.id} / 20</span>
                         </div>
-                        <div className="text-white/40 text-[10px] font-bold uppercase group-hover:text-red-500 transition-colors">Click para ampliar +</div>
+                        <div className="text-white/20 text-[10px] font-black uppercase tracking-widest group-hover:text-red-500 transition-colors">Click para Expandir +</div>
                     </div>
                 </div>
                 </div>
