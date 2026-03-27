@@ -7,6 +7,7 @@ if (typeof window !== 'undefined') {
 }
 
 const modules = [
+  { id: 19, title: "Carta Digital", desc: "Visualización optimizada para dispositivos móviles.", icon: "🍽️", img: "/images/gallery/menu_items.jpg" },
   { id: 1, title: "Dashboard Pro", desc: "Métricas en tiempo real de tu negocio.", icon: "📊", img: "/images/gallery/dashboard.jpg" },
   { id: 2, title: "Gestión de Productos", desc: "Control total de precios, fotos y stock.", icon: "🍔", img: "/images/gallery/productos.jpg" },
   { id: 3, title: "Pedidos en Vivo", desc: "Comandas digitales recibidas al instante.", icon: "📋", img: "/images/gallery/pedidos.jpg" },
@@ -25,7 +26,6 @@ const modules = [
   { id: 16, title: "Contenido en Video", desc: "Marketing multimedia para tu restaurante.", icon: "🎥", img: "/images/gallery/videos.jpg" },
   { id: 17, title: "Detalle de Producto", desc: "Vistas detalladas que aumentan el apetito.", icon: "🍔", img: "/images/gallery/detalle_producto.jpg" },
   { id: 18, title: "Historial de Pedidos", desc: "Transparencia total para tus clientes.", icon: "🕒", img: "/images/gallery/mi_pedido.jpg" },
-  { id: 19, title: "Carta Digital", desc: "Visualización optimizada para dispositivos móviles.", icon: "🍽️", img: "/images/gallery/menu_items.jpg" },
   { id: 20, title: "Categorías Pro", desc: "Organización avanzada para grandes cartas.", icon: "📂", img: "/images/gallery/categorias.jpg" }
 ];
 
@@ -148,7 +148,7 @@ export default function ModuleGallery() {
                           src={mod.img} 
                           alt={`Módulo ${mod.title}`} 
                           loading="lazy"
-                          className="w-full h-full object-cover opacity-40 group-hover:opacity-100 transition-all duration-1000 group-hover:scale-110"
+                          className="w-full h-full object-contain opacity-100 transition-all duration-1000 group-hover:scale-110"
                         />
                       ) : (
                         <div className="text-9xl opacity-20 group-hover:opacity-100 transition-opacity duration-700">{mod.icon}</div>
@@ -200,7 +200,7 @@ export default function ModuleGallery() {
                 <img 
                     src={selectedMod.img} 
                     alt={selectedMod.title} 
-                    className="w-full h-auto max-h-[70vh] object-cover border-b border-white/5"
+                    className="w-full h-auto max-h-[75vh] object-contain border-b border-white/5"
                 />
                 <div className="p-8 md:p-12 bg-gradient-to-br from-white/5 to-transparent">
                     <div className="flex items-center gap-3 mb-4">
