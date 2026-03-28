@@ -172,6 +172,12 @@ export default function AdminPanel({ onClose }) {
         } else if (sec === 'Promociones') {
           const [promos, products] = await Promise.all(path.map(p => adminFetch(p, token)));
           setData(prev => ({ ...prev, Promociones: promos, _allProducts: products }));
+        } else if (sec === 'Pedidos') {
+          const [orders, mp_settings] = await Promise.all([
+            adminFetch('/orders', token),
+            adminFetch('/mercadopago', token)
+          ]);
+          setData(prev => ({ ...prev, Pedidos: orders, MercadoPago: mp_settings }));
         }
       } else if (path) {
         const result = await adminFetch(path, token);
