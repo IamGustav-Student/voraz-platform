@@ -198,7 +198,7 @@ function App() {
           const absoluteBottom = bottom + window.pageYOffset;
 
           if (scrollPosition >= absoluteTop && scrollPosition < absoluteBottom) {
-            setActiveCategory(cat);
+            if (!searchTerm) setActiveCategory(cat);
             break;
           }
         }
@@ -224,11 +224,34 @@ function App() {
   const fmt = (n) => formatPrice(n);
 
   const renderMenuView = () => {
+    // Normalización de texto para búsqueda inteligente (quita tildes y deja minúsculas)
+    const normalizeText = (text) => 
+      text?.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "") || "";
+
     const categories = ['Todas', ...new Set(products.map(p => p.category))];
-    const filteredProducts = activeCategory === 'Todas' ? products : products.filter(p => p.category === activeCategory);
+    const searchTermNormalized = normalizeText(searchTerm);
+
+    // Búsqueda inteligente (Fuzzy): Considera nombre, descripción y categoría
+    const filterBySearch = (p) => {
+      if (!searchTermNormalized) return true;
+      const name = normalizeText(p.name);
+      const desc = normalizeText(p.description);
+      const cat = normalizeText(p.category);
+      // Coincidencias "infinitas" (si el término está en cualquiera de los campos principales)
+      return name.includes(searchTermNormalized) || 
+             desc.includes(searchTermNormalized) || 
+             cat.includes(searchTermNormalized);
+    };
+
+    const filteredBySearch = products.filter(filterBySearch);
     const featuredProducts = products.filter(p => p.badge).slice(0, 5);
-    const groupByCategory = (items) => items.reduce((acc, item) => { (acc[item.category] = acc[item.category] || []).push(item); return acc; }, {});
-    const menuDisplay = groupByCategory(filteredProducts);
+    
+    // Función para agrupar que ignora el filtro de activeCategory para el DOM
+    const groupByCategory = (items) => items.reduce((acc, item) => { 
+      (acc[item.category] = acc[item.category] || []).push(item); return acc; 
+    }, {});
+    
+    const menuDisplay = groupByCategory(filteredBySearch);
 
     return (
       <motion.div key="menu" initial="initial" animate="in" exit="out" variants={pageVariants} transition={pageTransition} className="pt-2 pb-28 md:pb-10">
@@ -285,15 +308,11 @@ function App() {
 
         <div className="container mx-auto px-4">
           {Object.keys(menuDisplay).length > 0 ? Object.keys(menuDisplay).map((category) => {
-            const productsInCategory = menuDisplay[category].filter(p => 
-              p.name.toLowerCase().includes(searchTerm.toLowerCase()) || 
-              p.description?.toLowerCase().includes(searchTerm.toLowerCase())
-            );
-            
-            if (productsInCategory.length === 0) return null;
+            const productsInCategory = menuDisplay[category];
+            if (!productsInCategory.length) return null;
 
             return (
-              <section key={category} id={`category-${category}`} className="mb-8 scroll-mt-48 md:scroll-mt-56">
+              <section key={category} id={`category-${category}`} className="mb-8 scroll-mt-40 md:scroll-mt-52">
                 <div className="flex items-center space-x-3 mb-3">
                   <h3 className="text-xl md:text-2xl font-black uppercase text-white italic border-l-4 border-primary pl-3 tracking-tighter">{category}</h3>
                   <div className="h-px bg-gradient-to-r from-white/10 to-transparent flex-grow"></div>
@@ -348,7 +367,22 @@ function App() {
               </div>
             </section>
           );
-        }) : <div className="text-center py-20 text-gray-500">Sin productos.</div>}
+        }) : (
+          <motion.div 
+            initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}
+            className="text-center py-20 px-4 bg-white/5 rounded-[3rem] border border-dashed border-white/10"
+          >
+            <div className="text-6xl mb-6">🔍</div>
+            <h3 className="text-2xl font-black text-white mb-2 italic uppercase">No encontramos coincidencias</h3>
+            <p className="text-gray-500 max-w-xs mx-auto">Probá buscando con otras palabras o revisá si hay algún error de escritura.</p>
+            <button 
+              onClick={() => setSearchTerm('')}
+              className="mt-8 bg-primary text-white px-8 py-3 rounded-2xl font-black uppercase tracking-widest text-xs shadow-xl shadow-primary/20 hover:scale-105 transition-transform"
+            >
+              Ver todo el menú
+            </button>
+          </motion.div>
+        )}
       </div>
     </motion.div>
   );
