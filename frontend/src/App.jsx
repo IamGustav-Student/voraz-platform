@@ -169,10 +169,10 @@ function App() {
     }
     const element = document.getElementById(`category-${category}`);
     if (element) {
-      const headerHeight = window.innerWidth < 768 ? 56 : 96; // h-14 vs h-24
-      const searchHeight = 88; // Search container approx
-      const navHeight = 60; // Nav approx
-      const offset = headerHeight + searchHeight + navHeight - 20; 
+      const headerHeight = window.innerWidth < 768 ? 56 : 96;
+      const searchHeight = window.innerWidth < 768 ? 72 : 88;
+      const navHeight = window.innerWidth < 768 ? 52 : 60;
+      const offset = headerHeight + searchHeight + navHeight - 10; 
       
       const elementPosition = element.getBoundingClientRect().top;
       const offsetPosition = elementPosition + window.pageYOffset - offset;
@@ -186,9 +186,9 @@ function App() {
     const handleScroll = () => {
       const categories = [...new Set(products.map(p => p.category))];
       const headerHeight = window.innerWidth < 768 ? 56 : 96;
-      const searchHeight = 88;
-      const navHeight = 60;
-      const scrollPosition = window.scrollY + headerHeight + searchHeight + navHeight + 10;
+      const searchHeight = window.innerWidth < 768 ? 72 : 88;
+      const navHeight = window.innerWidth < 768 ? 52 : 60;
+      const scrollPosition = window.scrollY + headerHeight + searchHeight + navHeight + 20;
 
       for (const cat of categories) {
         const element = document.getElementById(`category-${cat}`);
@@ -256,25 +256,25 @@ function App() {
           </div>
         </div>
 
-        <div className="container mx-auto px-4 mb-6 sticky top-14 md:top-24 z-40 pt-2">
+        <div className="container mx-auto px-4 mb-3 sticky top-14 md:top-24 z-40 pt-2">
           <div className="relative search-premium rounded-2xl group">
             <input
               type="text"
               placeholder="¿Qué vas a comer hoy?"
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full bg-transparent py-4 pl-12 pr-4 text-white placeholder-gray-400 focus:outline-none transition-all"
+              className="w-full bg-transparent py-3 md:py-4 pl-12 pr-4 text-white placeholder-gray-400 focus:outline-none transition-all"
             />
-            <svg className="absolute left-4 top-4 w-5 h-5 text-gray-400 group-focus-within:text-primary transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
+            <svg className="absolute left-4 top-3 md:top-4 w-5 h-5 text-gray-400 group-focus-within:text-primary transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
           </div>
         </div>
 
-        <nav className="sticky top-[124px] md:top-[174px] z-30 py-3 mb-8 bg-[#080C12]/80 backdrop-blur-xl border-b border-white/5">
+        <nav className="sticky top-[120px] md:top-[184px] z-30 py-2 mb-6 bg-[#080C12]/80 backdrop-blur-xl border-b border-white/5">
           <div className="container mx-auto px-4 overflow-x-auto no-scrollbar">
-            <div className="flex space-x-3 md:justify-center">
+            <div className="flex space-x-2 md:justify-center">
               {categories.map((cat) => (
                 <button key={cat} onClick={() => scrollToCategory(cat)}
-                  className={`category-pill px-6 py-2 rounded-full font-bold text-[10px] md:text-sm uppercase tracking-[0.1em] transition-all whitespace-nowrap
+                  className={`category-pill px-5 py-1.5 rounded-full font-bold text-[10px] md:text-xs uppercase tracking-widest transition-all whitespace-nowrap
                     ${activeCategory === cat ? 'active bg-primary text-white shadow-[0_0_20px_rgba(var(--brand-primary-rgb),0.3)]' : 'bg-white/5 text-gray-400 hover:text-white border border-white/5'}`}>
                   {cat}
                 </button>
@@ -293,12 +293,12 @@ function App() {
             if (productsInCategory.length === 0) return null;
 
             return (
-              <section key={category} id={`category-${category}`} className="mb-10 scroll-mt-32">
-                <div className="flex items-center space-x-3 mb-4">
-                  <h3 className="text-xl md:text-2xl font-black uppercase text-white italic border-l-4 border-primary pl-3">{category}</h3>
-                  <div className="h-px bg-white/10 flex-grow"></div>
+              <section key={category} id={`category-${category}`} className="mb-8 scroll-mt-48 md:scroll-mt-56">
+                <div className="flex items-center space-x-3 mb-3">
+                  <h3 className="text-xl md:text-2xl font-black uppercase text-white italic border-l-4 border-primary pl-3 tracking-tighter">{category}</h3>
+                  <div className="h-px bg-gradient-to-r from-white/10 to-transparent flex-grow"></div>
                 </div>
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 md:gap-5">
                   {productsInCategory.map((product) => {
                   const outOfStock = product.stock != null && Number(product.stock) === 0;
                   return (
@@ -317,13 +317,13 @@ function App() {
                         <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity"></div>
                       </div>
                       
-                      <div className="p-4 md:p-6 flex flex-col justify-between flex-grow bg-brand-surface/40 backdrop-blur-sm">
+                      <div className="p-3 md:p-5 flex flex-col justify-between flex-grow bg-brand-surface/40 backdrop-blur-sm">
                         <div>
-                          <h4 className="text-base md:text-xl font-black text-white leading-tight mb-2 group-hover:text-primary transition-colors line-clamp-1 italic">{product.name}</h4>
-                          <p className="text-gray-400 text-[10px] md:text-sm font-medium line-clamp-2 md:line-clamp-3 leading-relaxed">{product.description}</p>
+                          <h4 className="text-base md:text-xl font-black text-white leading-tight mb-1.5 group-hover:text-primary transition-colors line-clamp-1 italic">{product.name}</h4>
+                          <p className="text-gray-400 text-[10px] md:text-sm font-medium line-clamp-2 leading-relaxed opacity-80">{product.description}</p>
                         </div>
                         
-                        <div className="flex justify-between items-end mt-2 md:mt-6">
+                        <div className="flex justify-between items-end mt-2 md:mt-4">
                           <div className="flex flex-col">
                             <span className="text-gray-500 text-[9px] font-bold uppercase tracking-widest mb-0.5">Precio</span>
                             <div className="text-brand-secondary font-black text-lg md:text-2xl italic tracking-tight">{fmt(product.price)}</div>
