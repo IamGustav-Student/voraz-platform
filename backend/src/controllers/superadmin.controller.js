@@ -688,13 +688,13 @@ export const resetBaseCatalog = async (req, res) => {
     const products = [
       { name: 'Gastro Red Deluxe', desc: 'Doble carne especial, cheddar ffundido, bacon ahumado y salsa Gastro Red.', price: 12500, cat: cB, img: 'https://images.unsplash.com/photo-1568901346375-23c9450c58cd?w=800&q=80', badge: 'PREMIUM' },
       { name: 'Gastro Red Smash', desc: 'Doble smash, cebolla picada, pepinos y mostaza dulce.', price: 9800, cat: cB, img: 'https://images.unsplash.com/photo-1594212699903-ec8a3eca50f5?w=800&q=80', badge: 'ESTRELLA' },
-      { name: 'Pizza Napolitana Gastro', desc: 'Tomate fior di latte, albahaca fresca y aceite de oliva virgen.', price: 14000, cat: cP, img: 'https://images.unsplash.com/photo-1574071318508-1cdbad80ad50?w=800&q=80', badge: 'NUEVA' },
+      { name: 'Pizza Napolitana Gastro', desc: 'Tomate fior di latte, albahaca fresca y aceite de oliva virgen.', price: 14000, cat: cP, img: 'https://images.unsplash.com/photo-1627626775846-122b778965ae?w=800&q=80', badge: 'NUEVA' },
       { name: 'Pepperoni King', desc: 'Mozzarella premium y doble porción de pepperoni especiado.', price: 15500, cat: cP, img: 'https://images.unsplash.com/photo-1628840042765-356cda07504e?w=800&q=80', badge: 'PICANTE' },
       { name: 'Papas Gastro Trufadas', desc: 'Papas crocantes con aceite de trufa blanca y queso parmesano.', price: 7800, cat: cE, img: 'https://images.unsplash.com/photo-1630384060421-cb20d0e0649d?w=800&q=80', badge: 'TOP' },
-      { name: 'Bastones Gourmet', desc: '6 bastones de mozzarella con dip de pomodoro.', price: 6500, cat: cE, img: 'https://images.unsplash.com/photo-1531492746377-40be9216d79a?w=800&q=80', badge: null },
+      { name: 'Bastones Gourmet', desc: '6 bastones de mozzarella con dip de pomodoro.', price: 6500, cat: cE, img: 'https://images.unsplash.com/photo-1734774924912-dcbb467f8599?w=800&q=80', badge: null },
       { name: 'IPA Artesanal Gastro', desc: 'Cerveza artesanal de la casa, 500ml de puro sabor.', price: 4200, cat: cDrink, img: 'https://images.unsplash.com/photo-1535958636474-b021ee887b13?w=800&q=80', badge: 'ARTESANAL' },
       { name: 'Limonada Fresh', desc: 'Menta, jengibre y limones seleccionados. 500ml.', price: 3500, cat: cDrink, img: 'https://images.unsplash.com/photo-1513558161293-cdaf765ed2fd?w=800&q=80', badge: 'REFRESCO' },
-      { name: 'Volcán Gastro Red', desc: 'Corazón de chocolate belga fundido con helado de crema.', price: 6800, cat: cDessert, img: 'https://images.unsplash.com/photo-1624353365286-3f8d62ffff51?w=800&q=80', badge: 'POSTRE' },
+      { name: 'Volcán Gastro Red', desc: 'Corazón de chocolate belga fundido con helado de crema.', price: 6800, cat: cDessert, img: 'https://images.unsplash.com/photo-1673551490243-f29547426841?w=800&q=80', badge: 'POSTRE' },
       { name: 'New York Cheesecake', desc: 'Receta original con coulis de frutos rojos del bosque.', price: 7200, cat: cDessert, img: 'https://images.unsplash.com/photo-1533134242443-d4fd215305ad?w=800&q=80', badge: 'PREMIUM' }
     ];
 
