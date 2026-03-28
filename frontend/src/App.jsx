@@ -224,23 +224,40 @@ function App() {
   const fmt = (n) => formatPrice(n);
 
   const renderMenuView = () => {
-    // Normalización de texto para búsqueda inteligente (quita tildes y deja minúsculas)
+    const CATEGORY_ALIASES = {
+      'Burgers': ['hamburguesas', 'hamburgesas', 'burguer', 'burguers', 'burgers', 'hanburguesas', 'burgerss', 'hamburguesas'],
+      'Pizzas': ['pizas', 'pizzas', 'piza', 'pizza', 'picsas', 'picsa', 'pizaz'],
+      'Bebidas': ['bebidas', 'vevidas', 'gaseosas', 'refrescos', 'cocas', 'birras', 'cervezas', 'alcohol', 'tomar', 'jugos'],
+      'Milanesas': ['milanesas', 'milas', 'milanezas', 'milanessa'],
+      'Postres': ['postres', 'helados', 'dulces', 'postresitos', 'chocolate'],
+      'Combos': ['combos', 'conbos', 'promociones', 'ofertas', 'promos', 'convo'],
+      'Entradas': ['entradas', 'picadas', 'entraditas', 'aperitivos', 'papas frita', 'bastoncitos'],
+      'Sándwiches': ['sandwiches', 'sanguches', 'sanguche', 'sandwish', 'sanwich', 'baguette'],
+      'Ensaladas': ['ensaladas', 'dieta', 'saludable', 'verdes', 'salad'],
+      'Cafetería': ['cafe', 'cafeteria', 'desayuno', 'merienda', 'te', 'coffee']
+    };
+
     const normalizeText = (text) => 
       text?.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "") || "";
 
     const categories = ['Todas', ...new Set(products.map(p => p.category))];
     const searchTermNormalized = normalizeText(searchTerm);
 
-    // Búsqueda inteligente (Fuzzy): Considera nombre, descripción y categoría
+    // Búsqueda inteligente (Fuzzy): Considera nombre, descripción, categoría y alias
     const filterBySearch = (p) => {
       if (!searchTermNormalized) return true;
       const name = normalizeText(p.name);
       const desc = normalizeText(p.description);
       const cat = normalizeText(p.category);
-      // Coincidencias "infinitas" (si el término está en cualquiera de los campos principales)
+      
+      // Verificar si el término coincide con algún alias de la categoría del producto
+      const aliases = CATEGORY_ALIASES[p.category] || [];
+      const matchAlias = aliases.some(alias => normalizeText(alias).includes(searchTermNormalized));
+
       return name.includes(searchTermNormalized) || 
              desc.includes(searchTermNormalized) || 
-             cat.includes(searchTermNormalized);
+             cat.includes(searchTermNormalized) ||
+             matchAlias;
     };
 
     const filteredBySearch = products.filter(filterBySearch);
