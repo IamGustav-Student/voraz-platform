@@ -268,7 +268,9 @@ app.get('/api/settings', tenantMiddleware, async (req, res) => {
                     ts.loyalty_enabled, ts.points_redeem_value, t.status, t.whatsapp, t.address
              FROM tenants t
              LEFT JOIN tenant_settings ts ON ts.tenant_id_fk = t.id
-             WHERE t.id::text = $1::text OR t.subdomain = $1::text`,
+             WHERE t.id::text = $1::text OR t.subdomain = $1::text
+             ORDER BY ts.updated_at DESC NULLS LAST
+             LIMIT 1`,
             [String(tenantId)]
         );
         const cfg = result.rows[0] || {};
