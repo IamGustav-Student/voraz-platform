@@ -54,6 +54,51 @@ body {
   text-shadow: 0 0 20px rgba(var(--brand-secondary-rgb), 0.5);
 }
 
+/* ── Premium UI Elements ── */
+.card-premium {
+  background: linear-gradient(135deg, rgba(255,255,255,0.05) 0%, rgba(255,255,255,0) 100%);
+  border: 1px solid rgba(255,255,255,0.08);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.card-premium:hover {
+  border-color: rgba(var(--brand-primary-rgb), 0.3);
+  box-shadow: 0 10px 30px -10px rgba(var(--brand-primary-rgb), 0.2);
+  transform: translateY(-4px);
+}
+
+.search-premium {
+  background: rgba(18, 18, 18, 0.6);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  transition: all 0.3s ease;
+}
+
+.search-premium:focus-within {
+  border-color: var(--brand-primary);
+  box-shadow: 0 0 15px rgba(var(--brand-primary-rgb), 0.2);
+  background: rgba(18, 18, 18, 0.8);
+}
+
+.category-pill {
+  position: relative;
+  transition: all 0.3s ease;
+}
+
+.category-pill.active::after {
+  content: '';
+  position: absolute;
+  bottom: -4px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 12px;
+  height: 3px;
+  background: var(--brand-primary);
+  border-radius: 99px;
+  box-shadow: 0 0 10px var(--brand-primary);
+}
+
 .no-scrollbar::-webkit-scrollbar {
   display: none;
 }
