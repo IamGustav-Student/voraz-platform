@@ -1283,6 +1283,23 @@ function LoyaltySection({ items, token, reload, showToast }) {
     }
   }, [items]);
 
+  const toggleEnabled = async () => {
+    const newVal = !config.loyalty_enabled;
+    setSaving(true);
+    try {
+      await adminFetch('/loyalty', token, {
+        method: 'PATCH',
+        body: JSON.stringify({ ...config, loyalty_enabled: newVal }),
+      });
+      setConfig(p => ({ ...p, loyalty_enabled: newVal }));
+      showToast?.(`Sistema de puntos ${newVal ? 'activado' : 'desactivado'}`, 'success');
+      if (reload) reload();
+    } catch (err) {
+      showToast?.('Error al cambiar estado: ' + err.message, 'error');
+    }
+    setSaving(false);
+  };
+
   const save = async (e) => {
     e.preventDefault();
     setSaving(true);
@@ -1319,10 +1336,11 @@ function LoyaltySection({ items, token, reload, showToast }) {
           </p>
         </div>
         <button
-          onClick={() => setConfig(p => ({ ...p, loyalty_enabled: !p.loyalty_enabled }))}
+          onClick={toggleEnabled}
+          disabled={saving}
           className={`ml-auto px-4 py-1.5 rounded-lg text-xs font-bold transition-all ${config.loyalty_enabled ? 'bg-red-600/20 text-red-400 hover:bg-red-600/30' : 'bg-green-600/20 text-green-400 hover:bg-green-600/30'}`}
         >
-          {config.loyalty_enabled ? 'Desactivar' : 'Activar'}
+          {saving ? '...' : config.loyalty_enabled ? 'Desactivar' : 'Activar'}
         </button>
       </div>
 
@@ -1404,13 +1422,17 @@ function OrdersSection({ items, token, reload, mpData }) {
 
   const togglePause = async () => {
     setPauseLoading(true);
+    const newVal = !ordersPaused;
     try {
-      await patchOrdersPaused(!ordersPaused, token);
-      setOrdersPaused(p => !p);
-      setMsg(!ordersPaused ? '🔴 Pedidos pausados. Los clientes no podrán realizar nuevos pedidos.' : '✅ Pedidos activados. El comercio acepta nuevos pedidos.');
+      await patchOrdersPaused(newVal, token);
+      setOrdersPaused(newVal);
+      if (reload) reload('MercadoPago');
+      showToast?.(newVal ? '🔴 Pedidos pausados' : '✅ Pedidos reactivados', 'success');
+      setMsg(newVal ? '🔴 Pedidos pausados. Los clientes no podrán realizar nuevos pedidos.' : '✅ Pedidos activados. El comercio acepta nuevos pedidos.');
       setTimeout(() => setMsg(''), 4000);
     } catch (e) {
       setMsg('Error: ' + e.message);
+      showToast?.('Error: ' + e.message, 'error');
     }
     setPauseLoading(false);
   };
