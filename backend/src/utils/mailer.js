@@ -6,7 +6,7 @@
  *   RESEND_API_KEY   → se obtiene en resend.com (gratis, 3000 emails/mes)
  *
  * Variable opcional (para el remitente):
- *   SMTP_FROM        → e.g. "GastroRed <contacto@programadorgs.com.ar>"
+ *   SMTP_FROM        → e.g. "Gastro Red <contacto@programadorgs.com.ar>"
  *                      (requiere dominio verificado en Resend)
  *                      Si no está configurado, usa el dominio de onboarding de Resend.
  *
@@ -31,7 +31,7 @@ const getClient = () => {
  * Envía el email de recuperación de contraseña.
  * @returns {{ sent: boolean, devToken?: string }}
  */
-export const sendPasswordResetEmail = async ({ to, resetUrl, brandName = 'GastroRed', rawToken = null }) => {
+export const sendPasswordResetEmail = async ({ to, resetUrl, brandName = 'Gastro Red', rawToken = null }) => {
   const client = getClient();
 
   if (!client) {
@@ -127,7 +127,7 @@ export const sendTrialWelcomeEmail = async ({ to, brandName, subdomain, trialDay
     <html lang="es">
     <body style="margin:0;padding:20px;background:#0a0a0a;color:#fff;font-family:sans-serif;">
       <div style="max-width:600px;margin:0 auto;background:#111;padding:40px;border-radius:16px;border:1px solid #222;">
-        <h1 style="color:#E30613;margin-top:0;">¡Bienvenido a GastroRed! 🚀</h1>
+        <h1 style="color:#E30613;margin-top:0;">¡Bienvenido a Gastro Red! 🚀</h1>
         <p style="font-size:16px;color:#ccc;">Hola <strong>${brandName}</strong>, tu prueba gratuita de <strong>${trialDays} días</strong> ha comenzado con éxito.</p>
         <p style="color:#aaa;">Tu plataforma ya está online y lista para configurar:</p>
         <div style="background:#222;padding:20px;border-radius:10px;margin:20px 0;">
@@ -148,11 +148,11 @@ export const sendTrialWelcomeEmail = async ({ to, brandName, subdomain, trialDay
     return { sent: false };
   }
 
-  const from = process.env.SMTP_FROM || `GastroRed <onboarding@resend.dev>`;
+  const from = process.env.SMTP_FROM || `Gastro Red <onboarding@resend.dev>`;
   return resendClient.emails.send({
     from,
     to: [to],
-    subject: `🚀 ¡Bienvenido a GastroRed! — Tu acceso a ${brandName}`,
+    subject: `🚀 ¡Bienvenido a Gastro Red! — Tu acceso a ${brandName}`,
     html
   });
 };
@@ -174,7 +174,7 @@ export const sendSubscriptionWelcomeEmail = async ({ to, brandName, planType, am
           <p style="margin:5px 0;"><strong>Monto:</strong> $${amount}</p>
           <p style="margin:5px 0;"><strong>Estado:</strong> Activo ✅</p>
         </div>
-        <p style="color:#aaa;">Gracias por confiar en GastroRed para hacer crecer tu negocio.</p>
+        <p style="color:#aaa;">Gracias por confiar en Gastro Red para hacer crecer tu negocio.</p>
         <hr style="border:0;border-top:1px solid #333;margin:30px 0;">
         <p style="font-size:12px;color:#666;">Recordá que podés gestionar tu suscripción desde el panel de administrador.</p>
       </div>
@@ -188,11 +188,11 @@ export const sendSubscriptionWelcomeEmail = async ({ to, brandName, planType, am
     return { sent: false };
   }
 
-  const from = process.env.SMTP_FROM || `GastroRed <onboarding@resend.dev>`;
+  const from = process.env.SMTP_FROM || `Gastro Red <onboarding@resend.dev>`;
   return resendClient.emails.send({
     from,
     to: [to],
-    subject: `✅ Pago Confirmado — Plan ${planType} en GastroRed`,
+    subject: `✅ Pago Confirmado — Plan ${planType} en Gastro Red`,
     html
   });
 };
@@ -215,11 +215,11 @@ export const sendAdminNotification = async ({ subject, html }) => {
     return { sent: false };
   }
 
-  const from = process.env.SMTP_FROM || `GastroRed Alert <onboarding@resend.dev>`;
+  const from = process.env.SMTP_FROM || `Gastro Red Alert <onboarding@resend.dev>`;
   return resendClient.emails.send({
     from,
     to: [adminEmail],
-    subject: `🔔 [GastroRed Admin] ${subject}`,
+    subject: `🔔 [Gastro Red Admin] ${subject}`,
     html
   });
 };

@@ -17,6 +17,7 @@ import {
   deleteTenant,
   getTrialHistory,
   deleteTrialHistoryEntry,
+  resetBaseCatalog,
 } from '../controllers/superadmin.controller.js';
 
 const router = Router();
@@ -29,6 +30,7 @@ router.use(superadminMiddleware);
 router.get('/stats', getGlobalStats);
 router.get('/stores', listAllStores);
 router.post('/stores', createTenant);
+router.post('/reset-base-catalog', resetBaseCatalog);
 router.patch('/stores/:id/status', updateStoreStatus);
 router.put('/stores/:id', updateStoreData);
 router.delete('/stores/:id', deleteTenant);

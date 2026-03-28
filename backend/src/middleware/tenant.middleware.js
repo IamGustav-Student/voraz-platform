@@ -1,11 +1,11 @@
 import { query } from '../config/db.js';
 
 // ── Configuración ──────────────────────────────────────────────────────────────
-const FALLBACK_TENANT = { id: 1, store_id: 1, plan_type: 'Expert', status: 'active', brand_name: 'GastroRed' };
+const FALLBACK_TENANT = { id: 1, store_id: 1, plan_type: 'Expert', status: 'active', brand_name: 'Gastro Red' };
 const CACHE_TTL_MS = 60 * 1000; // 1 minuto: reducir consultas a DB sin dejar de reaccionar a cambios
 const tenantCache = new Map(); // host -> { tenant, expiresAt }
 
-// Dominios root de GastroRed → siempre landing
+// Dominios root de Gastro Red → siempre landing
 const GASTRORED_ROOT_DOMAINS = [
   'gastrored.com.ar',
   'www.gastrored.com.ar',
@@ -15,13 +15,14 @@ const GASTRORED_ROOT_DOMAINS = [
 // Sufijo del SaaS (ej: '.gastrored.com.ar')
 const GASTRORED_SUFFIX = (process.env.GASTRORED_ROOT_DOMAIN || 'gastrored.com.ar').toLowerCase();
 
-// Hosts de infra que NO son tenants reales → fallback a Voraz
+// Hosts de infra que NO son tenants reales → fallback a Gastro Red
 const isInfraHost = (host) =>
   host === 'localhost' ||
   host === '127.0.0.1' ||
   host.startsWith('192.168.') ||
   host.includes('.up.railway.app') ||
   host.includes('.railway.app') ||
+  host.includes('gastrored-platform.vercel.app') ||
   host.includes('voraz-platform.vercel.app');
 
 function extractSubdomain(host) {
@@ -49,7 +50,7 @@ function validateTenantAccess(tenant) {
       statusCode: 403,
       body: {
         status: 'error',
-        message: 'Suscripción vencida o inactiva. Contactá a GastroRed para renovar.',
+        message: 'Suscripción vencida o inactiva. Contactá a Gastro Red para renovar.',
         tenant_id: tenant.id,
       },
     };
@@ -70,7 +71,7 @@ function validateTenantAccess(tenant) {
       statusCode: 403,
       body: {
         status: 'error',
-        message: 'Tu suscripción venció. Contactá a GastroRed para renovarla.',
+        message: 'Tu suscripción venció. Contactá a Gastro Red para renovarla.',
         tenant_id: tenant.id,
       },
     };
@@ -103,7 +104,7 @@ export const tenantMiddleware = async (req, res, next) => {
     return next();
   }
 
-  // Infra hosts (Railway, Vercel dev) → fallback silencioso a Voraz
+  // Infra hosts (Railway, Vercel dev) → fallback silencioso a Gastro Red
   if (isInfraHost(host)) {
     console.log(`[Middleware] Infra host detected: ${host}`);
     req.tenant = FALLBACK_TENANT;

@@ -86,7 +86,7 @@ app.use(express.json({ limit: '5mb' }));
 app.use(express.urlencoded({ extended: true, limit: '5mb' }));
 
 app.get('/', (req, res) => {
-    res.json({ message: '🍔 GastroRed API — SaaS Multi-tenant' });
+    res.json({ message: '🍔 Gastro Red API — SaaS Multi-tenant' });
 });
 
 app.get('/api/test-db', async (req, res) => {
@@ -183,7 +183,7 @@ app.get('/api/manifest', async (req, res) => {
 
         const result = await query(queryStr, params);
         const s = result.rows[0] || {};
-        const name = s.brand_name || 'GastroRed';
+        const name = s.brand_name || 'Gastro Red';
         const color = s.brand_color_primary || '#E30613';
         const isRoot = GASTRORED_ROOT_DOMAINS.includes(host);
         const iconUrl = (s.custom_branding_enabled && s.brand_logo_url)
@@ -250,7 +250,7 @@ app.get('/api/manifest', async (req, res) => {
             ]
         });
     } catch (err) {
-        res.json({ name: 'GastroRed', short_name: 'GastroRed', theme_color: '#E30613' });
+        res.json({ name: 'Gastro Red', short_name: 'Gastro Red', theme_color: '#E30613' });
     }
 });
 
@@ -278,7 +278,7 @@ app.get('/api/settings', tenantMiddleware, async (req, res) => {
                 id: cfg.id || tenantId,
                 cash_on_delivery: cfg.cash_on_delivery !== false,
                 orders_paused: !!cfg.orders_paused,
-                brand_name: cfg.brand_name || 'GastroRed',
+                brand_name: cfg.brand_name || 'Gastro Red',
                 brand_color_primary: cfg.brand_color_primary || '#E30613',
                 brand_color_secondary: cfg.brand_color_secondary || '#1A1A1A',
                 brand_logo_url: cfg.brand_logo_url || null,
@@ -295,7 +295,7 @@ app.get('/api/settings', tenantMiddleware, async (req, res) => {
             }
         });
     } catch {
-        res.json({ status: 'success', data: { cash_on_delivery: true, orders_paused: false, brand_name: 'GastroRed' } });
+        res.json({ status: 'success', data: { cash_on_delivery: true, orders_paused: false, brand_name: 'Gastro Red' } });
     }
 });
 

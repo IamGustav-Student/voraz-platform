@@ -11,7 +11,7 @@ export function getTenantId(req) {
  * Resuelve el store_id (integer) para el tenant actual.
  * - Si ya es un número, lo devuelve directamente.
  * - Si es string (subdomain), busca el store INTEGER correspondiente.
- * - Fallback seguro: 1 (store original GastroRed).
+ * - Fallback seguro: 1 (store original Gastro Red).
  */
 export async function getStoreId(req) {
   const tenantId = getTenantId(req);

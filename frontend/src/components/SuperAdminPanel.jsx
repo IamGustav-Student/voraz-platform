@@ -3,7 +3,7 @@ import { usePWAInstall } from '../hooks/usePWAInstall';
 import InstallPWABanner from './InstallPWABanner';
 
 const API_URL = (import.meta.env.VITE_API_URL || 'http://localhost:3000/api').trim();
-// Dominio base de GastroRed para preview de URLs de tenant
+// Dominio base de Gastro Red para preview de URLs de tenant
 const GASTRORED_DOMAIN = (import.meta.env.VITE_GASTRORED_DOMAIN || 'gastrored.com.ar').trim();
 
 const superadminHeaders = (token) => ({
@@ -181,6 +181,7 @@ export default function SuperAdminPanel({ onBack }) {
   const [resetModal, setResetModal] = useState(null); // { tenantId, adminEmail }
   const [resetPwd, setResetPwd] = useState('');
   const [resetting, setResetting] = useState(false);
+  const [resettingCatalog, setResettingCatalog] = useState(false);
   // Historial de Trials (Bloqueos)
   const [trialHistory, setTrialHistory] = useState([]);
   const [loadingHistory, setLoadingHistory] = useState(false);
@@ -255,6 +256,21 @@ export default function SuperAdminPanel({ onBack }) {
       setMsg(!current ? '🎨 Branding personalizado activado' : '🔒 Branding personalizado desactivado');
       load();
     } catch (e) { setMsg('Error: ' + e.message); }
+  };
+
+  const handleResetCatalog = async () => {
+    if (!window.confirm('⚠️ ATENCIÓN: Esta operación ELIMINARÁ todos los productos y categorías del comercio base (Gastro Red) y creará un catálogo nuevo de ejemplo. ¿Estás seguro de que deseas continuar?')) return;
+    
+    setResettingCatalog(true);
+    try {
+      const data = await sfetch('/reset-base-catalog', token, { method: 'POST' });
+      alert(data.message || '✅ Catálogo de Gastro Red reiniciado con éxito.');
+      load();
+    } catch (e) {
+      alert('Error al reiniciar catálogo: ' + e.message);
+    } finally {
+      setResettingCatalog(false);
+    }
   };
 
   const handleResetAdminPassword = async (e) => {
@@ -378,7 +394,7 @@ export default function SuperAdminPanel({ onBack }) {
         <div className="bg-[#111] border border-white/10 rounded-2xl p-8 w-full max-w-sm">
           <div className="text-center mb-6">
             <div className="text-4xl mb-2">🍽️</div>
-            <h1 className="text-2xl font-black text-white">GastroRed</h1>
+            <h1 className="text-2xl font-black text-white">Gastro Red</h1>
             <p className="text-gray-500 text-sm">Panel de Administración SaaS</p>
           </div>
           <form onSubmit={handleLogin} className="space-y-4">
@@ -407,7 +423,7 @@ export default function SuperAdminPanel({ onBack }) {
         <div className="flex items-center gap-3">
           <span className="text-2xl">🍽️</span>
           <div>
-            <h1 className="font-black text-white text-lg leading-none">GastroRed</h1>
+            <h1 className="font-black text-white text-lg leading-none">Gastro Red</h1>
             <p className="text-gray-500 text-xs">Panel SaaS — Superadmin</p>
           </div>
         </div>
@@ -809,10 +825,29 @@ export default function SuperAdminPanel({ onBack }) {
                 />
               </div>
             </div>
+
+            {/* Mantenimiento de Catálogo Base */}
+            <div className="bg-red-900/10 border border-red-500/20 rounded-2xl p-6">
+              <h3 className="text-red-400 font-black text-sm uppercase tracking-widest mb-2 flex items-center gap-2">
+                ⚠️ Mantenimiento de Catálogo Base
+              </h3>
+              <p className="text-gray-400 text-[10px] mb-4 uppercase font-bold">
+                Esta acción borrará todos los productos y categorías actuales de Gastro Red y los reemplazará por un catálogo premium de ejemplo.
+              </p>
+              <button 
+                type="button"
+                onClick={handleResetCatalog}
+                disabled={resettingCatalog}
+                className="w-full bg-red-600/20 hover:bg-red-600 text-red-500 hover:text-white border border-red-500/30 py-3 rounded-xl font-black text-xs uppercase tracking-widest transition-all disabled:opacity-50"
+              >
+                {resettingCatalog ? '⏳ REINICIANDO...' : '🔥 REINICIAR CATÁLOGO BASE (GASTRO RED)'}
+              </button>
+            </div>
+
             {/* MercadoPago */}
             <div className="bg-white/5 border border-white/10 rounded-2xl p-6">
               <h3 className="text-white font-bold text-base mb-1 flex items-center gap-2">💳 MercadoPago</h3>
-              <p className="text-gray-500 text-xs mb-4">Configurá las credenciales con las que GastroRed cobra las suscripciones.</p>
+              <p className="text-gray-500 text-xs mb-4">Configurá las credenciales con las que Gastro Red cobra las suscripciones.</p>
 
               <div className="space-y-3">
                 <div>
@@ -1054,7 +1089,7 @@ export default function SuperAdminPanel({ onBack }) {
         <InstallPWABanner 
           isInstallable={isInstallable} 
           handleInstallClick={handleInstallClick}
-          brandName="GastroRed SuperAdmin"
+          brandName="Gastro Red SuperAdmin"
         />
       )}
 
