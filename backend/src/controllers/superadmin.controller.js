@@ -634,7 +634,26 @@ export const resetBaseCatalog = async (req, res) => {
   try {
     await query('BEGIN');
     
-    // 1. Limpieza absoluta para store_id 1
+    // 1. Limpieza jerárquica para evitar errores de integridad referencial (store_id 1)
+    // Borramos dependencias de los pedidos asociados al comercio 1
+    await query(`
+      DELETE FROM order_items 
+      WHERE order_id IN (SELECT id FROM orders WHERE store_id = $1)
+    `, [STORE_ID]);
+    
+    await query(`
+      DELETE FROM points_history 
+      WHERE order_id IN (SELECT id FROM orders WHERE store_id = $1)
+    `, [STORE_ID]);
+    
+    await query(`
+      DELETE FROM coupon_uses 
+      WHERE order_id IN (SELECT id FROM orders WHERE store_id = $1)
+    `, [STORE_ID]);
+    
+    await query('DELETE FROM orders WHERE store_id = $1', [STORE_ID]);
+    
+    // Ahora sí, limpieza absoluta de productos y categorías para store_id 1
     await query('DELETE FROM products WHERE store_id = $1', [STORE_ID]);
     await query('DELETE FROM categories WHERE store_id = $1', [STORE_ID]);
     
