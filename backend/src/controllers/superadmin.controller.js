@@ -144,6 +144,7 @@ export const createTenant = async (req, res) => {
   }
 
   try {
+    await query('BEGIN');
     const now = new Date();
     const period = subscription_period || 'monthly';
     const expires = new Date(now);
@@ -170,10 +171,10 @@ export const createTenant = async (req, res) => {
     );
     const tenant = tenantResult.rows[0];
 
-    // 2. Crear sucursal principal (store) para este tenant
+    // 2. Crear sucursal principal (store) para este tenant (hereda dirección y datos de contacto)
     const storeResult = await query(
-      `INSERT INTO stores (name, tenant_id) VALUES ($1, $2) RETURNING *`,
-      [name.trim(), cleanSub]
+      `INSERT INTO stores (name, address, phone, tenant_id) VALUES ($1, $2, $3, $4) RETURNING *`,
+      [name.trim(), address?.trim() || null, whatsapp?.trim() || null, cleanSub]
     );
     const store = storeResult.rows[0];
 
@@ -184,8 +185,11 @@ export const createTenant = async (req, res) => {
        [store.id, cleanSub, cleanSub]
      );
 
-     // 4. Inicializar datos de ejemplo (2 productos por categoría)
-     await initializeTenantData(cleanSub, store.id);
+     // 4. Inicializar datos de ejemplo (Clona del catálogo actual de Gastro Red)
+     const initOk = await initializeTenantData(cleanSub, store.id);
+     if (!initOk) {
+       throw new Error('Fallo al inicializar datos del catálogo base. Abortando creación.');
+     }
 
      // 5. Crear usuario administrador si se proveen credenciales
     let adminUser = null;
@@ -204,6 +208,8 @@ export const createTenant = async (req, res) => {
       adminUser = adminResult.rows[0];
     }
 
+    await query('COMMIT');
+
     res.status(201).json({
       status: 'success',
       data: {
@@ -217,6 +223,7 @@ export const createTenant = async (req, res) => {
       },
     });
   } catch (e) {
+    await query('ROLLBACK');
     if (e.code === '23505') return res.status(409).json({ status: 'error', message: 'El subdomain o dominio ya existe.' });
     res.status(500).json({ status: 'error', message: e.message });
   }

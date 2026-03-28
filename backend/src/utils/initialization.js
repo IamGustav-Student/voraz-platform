@@ -6,17 +6,20 @@ import { query } from '../config/db.js';
  */
 export async function initializeTenantData(tenantId, storeId) {
   try {
-    console.log(`[Init] Inicializando datos para tenant ${tenantId} (store ${storeId})...`);
+    console.log(`[Init] --- Iniciando clonación de catálogo base para: ${tenantId} (Sucursal: ${storeId}) ---`);
 
-    // 1. Obtener categorías de la tienda base (Voraz, store_id=1)
+    // 1. Obtener categorías de la tienda base (Gastro Red, store_id=1)
     const baseCategories = await query('SELECT name, slug, description, image_url FROM categories WHERE store_id = 1');
     
+    if (baseCategories.rows.length === 0) {
+      console.warn(`[Init] ADVERTENCIA: El comercio base (ID=1) no tiene categorías. El nuevo comercio iniciará vacío.`);
+      return true; // No es un error crítico, solo no hay nada que copiar
+    }
+
+    console.log(`[Init] Copiando ${baseCategories.rows.length} categorías...`);
+
     for (const cat of baseCategories.rows) {
       // 2. Crear categoría para el nuevo tenant
-      // Nota: El slug debe ser único, así que le agregamos el tenantId si es necesario, 
-      // pero usualmente ya manejamos slugs por store o globales con UNIQUE.
-      // En phase21_fix_constraints.sql se maneja esto o debería.
-      // Si falla por slug, le agregamos el tenantId al slug.
       const catResult = await query(
         `INSERT INTO categories (name, slug, description, image_url, store_id)
          VALUES ($1, $2, $3, $4, $5)
@@ -24,6 +27,8 @@ export async function initializeTenantData(tenantId, storeId) {
          RETURNING id`,
         [cat.name, cat.slug, cat.description, cat.image_url, storeId]
       );
+      
+      if (!catResult.rows.length) continue;
       const newCatId = catResult.rows[0].id;
 
       // 3. Obtener hasta 2 productos de esta categoría desde la tienda base
@@ -31,24 +36,27 @@ export async function initializeTenantData(tenantId, storeId) {
         `SELECT p.name, p.description, p.price, p.image_url, p.badge, p.stock
          FROM products p
          JOIN categories c ON p.category_id = c.id
-         WHERE c.slug = $1 AND p.store_id = 1
+         WHERE c.slug = $1 AND p.store_id = 1 AND p.deleted_at IS NULL
          LIMIT 2`,
         [cat.slug]
       );
 
-      for (const prod of baseProducts.rows) {
-        await query(
-          `INSERT INTO products (name, description, price, category_id, image_url, badge, store_id, stock)
-           VALUES ($1, $2, $3, $4, $5, $6, $7, $8)`,
-          [prod.name, prod.description, prod.price, newCatId, prod.image_url, prod.badge, storeId, prod.stock]
-        );
+      if (baseProducts.rows.length > 0) {
+        console.log(`[Init]   -> "${cat.name}": Copiando ${baseProducts.rows.length} productos.`);
+        for (const prod of baseProducts.rows) {
+          await query(
+            `INSERT INTO products (name, description, price, category_id, image_url, badge, store_id, stock)
+             VALUES ($1, $2, $3, $4, $5, $6, $7, $8)`,
+            [prod.name, prod.description, prod.price, newCatId, prod.image_url, prod.badge, storeId, prod.stock]
+          );
+        }
       }
     }
 
-    console.log(`[Init] Datos inicializados correctamente para ${tenantId}.`);
+    console.log(`[Init] ✅ Clonación finalizada exitosamente para ${tenantId}.`);
     return true;
   } catch (error) {
-    console.error(`[Init] Error inicializando datos para ${tenantId}:`, error.message);
+    console.error(`[Init] ❌ ERROR CRÍTICO inicializando datos para ${tenantId}:`, error.message);
     return false;
   }
 }

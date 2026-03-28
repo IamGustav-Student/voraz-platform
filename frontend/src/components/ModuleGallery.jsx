@@ -118,17 +118,17 @@ export default function ModuleGallery() {
             <h2 id="gallery-title" className="sr-only">Ecosistema Completo de GastroRed - 20 Módulos</h2>
 
             {/* Header de la sección (fijo al principio) */}
-            <div className="absolute top-16 left-16 z-20 pointer-events-none">
-                <div className="text-5xl md:text-8xl font-black text-white leading-[0.8] tracking-tighter">
+            <div className="absolute top-12 left-8 md:left-24 z-20 pointer-events-none">
+                <div className="text-4xl md:text-7xl font-black text-white leading-[0.8] tracking-tighter">
                     Explorá el <br/>
                     <span className="text-transparent bg-clip-text bg-gradient-to-r from-red-600 via-orange-500 to-red-600 animate-gradient text-glow">Ecosistema</span>
                 </div>
-                <p className="text-gray-500 mt-6 max-w-md font-bold text-lg leading-tight uppercase tracking-widest opacity-60">
+                <p className="text-gray-500 mt-4 max-w-xs md:max-w-md font-bold text-xs md:text-sm leading-tight uppercase tracking-[0.2em] opacity-60">
                     20 Módulos de Sincronización Total para la Gastronomía Pro.
                 </p>
             </div>
 
-            <div ref={sectionRef} className="flex gap-20 px-[20vw] md:px-[30vw]">
+            <div ref={sectionRef} className="flex gap-10 md:gap-16 px-[10vw] md:px-[20vw]">
             {modules.map((mod, index) => (
                 <div 
                 key={mod.id} 
@@ -137,10 +137,10 @@ export default function ModuleGallery() {
                 className="flex-shrink-0 w-[80vw] md:w-[45vw] aspect-[16/10] glass-premium rounded-[3rem] p-2 shadow-[0_40px_100px_rgba(0,0,0,0.5)] overflow-hidden group hover:border-red-500/50 transition-all duration-700 cursor-pointer"
                 style={{ transformStyle: "preserve-3d" }}
                 >
-                <div className="h-full flex flex-col p-8 pointer-events-none">
+                <div className="h-full flex flex-col p-6 pointer-events-none">
                     {/* Imagen o Icono */}
                     <div 
-                      className="flex-1 bg-[#0a0f18] rounded-[2rem] flex items-center justify-center overflow-hidden border border-white/5 relative group-hover:shadow-[0_0_50px_rgba(227,6,19,0.3)] transition-all duration-700"
+                      className="flex-1 bg-[#0a0f18] rounded-[2rem] flex items-center justify-center overflow-hidden border border-white/10 relative group-hover:shadow-[0_0_50px_rgba(227,6,19,0.3)] transition-all duration-700"
                       style={{ transform: "translateZ(40px)" }}
                     >
                       {mod.img ? (
@@ -157,16 +157,16 @@ export default function ModuleGallery() {
                       <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-transparent to-transparent opacity-80 group-hover:opacity-30 transition-opacity" />
                     </div>
                     
-                    <div className="pt-10" style={{ transform: "translateZ(80px)" }}>
-                        <h3 className="text-4xl font-black text-white mb-3 group-hover:text-red-500 transition-colors tracking-tighter">
+                    <div className="pt-6" style={{ transform: "translateZ(80px)" }}>
+                        <h3 className="text-2xl md:text-3xl font-black text-white mb-2 group-hover:text-red-500 transition-colors tracking-tighter italic">
                           {mod.title}
                         </h3>
-                        <p className="text-[10px] text-gray-500 font-black uppercase tracking-[0.3em]">
+                        <p className="text-[9px] text-gray-500 font-black uppercase tracking-[0.2em]">
                           {mod.desc}
                         </p>
                     </div>
 
-                    <div className="mt-8 flex items-center justify-between">
+                    <div className="mt-6 flex items-center justify-between">
                         <div className="flex items-center gap-3">
                           <span className="w-2.5 h-2.5 bg-red-600 rounded-full animate-ping" />
                           <span className="text-[10px] font-black text-red-500/60 uppercase tracking-[0.4em]">ACTIVO · {mod.id} / 20</span>

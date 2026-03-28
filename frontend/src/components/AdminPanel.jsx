@@ -177,7 +177,15 @@ export default function AdminPanel({ onClose }) {
         const result = await adminFetch(path, token);
         setData(prev => ({ ...prev, [sec]: result }));
       }
-    } catch (e) { if (!isBackground) setError(e.message); }
+    } catch (e) { 
+      if (!isBackground) {
+        if (e.message.includes('401') || e.message.includes('Token')) {
+          setError('Tu sesión expiró o el acceso fue denegado. Por favor, volvé a iniciar sesión.');
+        } else {
+          setError(e.message); 
+        }
+      }
+    }
     if (!isBackground) setLoading(false);
   }, [token]);
 

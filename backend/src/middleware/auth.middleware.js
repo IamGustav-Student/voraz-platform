@@ -60,6 +60,7 @@ export const adminMiddleware = (req, res, next) => {
                            (userStoreId && String(userStoreId) === currentTenantId);
 
             if (!isMatch && decoded.role !== 'superadmin') {
+                console.warn(`[Auth-Admin] 403 Mismatch: UserTenant=${userTenantId}, UserStore=${userStoreId}, ReqTenant=${currentTenantId}`);
                 return res.status(403).json({ 
                     status: 'error', 
                     message: 'Acceso denegado. No perteneces a este comercio.' 
@@ -72,7 +73,8 @@ export const adminMiddleware = (req, res, next) => {
         }
         req.user = decoded;
         next();
-    } catch {
+    } catch (e) {
+        console.error(`[Auth-Admin] 401 Invalid Token: ${e.message}`);
         res.status(401).json({ status: 'error', message: 'Token inválido o expirado.' });
     }
 };

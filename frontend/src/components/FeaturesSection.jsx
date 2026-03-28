@@ -71,11 +71,11 @@ export default function FeaturesSection() {
     <section 
       id="funcionalidades-premium" 
       ref={containerRef}
-      className="pt-24 pb-0 px-4 bg-[#080c12] overflow-hidden"
+      className="pt-16 pb-0 px-4 bg-[#080c12] overflow-hidden"
     >
       <div className="max-w-7xl mx-auto">
-        <div className="text-center mb-20">
-          <h2 className="text-5xl md:text-7xl font-black text-white mb-6 tracking-tighter">
+        <div className="text-center mb-12">
+          <h2 className="text-5xl md:text-7xl font-black text-white mb-4 tracking-tighter">
             Potencial <span className="text-transparent bg-clip-text bg-gradient-to-r from-red-600 via-orange-500 to-red-600 animate-gradient text-glow">Ilimitado</span>
           </h2>
           <p className="text-gray-400 max-w-2xl mx-auto text-lg font-medium">
@@ -88,20 +88,20 @@ export default function FeaturesSection() {
             <div
               key={index}
               ref={el => cardsRef.current[index] = el}
-              className="group relative glass-premium glass-premium-hover rounded-[2.5rem] p-10 transition-all duration-700 hover:translate-y-[-10px]"
+              className="group relative glass-premium glass-premium-hover rounded-[2.5rem] p-8 transition-all duration-700 hover:translate-y-[-10px]"
             >
               <div className="absolute inset-0 bg-gradient-to-br from-red-600/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-700 rounded-[2.5rem]" />
               
               <div className="relative z-10">
-                <div className="text-5xl mb-8 bg-red-600/10 w-24 h-24 rounded-3xl flex items-center justify-center border border-red-600/20 group-hover:scale-110 group-hover:rotate-3 transition-all duration-500 shadow-2xl shadow-red-900/20">
+                <div className="text-5xl mb-6 bg-red-600/10 w-20 h-20 rounded-3xl flex items-center justify-center border border-red-600/20 group-hover:scale-110 group-hover:rotate-3 transition-all duration-500 shadow-2xl shadow-red-900/20 text-glow">
                   {feature.icon}
                 </div>
                 
-                <h3 className="text-3xl font-black text-white mb-4 tracking-tight">
+                <h3 className="text-2xl font-black text-white mb-2 tracking-tight">
                   {feature.title}
                 </h3>
                 
-                <p className="text-red-500 text-[10px] font-black mb-5 uppercase tracking-[0.2em] opacity-80">
+                <p className="text-red-500 text-[10px] font-black mb-4 uppercase tracking-[0.2em] opacity-80">
                   {feature.description}
                 </p>
                 
@@ -109,7 +109,7 @@ export default function FeaturesSection() {
                   {feature.action}
                 </p>
                 
-                <div className="mt-10 pt-8 border-t border-white/5 flex items-center justify-between">
+                <div className="mt-8 pt-6 border-t border-white/5 flex items-center justify-between">
                   <span className="text-[10px] text-gray-600 font-black tracking-widest uppercase">MÓDULO ACTIVO</span>
                   <div className="w-2.5 h-2.5 bg-green-500 rounded-full animate-pulse shadow-[0_0_15px_rgba(34,197,94,0.6)]" />
                 </div>
