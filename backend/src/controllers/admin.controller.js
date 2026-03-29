@@ -421,14 +421,30 @@ export const getAdminOrders = async (req, res) => {
   try {
     const storeId = await getStoreId(req);
     const result = await query(
-      `SELECT o.*, u.name as user_name, u.email as user_email
-       FROM orders o LEFT JOIN users u ON o.user_id = u.id
+      `SELECT o.*, u.name as user_name, u.email as user_email,
+       (
+         SELECT json_agg(json_build_object(
+           'id', id,
+           'product_name', product_name,
+           'product_price', product_price,
+           'quantity', quantity,
+           'notes', notes,
+           'subtotal', subtotal
+         ))
+         FROM order_items
+         WHERE order_id = o.id
+       ) as items
+       FROM orders o 
+       LEFT JOIN users u ON o.user_id = u.id
        WHERE o.store_id = $1
        ORDER BY o.created_at DESC LIMIT 100`,
       [storeId]
     );
     res.json({ status: 'success', data: result.rows });
-  } catch (e) { res.status(500).json({ status: 'error', message: e.message }); }
+  } catch (e) { 
+    console.error('getAdminOrders error:', e.message);
+    res.status(500).json({ status: 'error', message: e.message }); 
+  }
 };
 
 export const updateOrderStatus = async (req, res) => {

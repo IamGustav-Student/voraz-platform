@@ -1544,23 +1544,63 @@ function OrdersSection({ items, token, reload, mpData }) {
           </h3>
           <div className="space-y-2 mb-8">
             {pending.map(o => (
-              <div key={o.id} className="flex items-center gap-4 bg-yellow-500/10 border border-yellow-500/30 rounded-lg px-4 py-3">
-                <span className="font-mono text-xs text-gray-400">#{o.id}</span>
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm font-medium">{o.user_name || o.user_email || 'Invitado'}</p>
-                  <p className="text-xs text-gray-500">{new Date(o.created_at).toLocaleString('es-AR')}</p>
+              <div key={o.id} className="flex flex-col gap-3 bg-yellow-500/10 border border-yellow-500/30 rounded-2xl p-5 transition-all hover:bg-yellow-500/20">
+                <div className="flex items-center gap-4">
+                  <span className="font-mono text-[10px] text-gray-500 bg-black/40 px-2 py-0.5 rounded-md">#{o.id}</span>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-black text-white">{o.customer_name || o.user_name || o.user_email || 'Invitado'}</p>
+                    <p className="text-[10px] text-gray-500 font-bold uppercase tracking-widest">{new Date(o.created_at).toLocaleString('es-AR')}</p>
+                  </div>
+                  <div className="text-right">
+                    <span className="text-[10px] px-2 py-0.5 rounded-full bg-yellow-900/50 text-yellow-300 font-black uppercase tracking-widest">
+                      {STATUS_LABELS[o.status] || o.status}
+                    </span>
+                    <p className="font-black text-yellow-500 mt-1">${Number(o.total).toLocaleString('es-AR')}</p>
+                  </div>
                 </div>
-                <span className="text-xs px-2 py-1 rounded-full bg-yellow-900/50 text-yellow-300 flex-shrink-0">
-                  {STATUS_LABELS[o.status] || o.status}
-                </span>
-                <span className="font-bold text-yellow-400 flex-shrink-0">${o.total}</span>
-                <button
-                  onClick={() => markDelivered(o.id)}
-                  disabled={updating === o.id}
-                  className="text-xs bg-green-600 hover:bg-green-700 text-white px-3 py-1.5 rounded-lg flex-shrink-0 disabled:opacity-50 font-semibold"
-                >
-                  {updating === o.id ? '...' : 'Entregado'}
-                </button>
+
+                {/* Detalle de ítems */}
+                {o.items && o.items.length > 0 && (
+                  <div className="mt-2 pl-4 border-l-2 border-yellow-500/20 space-y-2">
+                    {o.items.map((item, idx) => (
+                      <div key={idx} className="bg-black/20 rounded-xl p-3">
+                        <div className="flex justify-between items-start">
+                          <p className="text-sm font-bold text-gray-300">
+                            <span className="text-yellow-500 mr-2">{item.quantity}x</span>
+                            {item.product_name}
+                          </p>
+                          <p className="text-xs font-bold text-gray-500">${Number(item.subtotal || item.product_price * item.quantity).toLocaleString('es-AR')}</p>
+                        </div>
+                        {item.notes && (
+                          <div className="mt-2 bg-yellow-500/10 p-2 rounded-lg border border-yellow-500/20">
+                            <p className="text-[11px] text-yellow-200 leading-relaxed italic">
+                              <span className="font-black uppercase mr-1">Nota:</span> "{item.notes}"
+                            </p>
+                          </div>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+                {/* Notas generales del pedido */}
+                {o.notes && (
+                  <div className="bg-red-500/10 border border-red-500/20 p-3 rounded-xl mt-1">
+                    <p className="text-xs text-red-200">
+                      <span className="font-black uppercase mr-1">Comentario Global:</span> {o.notes}
+                    </p>
+                  </div>
+                )}
+
+                <div className="flex gap-2 pt-2">
+                  <button
+                    onClick={() => markDelivered(o.id)}
+                    disabled={updating === o.id}
+                    className="flex-1 bg-green-600 hover:bg-green-500 text-white py-2.5 rounded-xl text-xs font-black uppercase tracking-widest transition-all disabled:opacity-50"
+                  >
+                    {updating === o.id ? 'Marcando...' : 'Marcar como Entregado'}
+                  </button>
+                </div>
               </div>
             ))}
           </div>
@@ -1572,17 +1612,29 @@ function OrdersSection({ items, token, reload, mpData }) {
           <h3 className="text-sm font-semibold text-gray-500 uppercase tracking-wider mb-3">Historial</h3>
           <div className="space-y-2">
             {delivered.map(o => (
-              <div key={o.id} className="flex items-center gap-4 bg-white/2 border border-white/5 rounded-lg px-4 py-3 opacity-50">
-                <span className="font-mono text-xs text-gray-600">#{o.id}</span>
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm text-gray-500">{o.user_name || o.user_email || 'Invitado'}</p>
-                  <p className="text-xs text-gray-600">{new Date(o.delivered_at || o.created_at).toLocaleString('es-AR')}</p>
+              <details key={o.id} className="group bg-white/2 border border-white/5 rounded-xl overflow-hidden opacity-70 hover:opacity-100 transition-all">
+                <summary className="flex items-center gap-4 px-4 py-3 cursor-pointer list-none">
+                  <span className="font-mono text-xs text-gray-600">#{o.id}</span>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-bold text-gray-400">{o.customer_name || o.user_name || 'Invitado'}</p>
+                    <p className="text-[10px] text-gray-600">{new Date(o.delivered_at || o.created_at).toLocaleString('es-AR')}</p>
+                  </div>
+                  <span className={`text-[10px] font-black uppercase tracking-widest px-2 py-0.5 rounded-full flex-shrink-0 ${
+                    o.status === 'delivered' ? 'bg-gray-800 text-gray-500' : 'bg-red-950 text-red-700'
+                  }`}>{STATUS_LABELS[o.status] || o.status}</span>
+                  <span className="text-gray-500 font-bold ml-2">${Number(o.total).toLocaleString('es-AR')}</span>
+                  <svg className="w-4 h-4 text-gray-600 group-open:rotate-180 transition-transform ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M19 9l-7 7-7-7" /></svg>
+                </summary>
+                
+                <div className="px-4 pb-4 border-t border-white/5 pt-3 space-y-2">
+                   {o.items?.map((item, idx) => (
+                      <div key={idx} className="flex justify-between text-xs text-gray-500">
+                        <span>{item.quantity}x {item.product_name}</span>
+                        <span>${Number(item.subtotal || item.product_price * item.quantity).toLocaleString('es-AR')}</span>
+                      </div>
+                   ))}
                 </div>
-                <span className={`text-xs px-2 py-1 rounded-full flex-shrink-0 ${
-                  o.status === 'delivered' ? 'bg-gray-800 text-gray-500' : 'bg-red-950 text-red-700'
-                }`}>{STATUS_LABELS[o.status] || o.status}</span>
-                <span className="text-gray-600 flex-shrink-0">${o.total}</span>
-              </div>
+              </details>
             ))}
           </div>
         </>
