@@ -36,7 +36,7 @@ export async function subscribeToPush(token) {
     }
 
     // Suscribir al servidor de push
-    const publicKey = 'BCWAJJFkA_BiRWRzAqc8uFe1l9CJh3Cichnm7o5fAMDNE0-gf3a8hPnOInzpV19mxsurEOO-NYbWnlSBP'; 
+    const publicKey = 'BCkh3MImFXcJprtbYtGCER6RjhjwraivDVtgsRoOPj2HFqxsrLCuANVx8ND7-gCz64PTxoaF_z6RvKO83POdO4U'; 
     subscription = await registration.pushManager.subscribe({
       userVisibleOnly: true,
       applicationServerKey: urlBase64ToUint8Array(publicKey)

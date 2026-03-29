@@ -8,11 +8,17 @@ const configureWebPush = () => {
   const privateKey = process.env.VAPID_PRIVATE_KEY;
 
   if (publicKey && privateKey) {
-    webpush.setVapidDetails(
-      'mailto:admin@gastrored.com.ar', // Contacto técnico
-      publicKey,
-      privateKey
-    );
+    try {
+      webpush.setVapidDetails(
+        'mailto:admin@gastrored.com.ar', // Contacto técnico
+        publicKey,
+        privateKey
+      );
+    } catch (err) {
+      console.error('🔴 Error al configurar Web Push:', err.message);
+    }
+  } else {
+    console.warn('⚠️ Web Push no configurado (falta VAPID_PUBLIC_KEY o VAPID_PRIVATE_KEY)');
   }
 };
 
