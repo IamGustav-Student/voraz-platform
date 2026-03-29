@@ -28,7 +28,11 @@ self.addEventListener('push', (event) => {
     body: data.body || 'Nuevo pedido recibido.',
     icon: '/vite.svg', // Icono por defecto (se puede cambiar dinámicamente)
     badge: '/vite.svg',
-    vibrate: [200, 100, 200],
+    // VIBRACIÓN AGRESIVA: Patrón rítmico potente que no pasa desapercibido
+    vibrate: [500, 110, 500, 110, 450, 110, 200, 110, 170, 40, 450, 110, 200, 110, 170, 40, 500],
+    tag: 'new-order-alerta', // Agrupar para renotificar
+    renotify: true,          // Volver a sonar y vibrar incluso si ya existe una alerta de pedido
+    silent: false,           // Forzar que el sistema tente usar el sonido predeterminado
     data: {
       url: data.data?.url || '/admin/orders'
     },

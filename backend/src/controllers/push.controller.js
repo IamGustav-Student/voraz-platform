@@ -86,8 +86,9 @@ export const notifyNewOrder = async (tenantId, orderData) => {
     const payload = JSON.stringify({
       title: '🍔 ¡Nuevo Pedido en GastroRed!',
       body: `Pedido #${orderData.id} de ${orderData.customer_name}\nTotal: $${orderData.total}`,
+      tag: 'new-order-alerta', // Clave para la renotificación
       data: {
-        url: '/admin/orders', // Donde queremos que abra al hacer clic
+        url: '/admin/orders', 
         orderId: orderData.id
       }
     });
