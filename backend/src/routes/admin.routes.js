@@ -17,6 +17,7 @@ import {
   toggleOrdersPaused,
   updateTenantProfile,
 } from '../controllers/admin.controller.js';
+import { subscribe, unsubscribe } from '../controllers/push.controller.js';
 import { getAdminPromos, createPromo, updatePromo, deletePromo } from '../controllers/promos.controller.js';
 import { getStoreId } from '../utils/tenant.js';
 import { getSubscriptionStatus, createUpgradeCheckout } from '../controllers/subscriptions.controller.js';
@@ -89,5 +90,9 @@ router.patch('/orders-pause', toggleOrdersPaused);
 
 // Perfil del comercio (address, whatsapp)
 router.patch('/profile', updateTenantProfile);
+
+// Notificaciones Push
+router.post('/push/subscribe', subscribe);
+router.post('/push/unsubscribe', unsubscribe);
 
 export default router;

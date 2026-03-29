@@ -1,8 +1,8 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { QRCodeCanvas } from 'qrcode.react';
-// No Recharts imports needed - Using Premium SVG for build stability
 import { useAuth } from '../context/AuthContext';
 import { adminFetch, patchOrdersPaused } from '../services/api';
+import { subscribeToPush, unsubscribeFromPush, getPushSubscriptionState } from '../utils/pushNotifications';
 
 // ── Skeletons de carga (Tailwind) para tablas ─────────────────────────────────
 function TableRowSkeleton({ cols = 4 }) {
@@ -352,8 +352,29 @@ export default function AdminPanel({ onClose }) {
 // ── Dashboard Components ─────────────────────────────────────────────────────
 
 function DashboardHero({ subscription }) {
+  const { getToken } = useAuth();
+  const token = getToken();
   const [timeLeft, setTimeLeft] = useState({ days: 0, hours: 0, minutes: 0, seconds: 0 });
+  const [pushEnabled, setPushEnabled] = useState(false);
   
+  useEffect(() => {
+    getPushSubscriptionState().then(setPushEnabled);
+  }, []);
+
+  const handlePushToggle = async () => {
+    try {
+      if (pushEnabled) {
+        await unsubscribeFromPush(token);
+        setPushEnabled(false);
+      } else {
+        await subscribeToPush(token);
+        setPushEnabled(true);
+      }
+    } catch (e) {
+      alert('Error en notificaciones: ' + e.message);
+    }
+  };
+
   useEffect(() => {
     if (!subscription?.expires_at) return;
     
@@ -410,12 +431,24 @@ function DashboardHero({ subscription }) {
             Tu tienda está funcionando al 100%. Seguí potenciando tus ventas con las métricas de hoy.
           </p>
           
-          <button 
-            onClick={() => window.print()}
-            className="no-print mt-6 flex items-center justify-center gap-2 bg-white/10 hover:bg-white/20 text-white px-5 py-2.5 rounded-xl font-black text-xs transition-all border border-white/10 active:scale-95 shadow-lg w-full sm:w-auto"
-          >
-            <span>📥</span> Exportar Reporte (PDF)
-          </button>
+          <div className="flex flex-wrap gap-2 mt-6 no-print">
+            <button 
+              onClick={() => window.print()}
+              className="flex items-center justify-center gap-2 bg-white/10 hover:bg-white/20 text-white px-5 py-2.5 rounded-xl font-black text-xs transition-all border border-white/10 active:scale-95 shadow-lg w-full sm:w-auto"
+            >
+              <span>📥</span> Exportar Reporte (PDF)
+            </button>
+            <button 
+              onClick={handlePushToggle}
+              className={`flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl font-black text-xs transition-all border active:scale-95 shadow-lg w-full sm:w-auto ${
+                pushEnabled 
+                ? 'bg-green-500/20 text-green-400 border-green-500/30' 
+                : 'bg-primary/20 text-white border-primary/30'
+              }`}
+            >
+              <span>{pushEnabled ? '🔔 Notificaciones: ON' : '🔕 Activar Alertas Push'}</span>
+            </button>
+          </div>
         </div>
 
         {subscription?.expires_at && (

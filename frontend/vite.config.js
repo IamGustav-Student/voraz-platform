@@ -6,22 +6,14 @@ export default defineConfig({
   plugins: [
     react(),
     VitePWA({
+      strategies: 'injectManifest',
+      srcDir: 'src',
+      filename: 'sw.js',
       registerType: 'autoUpdate',
-      includeAssets: ['favicon.ico'],
-      manifest: false,
-      workbox: {
+      injectManifest: {
         globPatterns: ['**/*.{js,css,html,png,jpg,jpeg,svg,webp,woff2}'],
-        runtimeCaching: [
-          {
-            urlPattern: ({ url }) => url.pathname.startsWith('/api'),
-            handler: 'NetworkFirst',
-            options: {
-              cacheName: 'api-cache',
-              expiration: { maxEntries: 50, maxAgeSeconds: 60 * 60 * 24 }
-            }
-          }
-        ]
-      }
+      },
+      manifest: false, // El manifest se sirve dinámicamente desde la API
     })
   ],
   server: {

@@ -1,5 +1,5 @@
-import { pool, query } from '../config/db.js';
 import { getStoreId, getTenantId } from '../utils/tenant.js';
+import { notifyNewOrder } from './push.controller.js';
 
 // Points helper removed as it's now per product
 
@@ -144,6 +144,10 @@ export const createOrder = async (req, res) => {
         // Ahora se acreditan únicamente cuando el administrador marca el pedido como 'entregado'.
 
         await client.query('COMMIT');
+
+        // Notificación Push asíncrona para el dueño del comercio
+        notifyNewOrder(tenantId, { id: orderId, customer_name, total: finalTotal });
+
         res.status(201).json({ status: 'success', data: { order_id: orderId, final_total: finalTotal, points_earned: totalPointsEarned } });
 
     } catch (error) {
