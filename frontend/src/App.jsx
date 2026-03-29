@@ -14,6 +14,7 @@ import GastroRedLanding from './components/GastroRedLanding';
 import { useBranding } from './hooks/useBranding';
 import { usePWAInstall } from './hooks/usePWAInstall';
 import InstallPWABanner from './components/InstallPWABanner';
+import OrderNotificationListener from './components/OrderNotificationListener';
 
 // Dominios que deben mostrar la landing de GastroRed en lugar de un tenant
 const GASTRORED_ROOT_DOMAINS = [
@@ -623,6 +624,7 @@ function App() {
 
   return (
     <div className="min-h-screen bg-brand-bg text-brand-text font-sans selection:bg-brand-primary selection:text-white">
+      <OrderNotificationListener />
 
       {/* HEADER PC */}
       <header className={`hidden md:block sticky top-0 z-50 h-24 transition-all duration-300 ${isScrolled ? 'bg-[#121212] border-b border-white/10 shadow-xl' : 'bg-[#121212] py-4'}`}>
