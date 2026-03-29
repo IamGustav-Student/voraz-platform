@@ -1,12 +1,12 @@
-# Dockerfile para Google Cloud Run - GastroRed (Root Context)
+# Dockerfile para Railway / GastroRed
 FROM node:20-slim
 RUN apt-get update && apt-get install -y openssl && rm -rf /var/lib/apt/lists/*
 WORKDIR /app
 
-# NOTA: Ahora agregamos "backend/" antes de los archivos porque el build se lanza desde la raíz
-COPY backend/package*.json ./
+# Copiamos archivos desde la raíz del contexto (que en Railway es /backend)
+COPY package*.json ./
 RUN npm install --production
-COPY backend/ .
+COPY . .
 
-EXPOSE 8080
+EXPOSE 3000
 CMD ["node", "src/index.js"]
