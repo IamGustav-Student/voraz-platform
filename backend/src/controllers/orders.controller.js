@@ -1,3 +1,4 @@
+import { pool, query } from '../config/db.js';
 import { getStoreId, getTenantId } from '../utils/tenant.js';
 import { notifyNewOrder } from './push.controller.js';
 
