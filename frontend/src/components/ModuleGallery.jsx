@@ -1,10 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
-import gsap from 'gsap';
-import { ScrollTrigger } from 'gsap/ScrollTrigger';
-
-if (typeof window !== 'undefined') {
-  gsap.registerPlugin(ScrollTrigger);
-}
+import { useState, useEffect } from 'react';
 
 const modules = [
   { id: 19, title: "Carta Digital", desc: "Visualización optimizada para dispositivos móviles.", icon: "🍽️", img: "/images/gallery/menu_items.jpg" },
@@ -30,84 +24,10 @@ const modules = [
 ];
 
 export default function ModuleGallery() {
-  const sectionRef = useRef(null);
-  const triggerRef = useRef(null);
-  const cardsRef = useRef([]);
   const [selectedMod, setSelectedMod] = useState(null);
-  const modalRef = useRef(null);
-  const modalImgRef = useRef(null);
 
-  useEffect(() => {
-    const section = sectionRef.current;
-    
-    let mm = gsap.matchMedia();
-
-    mm.add({
-      // Escritorio
-      isDesktop: "(min-width: 768px)",
-      // Móvil
-      isMobile: "(max-width: 767px)"
-    }, (context) => {
-      let { isDesktop, isMobile } = context.conditions;
-
-      // Pin horizontal scroll
-      gsap.to(section, {
-        x: () => -(section.scrollWidth - window.innerWidth),
-        ease: "none",
-        scrollTrigger: {
-          trigger: triggerRef.current,
-          start: isMobile ? "top 15%" : "top top",
-          end: () => isMobile ? "+=" + (section.scrollWidth * 0.6) : "+=" + section.scrollWidth,
-          scrub: 1.2,
-          pin: true,
-          pinSpacing: true, // Lo mantenemos true para que no se pisen secciones
-          anticipatePin: 1,
-          invalidateOnRefresh: true,
-        },
-      });
-
-      // Efecto de inclinación (Tilt) 3D en hover (Solo escritorio)
-      if (isDesktop) {
-        cardsRef.current.forEach((card) => {
-          if (!card) return;
-          
-          const onMove = (e) => {
-            const rect = card.getBoundingClientRect();
-            const x = e.clientX - rect.left;
-            const y = e.clientY - rect.top;
-            const centerX = rect.width / 2;
-            const centerY = rect.height / 2;
-            const rotateX = (y - centerY) / 10;
-            const rotateY = (centerX - x) / 10;
-
-            gsap.to(card, {
-              rotateX: rotateX, rotateY: rotateY, scale: 1.05,
-              duration: 0.5, ease: "power2.out", overwrite: "auto",
-              transformPerspective: 1000
-            });
-          };
-
-          const onLeave = () => {
-            gsap.to(card, {
-              rotateX: 0, rotateY: 0, scale: 1,
-              duration: 0.5, ease: "power2.out", overwrite: "auto"
-            });
-          };
-
-          card.addEventListener("mousemove", onMove);
-          card.addEventListener("mouseleave", onLeave);
-        });
-      }
-    });
-
-    return () => mm.revert();
-  }, []);
-
-  // Animación del Modal
   useEffect(() => {
     if (selectedMod) {
-        gsap.fromTo(modalRef.current, { opacity: 0 }, { opacity: 1, duration: 0.4, ease: "power2.out" });
-        gsap.fromTo(modalImgRef.current, { scale: 0.8, y: 20 }, { scale: 1, y: 0, duration: 0.6, ease: "back.out(1.7)" });
         document.body.style.overflow = 'hidden';
     } else {
         document.body.style.overflow = 'unset';
@@ -117,104 +37,93 @@ export default function ModuleGallery() {
   return (
     <section 
       id="ecosistema-gastrored" 
-      className="bg-[#05080d] overflow-hidden" 
+      className="bg-[#05080d] py-20 px-4 md:px-8" 
       aria-labelledby="gallery-title"
     >
-      <div ref={triggerRef}>
-        <div className="h-[85vh] md:h-screen flex items-center relative">
-            <h2 id="gallery-title" className="sr-only">Ecosistema Completo de GastroRed - 20 Módulos</h2>
+      <div className="max-w-7xl mx-auto">
+        {/* Header de la sección */}
+        <div className="mb-16 text-center md:text-left">
+            <h2 id="gallery-title" className="text-4xl md:text-7xl font-black text-white leading-tight tracking-tighter mb-4">
+                Explorá el <br className="hidden md:block"/>
+                <span className="text-transparent bg-clip-text bg-gradient-to-r from-red-600 via-orange-500 to-red-600 animate-gradient text-glow">Ecosistema</span>
+            </h2>
+            <p className="text-gray-500 max-w-xl font-bold text-xs md:text-sm leading-tight uppercase tracking-[0.2em] opacity-60">
+                20 Módulos de Sincronización Total para la Gastronomía Profesional, ahora en una vista simplificada y potente.
+            </p>
+        </div>
 
-            {/* Header de la sección (fijo al principio) */}
-            <div className="absolute top-12 left-8 md:left-24 z-20 pointer-events-none">
-                <div className="text-4xl md:text-7xl font-black text-white leading-[0.8] tracking-tighter">
-                    Explorá el <br/>
-                    <span className="text-transparent bg-clip-text bg-gradient-to-r from-red-600 via-orange-500 to-red-600 animate-gradient text-glow">Ecosistema</span>
+        {/* Grid de módulos corregido (Sin GSAP) */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 md:gap-10">
+          {modules.map((mod) => (
+            <div 
+              key={mod.id} 
+              onClick={() => setSelectedMod(mod)}
+              className="group relative glass-premium rounded-[2.5rem] p-2 shadow-2xl overflow-hidden hover:border-red-500/50 transition-all duration-500 cursor-pointer flex flex-col"
+            >
+              <div className="h-full flex flex-col p-5">
+                {/* Imagen o Icono */}
+                <div className="aspect-[16/10] bg-[#0a0f18] rounded-[1.8rem] flex items-center justify-center overflow-hidden border border-white/10 relative group-hover:shadow-[0_0_40px_rgba(227,6,19,0.2)] transition-all duration-500">
+                  {mod.img ? (
+                    <img 
+                      src={mod.img} 
+                      alt={`Módulo ${mod.title}`} 
+                      className="w-full h-full object-cover opacity-90 transition-all duration-700 group-hover:scale-105 group-hover:opacity-100"
+                    />
+                  ) : (
+                    <div className="text-7xl opacity-20 group-hover:opacity-100 transition-opacity duration-500">{mod.icon}</div>
+                  )}
+                  {/* Overlay sutil */}
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent opacity-60 group-hover:opacity-20 transition-opacity" />
                 </div>
-                <p className="text-gray-500 mt-4 max-w-xs md:max-w-md font-bold text-xs md:text-sm leading-tight uppercase tracking-[0.2em] opacity-60">
-                    20 Módulos de Sincronización Total para la Gastronomía Pro.
-                </p>
+                
+                <div className="pt-5">
+                  <h3 className="text-xl md:text-2xl font-black text-white mb-2 group-hover:text-red-500 transition-colors tracking-tight italic">
+                    {mod.title}
+                  </h3>
+                  <p className="text-[10px] text-gray-500 font-black uppercase tracking-[0.2em] line-clamp-1">
+                    {mod.desc}
+                  </p>
+                </div>
+
+                <div className="mt-5 flex items-center justify-between border-t border-white/5 pt-4">
+                  <div className="flex items-center gap-2">
+                    <span className="w-1.5 h-1.5 bg-red-600 rounded-full" />
+                    <span className="text-[9px] font-black text-white/40 uppercase tracking-widest">ACTIVO</span>
+                  </div>
+                  <div className="text-red-500/80 text-[10px] font-black uppercase tracking-widest opacity-0 group-hover:opacity-100 transition-opacity">+ Detalles</div>
+                </div>
+              </div>
             </div>
-
-            <div ref={sectionRef} className="flex gap-10 md:gap-16 px-[10vw] md:px-[20vw]">
-            {modules.map((mod, index) => (
-                <div 
-                key={mod.id} 
-                ref={el => cardsRef.current[index] = el}
-                onClick={() => setSelectedMod(mod)}
-                className="flex-shrink-0 w-[80vw] md:w-[45vw] aspect-[16/10] glass-premium rounded-[3rem] p-2 shadow-[0_40px_100px_rgba(0,0,0,0.5)] overflow-hidden group hover:border-red-500/50 transition-all duration-700 cursor-pointer"
-                style={{ transformStyle: "preserve-3d" }}
-                >
-                <div className="h-full flex flex-col p-6 pointer-events-none">
-                    {/* Imagen o Icono */}
-                    <div 
-                      className="flex-1 bg-[#0a0f18] rounded-[2rem] flex items-center justify-center overflow-hidden border border-white/10 relative group-hover:shadow-[0_0_50px_rgba(227,6,19,0.3)] transition-all duration-700"
-                      style={{ transform: "translateZ(40px)" }}
-                    >
-                      {mod.img ? (
-                        <img 
-                          src={mod.img} 
-                          alt={`Módulo ${mod.title}`} 
-                          className="w-full h-full object-cover opacity-100 transition-all duration-1000 group-hover:scale-110"
-                        />
-                      ) : (
-                        <div className="text-9xl opacity-20 group-hover:opacity-100 transition-opacity duration-700">{mod.icon}</div>
-                      )}
-                      
-                      {/* Overlay Gradiente */}
-                      <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-transparent to-transparent opacity-80 group-hover:opacity-30 transition-opacity" />
-                    </div>
-                    
-                    <div className="pt-6" style={{ transform: "translateZ(80px)" }}>
-                        <h3 className="text-2xl md:text-3xl font-black text-white mb-2 group-hover:text-red-500 transition-colors tracking-tighter italic">
-                          {mod.title}
-                        </h3>
-                        <p className="text-[9px] text-gray-500 font-black uppercase tracking-[0.2em]">
-                          {mod.desc}
-                        </p>
-                    </div>
-
-                    <div className="mt-6 flex items-center justify-between">
-                        <div className="flex items-center gap-3">
-                          <span className="w-2.5 h-2.5 bg-red-600 rounded-full animate-ping" />
-                          <span className="text-[10px] font-black text-red-500/60 uppercase tracking-[0.4em]">ACTIVO · {mod.id} / 20</span>
-                        </div>
-                        <div className="text-white/20 text-[10px] font-black uppercase tracking-widest group-hover:text-red-500 transition-colors">Click para Expandir +</div>
-                    </div>
-                </div>
-                </div>
-            ))}
-            </div>
-
-            {/* Decoración Visual */}
-            <div className="absolute top-0 right-0 w-[50vw] h-[50vh] bg-red-600/5 blur-[120px] rounded-full pointer-events-none" />
+          ))}
         </div>
       </div>
 
-      {/* LIGHTBOX MODAL */}
+      {/* LIGHTBOX MODAL (Simplificado) */}
       {selectedMod && (
         <div 
-            ref={modalRef}
-            className="fixed inset-0 z-[100] bg-black/95 backdrop-blur-xl flex items-center justify-center p-4 md:p-12 cursor-zoom-out"
+            className="fixed inset-0 z-[110] bg-black/95 backdrop-blur-xl flex items-center justify-center p-4 cursor-zoom-out animate-in fade-in duration-300"
             onClick={() => setSelectedMod(null)}
         >
-            <button className="absolute top-8 right-8 text-white text-4xl hover:text-red-500 transition-colors">✕</button>
+            <button className="absolute top-6 right-6 text-white text-3xl hover:text-red-500 transition-colors z-20">✕</button>
             <div 
-                ref={modalImgRef}
-                className="max-w-7xl w-full bg-[#0d1117] border border-white/10 rounded-[2rem] overflow-hidden shadow-2xl cursor-default"
+                className="max-w-5xl w-full bg-[#0d1117] border border-white/10 rounded-[2.5rem] overflow-hidden shadow-2xl cursor-default animate-in zoom-in-95 duration-500"
                 onClick={e => e.stopPropagation()}
             >
-                <img 
-                    src={selectedMod.img} 
-                    alt={selectedMod.title} 
-                    className="w-full h-auto max-h-[75vh] object-contain border-b border-white/5"
-                />
-                <div className="p-8 md:p-12 bg-gradient-to-br from-white/5 to-transparent">
+                <div className="relative aspect-video">
+                  <img 
+                      src={selectedMod.img} 
+                      alt={selectedMod.title} 
+                      className="w-full h-full object-cover"
+                  />
+                  <div className="absolute inset-0 bg-gradient-to-t from-[#0d1117] via-transparent to-transparent" />
+                </div>
+                <div className="p-8 md:p-12 relative -mt-20">
                     <div className="flex items-center gap-3 mb-4">
-                        <span className="w-2 h-2 bg-red-500 rounded-full" />
-                        <span className="text-red-500 font-black uppercase text-xs tracking-widest">Módulo {selectedMod.id} de GastroRed</span>
+                        <span className="w-2.5 h-2.5 bg-red-500 rounded-full shadow-[0_0_10px_rgba(227,6,19,1)]" />
+                        <span className="text-red-500 font-black uppercase text-xs tracking-[0.3em]">Módulo GastroRed</span>
                     </div>
-                    <h3 className="text-4xl md:text-5xl font-black text-white mb-4">{selectedMod.title}</h3>
-                    <p className="text-xl text-gray-400 max-w-3xl leading-relaxed">{selectedMod.desc}</p>
+                    <h3 className="text-4xl md:text-6xl font-black text-white mb-4 tracking-tighter italic">{selectedMod.title}</h3>
+                    <p className="text-lg md:text-xl text-gray-400 max-w-3xl leading-relaxed font-medium">{selectedMod.desc}</p>
                 </div>
             </div>
         </div>

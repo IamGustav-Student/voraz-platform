@@ -1,11 +1,4 @@
 import { useEffect, useRef } from 'react';
-import gsap from 'gsap';
-import { ScrollTrigger } from 'gsap/ScrollTrigger';
-
-// Registrar el plugin de GSAP
-if (typeof window !== 'undefined') {
-  gsap.registerPlugin(ScrollTrigger);
-}
 
 const features = [
   {
@@ -41,36 +34,9 @@ const features = [
 ];
 
 export default function FeaturesSection() {
-  const containerRef = useRef(null);
-  const cardsRef = useRef([]);
-
-  useEffect(() => {
-    // Contexto de GSAP para limpieza automática
-    let ctx = gsap.context(() => {
-      gsap.from(cardsRef.current, {
-        opacity: 0,
-        y: 30,
-        duration: 0.8,
-        stagger: 0.2,
-        ease: "power2.out",
-        scrollTrigger: {
-          trigger: containerRef.current,
-          start: "top 80%",
-          once: true,
-          // La contradicción en el request: "once: true" vs "reiniciar al subir/bajar"
-          // Mantenemos "once: true" según el requerimiento explícito Final,
-          // pero ScrollTrigger se encarga de dispararlo en el punto justo.
-        }
-      });
-    }, containerRef);
-
-    return () => ctx.revert(); // Cleanup total de GSAP
-  }, []);
-
   return (
     <section 
       id="funcionalidades-premium" 
-      ref={containerRef}
       className="pt-4 md:pt-16 pb-0 px-4 bg-[#080c12] overflow-hidden"
     >
       <div className="max-w-7xl mx-auto">
@@ -87,8 +53,7 @@ export default function FeaturesSection() {
           {features.map((feature, index) => (
             <div
               key={index}
-              ref={el => cardsRef.current[index] = el}
-              className="group relative glass-premium glass-premium-hover rounded-[2.5rem] p-8 transition-all duration-700 hover:translate-y-[-10px]"
+              className="group relative glass-premium rounded-[2.5rem] p-8 transition-all duration-700 hover:translate-y-[-10px]"
             >
               <div className="absolute inset-0 bg-gradient-to-br from-red-600/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-700 rounded-[2.5rem]" />
               
@@ -119,7 +84,6 @@ export default function FeaturesSection() {
 
           {/* Tarjeta de Cierre (Call to Action) */}
           <div
-            ref={el => cardsRef.current[5] = el}
             className="group relative bg-gradient-to-br from-red-600 to-red-900 rounded-[2.5rem] p-12 flex flex-col items-center justify-center text-center shadow-[0_20px_50px_rgba(227,6,19,0.3)] transition-all duration-700 hover:scale-[1.02]"
           >
             <div className="relative z-10">

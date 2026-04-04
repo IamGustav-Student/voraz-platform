@@ -1,9 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { Helmet } from 'react-helmet-async';
-import gsap from 'gsap';
-import { ScrollTrigger } from 'gsap/ScrollTrigger';
-
-gsap.registerPlugin(ScrollTrigger);
 
 // ── Mouse Glow Background Effect ──────────────────────────────────────────────
 function MouseGlow() {
@@ -11,12 +7,7 @@ function MouseGlow() {
         const glow = document.getElementById('mouse-glow');
         if (!glow) return;
         const moveHandler = (e) => {
-            gsap.to(glow, {
-                x: e.clientX,
-                y: e.clientY,
-                duration: 0.8,
-                ease: 'power2.out'
-            });
+            glow.style.transform = `translate(${e.clientX - 400}px, ${e.clientY - 400}px)`;
         };
         window.addEventListener('mousemove', moveHandler);
         return () => window.removeEventListener('mousemove', moveHandler);
@@ -25,7 +16,7 @@ function MouseGlow() {
     return (
         <div 
             id="mouse-glow" 
-            className="fixed top-0 left-0 w-[800px] h-[800px] bg-red-600/20 blur-[180px] rounded-full pointer-events-none z-[1] -translate-x-1/2 -translate-y-1/2 opacity-60"
+            className="fixed top-0 left-0 w-[800px] h-[800px] bg-red-600/20 blur-[180px] rounded-full pointer-events-none z-[1] opacity-60 transition-transform duration-700 ease-out"
         />
     );
 }
@@ -741,52 +732,6 @@ export default function GastroRedLanding() {
         { number: 4, icon: '🚀', title: 'Comenzás a vender', desc: 'Compartís el link de tu carta, tus clientes hacen pedidos y pagos desde el celular, y vos gestionás todo desde el admin.' },
     ];
 
-
-    // ── GSAP Reveals ────────────────────────────────────────────────────────────
-    useEffect(() => {
-        // Reveal Hero
-        gsap.from('#hero-content > *', {
-            y: 40,
-            opacity: 0,
-            duration: 1.2,
-            stagger: 0.2,
-            ease: 'expo.out',
-            delay: 0.5
-        });
-
-        // Reveal sections on scroll
-        const reveals = [
-            { selector: '#problema h2', y: 30 },
-            { selector: '#problema p', y: 20 },
-            { selector: '#problema .grid > div', stagger: 0.15 },
-            { selector: '#como-funciona h2', x: -40 },
-            { selector: '.reveal-step', stagger: 0.2 },
-            { selector: '#planes .text-center > *', y: 30, stagger: 0.2 },
-            { selector: '#planes .grid > div', y: 40, opacity: 0, stagger: 0.2 },
-            { selector: '#contacto .glass-premium', scale: 0.9, opacity: 0 }
-        ];
-
-        reveals.forEach(r => {
-            gsap.from(r.selector, {
-                scrollTrigger: {
-                    trigger: r.selector,
-                    start: 'top 85%',
-                    toggleActions: 'play none none none'
-                },
-                y: r.y || (r.x ? 0 : 30),
-                x: r.x || 0,
-                scale: r.scale || 1,
-                opacity: 0,
-                duration: 1,
-                stagger: r.stagger || 0,
-                ease: 'power3.out'
-            });
-        });
-
-        return () => {
-            ScrollTrigger.getAll().forEach(t => t.kill());
-        };
-    }, []);
 
     return (
         <div className="min-h-screen bg-[#080c12] text-white font-sans overflow-x-hidden relative">
