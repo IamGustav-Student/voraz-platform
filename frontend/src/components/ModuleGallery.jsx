@@ -51,7 +51,6 @@ export default function ModuleGallery() {
           end: () => "+=" + section.scrollWidth,
           scrub: 1,
           pin: true,
-          pinSpacing: false,
           anticipatePin: 1,
           invalidateOnRefresh: true,
         },
