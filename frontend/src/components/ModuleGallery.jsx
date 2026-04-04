@@ -40,60 +40,67 @@ export default function ModuleGallery() {
   useEffect(() => {
     const section = sectionRef.current;
     
-    let ctx = gsap.context(() => {
+    let mm = gsap.matchMedia();
+
+    mm.add({
+      // Escritorio
+      isDesktop: "(min-width: 768px)",
+      // Móvil
+      isMobile: "(max-width: 767px)"
+    }, (context) => {
+      let { isDesktop, isMobile } = context.conditions;
+
       // Pin horizontal scroll
       gsap.to(section, {
         x: () => -(section.scrollWidth - window.innerWidth),
         ease: "none",
         scrollTrigger: {
           trigger: triggerRef.current,
-          start: "top top",
-          end: () => "+=" + section.scrollWidth,
-          scrub: 1,
+          start: isMobile ? "top 15%" : "top top",
+          end: () => isMobile ? "+=" + (section.scrollWidth * 0.6) : "+=" + section.scrollWidth,
+          scrub: 1.2,
           pin: true,
+          pinSpacing: true, // Lo mantenemos true para que no se pisen secciones
           anticipatePin: 1,
           invalidateOnRefresh: true,
         },
       });
 
-      // Efecto de inclinación (Tilt) 3D en hover
-      cardsRef.current.forEach((card) => {
-        if (!card) return;
-        
-        card.addEventListener("mousemove", (e) => {
-          const rect = card.getBoundingClientRect();
-          const x = e.clientX - rect.left;
-          const y = e.clientY - rect.top;
-          const centerX = rect.width / 2;
-          const centerY = rect.height / 2;
-          const rotateX = (y - centerY) / 10;
-          const rotateY = (centerX - x) / 10;
+      // Efecto de inclinación (Tilt) 3D en hover (Solo escritorio)
+      if (isDesktop) {
+        cardsRef.current.forEach((card) => {
+          if (!card) return;
+          
+          const onMove = (e) => {
+            const rect = card.getBoundingClientRect();
+            const x = e.clientX - rect.left;
+            const y = e.clientY - rect.top;
+            const centerX = rect.width / 2;
+            const centerY = rect.height / 2;
+            const rotateX = (y - centerY) / 10;
+            const rotateY = (centerX - x) / 10;
 
-          gsap.to(card, {
-            rotateX: rotateX,
-            rotateY: rotateY,
-            scale: 1.05,
-            duration: 0.5,
-            ease: "power2.out",
-            overwrite: "auto",
-            transformPerspective: 1000
-          });
-        });
+            gsap.to(card, {
+              rotateX: rotateX, rotateY: rotateY, scale: 1.05,
+              duration: 0.5, ease: "power2.out", overwrite: "auto",
+              transformPerspective: 1000
+            });
+          };
 
-        card.addEventListener("mouseleave", () => {
-          gsap.to(card, {
-            rotateX: 0,
-            rotateY: 0,
-            scale: 1,
-            duration: 0.5,
-            ease: "power2.out",
-            overwrite: "auto"
-          });
+          const onLeave = () => {
+            gsap.to(card, {
+              rotateX: 0, rotateY: 0, scale: 1,
+              duration: 0.5, ease: "power2.out", overwrite: "auto"
+            });
+          };
+
+          card.addEventListener("mousemove", onMove);
+          card.addEventListener("mouseleave", onLeave);
         });
-      });
+      }
     });
 
-    return () => ctx.revert();
+    return () => mm.revert();
   }, []);
 
   // Animación del Modal
@@ -114,7 +121,7 @@ export default function ModuleGallery() {
       aria-labelledby="gallery-title"
     >
       <div ref={triggerRef}>
-        <div className="h-screen flex items-center relative">
+        <div className="h-[85vh] md:h-screen flex items-center relative">
             <h2 id="gallery-title" className="sr-only">Ecosistema Completo de GastroRed - 20 Módulos</h2>
 
             {/* Header de la sección (fijo al principio) */}

@@ -71,7 +71,7 @@ export default function FeaturesSection() {
     <section 
       id="funcionalidades-premium" 
       ref={containerRef}
-      className="pt-16 pb-0 px-4 bg-[#080c12] overflow-hidden"
+      className="pt-4 md:pt-16 pb-0 px-4 bg-[#080c12] overflow-hidden"
     >
       <div className="max-w-7xl mx-auto">
         <div className="text-center mb-12">

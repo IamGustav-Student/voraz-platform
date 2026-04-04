@@ -926,7 +926,7 @@ export default function GastroRedLanding() {
             </section>
 
             {/* ── EL PROBLEMA ──────────────────────────────────────────────────────── */}
-            <section id="problema" className="relative py-24">
+            <section id="problema" className="relative py-16 md:py-24">
                 <div className="absolute inset-0 bg-gradient-to-b from-transparent via-red-950/10 to-transparent" />
                 <div className="relative px-4 mx-auto max-w-7xl md:px-8">
                     <div className="mb-16 text-center">
@@ -970,7 +970,7 @@ export default function GastroRedLanding() {
             <ModuleGallery />
 
             {/* ── CÓMO FUNCIONA ────────────────────────────────────────────────────── */}
-            <section id="como-funciona" className="relative py-24">
+            <section id="como-funciona" className="relative py-16 md:py-24">
                 <div className="absolute inset-0 bg-gradient-to-b from-transparent via-red-950/15 to-transparent" />
                 <div className="relative px-4 mx-auto max-w-7xl md:px-8">
                     <div className="grid items-center gap-16 lg:grid-cols-2">
@@ -1053,7 +1053,7 @@ export default function GastroRedLanding() {
             </section>
 
             {/* ── PLANES ──────────────────────────────────────────────────────────── */}
-            <section id="planes" className="py-24 scroll-mt-20">
+            <section id="planes" className="relative py-16 md:py-24 scroll-mt-20">
                 <div className="px-4 mx-auto max-w-7xl md:px-8">
                     <div className="mb-16 text-center">
                         <div className="mb-4 text-sm font-black tracking-[0.3em] text-red-500 uppercase opacity-60">Inversión Inteligente</div>
@@ -1078,7 +1078,7 @@ export default function GastroRedLanding() {
             </section>
 
             {/* ── PARA EL DUEÑO ────────────────────────────────────────────────────── */}
-            <section className="relative py-24">
+            <section className="relative py-16 md:py-24">
                 <div className="absolute inset-0 bg-gradient-to-b from-transparent via-red-950/10 to-transparent" />
                 <div className="relative px-4 mx-auto max-w-7xl md:px-8">
                     <div className="mb-16 text-center">
@@ -1120,7 +1120,7 @@ export default function GastroRedLanding() {
             </section>
 
             {/* ── CTA FINAL ────────────────────────────────────────────────────────── */}
-            <section id="contacto" className="py-32 relative overflow-hidden">
+            <section id="contacto" className="py-20 md:py-32 relative overflow-hidden">
                 <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[1000px] h-[1000px] bg-red-600/5 rounded-full blur-[200px]" />
                 <div className="max-w-5xl px-4 mx-auto text-center md:px-8">
                     <div className="relative p-16 md:p-24 overflow-hidden glass-premium border-red-500/30 rounded-[3rem] shadow-[0_0_80px_rgba(227,6,19,0.15)]">
