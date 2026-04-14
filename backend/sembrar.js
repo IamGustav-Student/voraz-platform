@@ -21,6 +21,10 @@ const sembrarDatos = async () => {
 
     // 1. LIMPIEZA PREVIA (Opcional: Descomentar si quieres borrar todo antes de llenar)
     await pool.query('TRUNCATE TABLE order_items, orders, products, influencers, videos, stores, news RESTART IDENTITY CASCADE');
+    
+    // Restaurar tienda base con ID 1 para las llaves foráneas
+    await pool.query("INSERT INTO stores (id, name) VALUES (1, 'Voraz') ON CONFLICT (id) DO NOTHING");
+    await pool.query("SELECT setval('stores_id_seq', 1)");
 
     // -----------------------------------------------------------------------
     // 2. NUEVAS CATEGORÍAS
